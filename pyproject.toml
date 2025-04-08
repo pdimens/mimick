@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=65", "setuptools_scm[toml]>=3.4"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mimick"
+version = "0.0.0"
+authors = [
+    {name = "Pavel Dimens"},
+    {name = "David Bolognini"}
+]
+description = "Simulate linked-read data"
+requires-python = ">=3.10"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {text = "GPL-3.0"}
+dependencies = [
+    'numpy',
+    'rich-click',
+    'pyfaidx',
+    'pysam',
+    'pywgsim',
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["test"]
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+[project.scripts]
+mimick = "src.__main__:mimick"
+
+[tool.setuptools_scm]
+
+[project.urls]
+Homepage = "https://github.com/pdimens/mimick"

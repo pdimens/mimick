@@ -24,7 +24,7 @@ click.rich_click.OPTION_GROUPS = {
     "mimick": [
         {
             "name": "General Options",
-            "options": ["--help", "--output", "--output-format", "--prefix", "--threads", "--version"],
+            "options": ["--help", "--output", "--output-format", "--prefix", "--regions", "--threads", "--version"],
             "panel_styles": {"border_style": "dim"}
         },
         {
@@ -42,10 +42,10 @@ click.rich_click.OPTION_GROUPS = {
 
 @click.version_option("0.0.1", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/")
-#@click.argument('bedfile', help='one or more regions to simulate in BED format', metavar='BEDFILE')
 @click.option('-o','--output', help='output directory', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated")
 @click.option('-p','--prefix', help='output file prefix', type = str, default="SIM", show_default=True)
 @click.option('-O','--output-format', help='output format of FASTQ files', default="standard", show_default=True, type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
+@click.option('-r','--regions', help='one or more regions to simulate, in BED format', type = click.Path(dir_okay=False, readable=True, resolve_path=True))
 @click.option('-t','--threads', help='number of threads to use for simulation', type=click.IntRange(min=1), default=2, show_default=True)
 #Paired-end FASTQ simulation using pywgsim
 @click.option('--coverage', help='mean coverage target for simulated data', show_default=True, default=30.0, type=click.FloatRange(min=0.05))
@@ -63,7 +63,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-n','--molecule-number', help='mean number of unrelated molecules per barcode', default=3, show_default=True, type=click.IntRange(min=1))
 @click.argument('barcodes', type = click.Path(dir_okay=False, readable=True, exists=True, resolve_path=True))
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output, output_format, prefix, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecule_number):
+def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecule_number):
     """
     Simulate linked-read FASTQ using genome haplotypes and file of nucleotide barcodes, 1 per line.
     You can specify the linked-read barcode chemistry to simulate via `--barcode-type` as well as
