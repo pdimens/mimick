@@ -187,6 +187,7 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
             mimick_console.log(f'Processing haplotype {k+1}')
             c.hapnumber = f'{k+1}'
             c.ffile = c.ffiles[k]
+            _ = pysam.faidx(c.ffile)
             for w in intervals:
                 mimick_console.log(f'Simulating from region {w.chrom}:{w.start}-{w.end}')
                 LinkedSim(w,c)

@@ -9,7 +9,7 @@ from tempfile import mkstemp
 from .classes import *
 from .file_ops import *
 from .common import RNG, mimick_console, Chunks
-import pyfaidx
+#import pyfaidx
 from pywgsim import wgsim
 
 def wrap_wgsim(*args, **kwargs):
@@ -149,7 +149,7 @@ def selectbarcode(drop,molecules,c):
         droplet_container.append(temp)
     return droplet_container, assigned_barcodes
 
-def MolSim(processor,molecule,hfa,w,c):
+def MolSim(processor,molecule,_fasta,w,c):
     '''Parallelize linked reads simulation'''
     for mol in molecule:
         moleculenumber = mol.seqidx + 1
@@ -159,7 +159,7 @@ def MolSim(processor,molecule,hfa,w,c):
         chromend = w.start + mol.end
 
         header = f'MOL:{moleculenumber}_GEM:{moleculedroplet}_BAR:{barcodestring}_CHROM:{w.chrom}_START:{chromstart}_END:{chromend}'
-        seq__ = hfa[w.chrom][w.start+mol.start-1:w.start+mol.end].seq
+        seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end].seq
         truedim = mol.length-seq__.count('N')
         if c.molcov < 1:
             N = int(truedim*c.molcov)/(c.length*2)
@@ -224,12 +224,12 @@ def MolSim(processor,molecule,hfa,w,c):
 
 def LinkedSim(w,c):
     '''Perform linked-reads simulation'''
-    hfa=pyfaidx.Fasta(c.ffile)
-    if w.chrom not in hfa.keys():
+    _fasta=pysam.FastaFile(c.ffile)
+    if w.chrom not in _fasta:
         mimick_console.log(f'[Warning] Chromosome {w.chrom} not found in {c.ffile}. Skipping.')
     else:
         mimick_console.log(f'Preparing simulation from {c.ffile}: haplotype {c.hapnumber}')
-        chr_ = hfa[w.chrom]
+        chr_ = _fasta[w.chrom]
         seq_ = chr_[w.start-1:w.end].seq
         region = w.chrom+'_'+str(w.start)+'_'+str(w.end)
         Ns = seq_.count('N') #normalize coverage on Ns
@@ -258,7 +258,7 @@ def LinkedSim(w,c):
 
         for i,molecule in enumerate(slices,1):
             processor = f'p{i}'
-            p = multiprocessing.Process(target=MolSim, args=(processor,molecule,hfa,w,c))
+            p = multiprocessing.Process(target=MolSim, args=(processor,molecule,_fasta,w,c))
             p.start()
             processes.append(p)
         

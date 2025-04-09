@@ -14,10 +14,8 @@ requires-python = ">=3.10"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {text = "GPL-3.0"}
 dependencies = [
-    'biopython',
     'numpy',
     'rich-click',
-    'pyfaidx',
     'pysam',
     'pywgsim',
 ]
