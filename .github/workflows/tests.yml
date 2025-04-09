@@ -44,7 +44,9 @@ jobs:
 
       - name: Create Test Data
         shell: micromamba-shell {0}
-        run: resources/create_test_data.py
+        run: |
+          resources/create_test_data.py
+          ls -lh
 
       - name: sim tests
         shell: micromamba-shell {0}
