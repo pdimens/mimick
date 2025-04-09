@@ -4,7 +4,7 @@ from itertools import product
 from random import choices
 
 nuc = "ATCG"
-with open("test.ha1.fa", "w") as fa:
+with open("test.hap1.fa", "w") as fa:
     for i in [1,2]:
         _ = fa.write(f">Contig{i}\n" + "".join(choices(nuc, k = 200000)) + "\n")
 
