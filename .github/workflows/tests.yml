@@ -40,4 +40,28 @@ jobs:
       - name: haplotagging
         shell: micromamba-shell {0}
         run: mimick --lr-type haplotagging test/test.bc test/test.fa.gz test/test.fa.gz 2> haptag.log
+  macOS:
+    name: tests
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup Mamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          init-shell: bash
+          generate-run-shell: true
+          environment-file: resources/mimick.yaml
+          cache-environment: true
+          post-cleanup: 'all'
+      - name: Install Mimick
+        shell: micromamba-shell {0}
+        run: |
+          python3 -m pip install --upgrade build && python3 -m build
+          pip install dist/*.whl
+      - name: haplotagging
+        shell: micromamba-shell {0}
+        run: mimick --lr-type haplotagging test/test.bc test/test.fa.gz test/test.fa.gz 2> haptag.log
 #TODO ETC
