@@ -12,7 +12,7 @@ authors = [
 description = "Simulate linked-read data"
 requires-python = ">=3.10"
 readme = {file = "README.md", content-type = "text/markdown"}
-license = {text = "GPL-3.0"}
+license = "GPL-3.0-or-later"
 dependencies = [
     'numpy',
     'rich-click',
