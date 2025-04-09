@@ -159,7 +159,7 @@ def MolSim(processor,molecule,_fasta,w,c):
         chromend = w.start + mol.end
 
         header = f'MOL:{moleculenumber}_GEM:{moleculedroplet}_BAR:{barcodestring}_CHROM:{w.chrom}_START:{chromstart}_END:{chromend}'
-        seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end].seq
+        seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end]
         truedim = mol.length-seq__.count('N')
         if c.molcov < 1:
             N = int(truedim*c.molcov)/(c.length*2)
@@ -230,8 +230,8 @@ def LinkedSim(w,c):
     else:
         mimick_console.log(f'Preparing simulation from {c.ffile}: haplotype {c.hapnumber}')
         chr_ = _fasta[w.chrom]
-        seq_ = chr_[w.start-1:w.end].seq
-        region = w.chrom+'_'+str(w.start)+'_'+str(w.end)
+        seq_ = chr_[w.start-1:w.end]
+        region = f"{w.chrom}_{w.start}_{w.end}"
         Ns = seq_.count('N') #normalize coverage on Ns
         mimick_console.log(f'Number of available barcodes: {c.remainingbarcodes}')
 
