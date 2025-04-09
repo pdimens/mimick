@@ -7,6 +7,7 @@ dependencies:
   - numpy
   - rich-click
   - click =8
+  - pyfaidx
   - pysam
   - python
   - pywgsim

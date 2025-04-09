@@ -8,8 +8,8 @@ import multiprocessing
 from tempfile import mkstemp
 from .classes import *
 from .file_ops import *
-from .common import RNG, mimick_console, Chunks
-#import pyfaidx
+from .common import RNG, log_table, mimick_console, Chunks
+import pyfaidx
 from pywgsim import wgsim
 
 def wrap_wgsim(*args, **kwargs):
@@ -136,7 +136,7 @@ def selectbarcode(drop,molecules,c):
         try:
             bc = next(c.barcodes) if c.barcodetype in ["10x", "tellseq"] else "".join(next(c.barcodes))
         except StopIteration:
-            mimick_console.log(f'[Error] No more barcodes left for simulation. The requested parameters require more barcodes.')
+            mimick_console.log(f'[Error] No more barcodes left for simulation. The requested parameters require more barcodes.', highlight=False, style = "red")
             sys.exit(1)
         c.remainingbarcodes -= 1
         for j in range(num_molecule_per_partition):
@@ -159,7 +159,10 @@ def MolSim(processor,molecule,_fasta,w,c):
         chromend = w.start + mol.end
 
         header = f'MOL:{moleculenumber}_GEM:{moleculedroplet}_BAR:{barcodestring}_CHROM:{w.chrom}_START:{chromstart}_END:{chromend}'
-        seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end]
+        #mimick_console.log("[DEBUG]" + f"MOL {mol.start} {mol.end} | W {w.start} {w.end}")
+        #mimick_console.log("[DEBUG]" + f"fasta[{w.chrom}][{w.start-1 + mol.start-1}:{w.start-1+mol.end-1}]")
+
+        seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end-1].seq
         truedim = mol.length-seq__.count('N')
         if c.molcov < 1:
             N = int(truedim*c.molcov)/(c.length*2)
@@ -224,43 +227,46 @@ def MolSim(processor,molecule,_fasta,w,c):
 
 def LinkedSim(w,c):
     '''Perform linked-reads simulation'''
-    _fasta=pysam.FastaFile(c.ffile)
+    try:
+        _fasta = pyfaidx.Fasta(c.ffile)
+    except ValueError as e:
+        mimick_console.log(f'[Error] {e} in {os.path.basename(c.ffile)}', highlight=False, style = "red")
+        sys.exit(1)
     if w.chrom not in _fasta:
-        mimick_console.log(f'[Warning] Chromosome {w.chrom} not found in {c.ffile}. Skipping.')
-    else:
-        mimick_console.log(f'Preparing simulation from {c.ffile}: haplotype {c.hapnumber}')
-        chr_ = _fasta[w.chrom]
-        seq_ = chr_[w.start-1:w.end]
-        region = f"{w.chrom}_{w.start}_{w.end}"
-        Ns = seq_.count('N') #normalize coverage on Ns
-        mimick_console.log(f'Number of available barcodes: {c.remainingbarcodes}')
+        mimick_console.log(f'[Warning] Chromosome {w.chrom} not found in {c.ffile}. Skipping.', style = "yellow")
+        return
+    chr_ = _fasta[w.chrom]
+    seq_ = chr_[w.start-1:w.end].seq
+    region = f"{w.chrom}_{w.start}_{w.end}"
+    Ns = seq_.count('N') #normalize coverage on Ns
 
-        MRPM = (c.molcov*c.mollen)/(c.length*2) if c.molcov < 1 else c.molcov
-        TOTALR = round(((c.regioncoverage*(len(seq_)-Ns))/c.length)/2)
-        EXPM = round(TOTALR/MRPM)
+    MRPM = (c.molcov*c.mollen)/(c.length*2) if c.molcov < 1 else c.molcov
+    TOTALR = round(((c.regioncoverage*(len(seq_)-Ns))/c.length)/2)
+    EXPM = round(TOTALR/MRPM)
 
-        mimick_console.log(f'Average number of paired reads per molecule: {round(MRPM)}')
-        mimick_console.log(f'Number of reads required to get the expected coverage: {TOTALR}')
-        mimick_console.log(f'Expected number of molecules: {EXPM}')
-        # MolSet
-        molecules = randomlong(c,seq_,EXPM)
-        mimick_console.log(f'Molecules generated: {len(molecules)}')
-        drop = deternumdroplet(molecules,c.molnum)
-        mimick_console.log(f'Assigned molecules to: {len(drop)} partitions')
-        droplet_container,assigned_barcodes = selectbarcode(drop,molecules,c)
-        mimick_console.log(f'Assigned a unique barcode to each molecule')
-        mimick_console.log(f'Barcodes remaining: {c.remainingbarcodes}')
+    info_table = log_table()
+    info_table.add_row('Average number of paired reads per molecule', f'{round(MRPM)}')
+    info_table.add_row('Reads required to get the expected coverage', f'{TOTALR}')
+    info_table.add_row('Expected number of molecules', f'{EXPM}')
+    # MolSet
+    molecules = randomlong(c,seq_,EXPM)
+    info_table.add_row('Molecules generated', f'{len(molecules)}')
+    drop = deternumdroplet(molecules,c.molnum)
+    info_table.add_row('Partitions molecules assigned to', f'{len(drop)}')
+    info_table.add_row('Available barcodes', f'{c.remainingbarcodes}')
+    droplet_container,assigned_barcodes = selectbarcode(drop,molecules,c)
+    info_table.add_row('Barcodes remaining after molecule assignment', f'{c.remainingbarcodes}')
+    mimick_console.log(info_table)
+    chunk_size = len(molecules)/c.threads
+    slices = Chunks(molecules,math.ceil(chunk_size))
 
-        chunk_size = len(molecules)/c.threads
-        slices = Chunks(molecules,math.ceil(chunk_size))
+    processes=[]
 
-        processes=[]
+    for i,molecule in enumerate(slices,1):
+        processor = f'p{i}'
+        p = multiprocessing.Process(target=MolSim, args=(processor,molecule,_fasta,w,c))
+        p.start()
+        processes.append(p)
 
-        for i,molecule in enumerate(slices,1):
-            processor = f'p{i}'
-            p = multiprocessing.Process(target=MolSim, args=(processor,molecule,_fasta,w,c))
-            p.start()
-            processes.append(p)
-        
-        for p in processes:
-            p.join()
+    for p in processes:
+        p.join()

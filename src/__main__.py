@@ -11,7 +11,7 @@ import multiprocessing
 from itertools import product
 from .classes import *
 from .common import *
-from .file_ops import interpret_barcodes, readBED, FASTAtoBED
+from .file_ops import *
 from .simulate import *
 import pysam
 from rich.progress import Progress
@@ -130,7 +130,7 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
             with open(c.barcodepath, 'r') as filein:
                 c.barcodes, c.barcodebp, c.totalbarcodes = interpret_barcodes(filein, c.barcodetype)
         except:
-            mimick_console.log(f'[Error] Cannot open {c.barcodepath} for reading')
+            mimick_console.log(f'[Error] Cannot open {c.barcodepath} for reading', highlight=False, style = "red")
             sys.exit(1)
         progress.update(progbar, advance=1)
         # fill c with wgsim and general linked-read parameters 
@@ -141,7 +141,7 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
             # barcode at beginning of read 1
             c.len_r1 = c.length - c.barcodebp
             if c.len_r1 <= 5:
-                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}')
+                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', highlight=False, style = "red")
                 sys.exit(1)
             c.len_r2 = c.length
         elif c.barcodetype == "stlfr":
@@ -149,14 +149,14 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
             c.len_r1 = c.length
             c.len_r2 = c.length - c.barcodebp
             if c.len_r2 <= 5:
-                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}')
+                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', highlight=False, style = "red")
                 sys.exit(1)
         else:
             # would be 4-segment haplotagging where AC on read 1 and BD on read 2
             c.len_r1 = c.length - c.barcodebp
             c.len_r2 = c.length - c.barcodebp
             if c.len_r1 <= 5 or c.len_r2 <= 5:
-                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}')
+                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', highlight=False, style = "red")
                 sys.exit(1)
         if output_format:
             c.outformat = output_format.lower()
@@ -174,22 +174,25 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
         # check that the haplotagging output format can support the supplied number of barcodes
         if c.outformat == "haplotagging":
             if c.totalbarcodes > 96**4:
-                mimick_console.log(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+                mimick_console.log(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes', highlight=False, style = "red")
                 sys.exit(1)
         # check that the stlfr output format can support the supplied number of barcodes
         if c.outformat == "stlfr":
             if c.totalbarcodes > 1537**3:
-                mimick_console.log(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in stlfr format is limited to {1537**3} barcodes')
+                mimick_console.log(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in stlfr format is limited to {1537**3} barcodes', highlight=False, style = "red")
                 sys.exit(1)
 
-        mimick_console.log(f'Preparing for bulk simulations with a single clone')
         for k,s in enumerate(c.ffiles):
-            mimick_console.log(f'Processing haplotype {k+1}')
+            haplotype_table = log_table()
+            haplotype_table.add_row(f'Processing haplotype {k+1}', f'[blue]{os.path.basename(s)}[/]')
+            mimick_console.log(haplotype_table)
+            #mimick_console.log(f'Processing haplotype {k+1}: [blue]{os.path.basename(s)}[/]')
             c.hapnumber = f'{k+1}'
             c.ffile = c.ffiles[k]
-            _ = pysam.faidx(c.ffile)
             for w in intervals:
-                mimick_console.log(f'Simulating from region {w.chrom}:{w.start}-{w.end}')
+                region_table = log_table()
+                region_table.add_row('Region being simulated', f'[green]{w.chrom}:{w.start}-{w.end}[/]')
+                mimick_console.log(region_table)
                 LinkedSim(w,c)
                 progress.update(progbar, advance=1)
         n_fq = len(fasta) * 2
@@ -200,8 +203,8 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
         processes = []
 
         for i,sli in enumerate(slices):
-            for _s in sli:
-                mimick_console.log(f'Compressing {os.path.basename(_s)}')
+            #for _s in sli:
+            #    mimick_console.log(f'Compressing [blue]{os.path.basename(_s)}[/]')
             p = multiprocessing.Process(target=BGzipper, args=(sli,))
             p.start()
             processes.append(p)

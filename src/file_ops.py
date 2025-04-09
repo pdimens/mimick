@@ -20,6 +20,7 @@ def readfq(fp): # this is a fast generator function
 def BGzipper(sli,):
 	'''Use pysam/htslib BGzip and multi-processing to save some time'''
 	for s in sli:
+		mimick_console.log(f'Compressing [blue]{os.path.basename(s)}[/]')
 		pysam.tabix_compress(s, f'{s}.gz', force=True)
 		os.remove(s)
 
@@ -44,10 +45,10 @@ def readBED(bedfile):
 				start = int(row[1])
 				end = int(row[2])
 			except ValueError:
-				mimick_console.log(f"The input file is formatted incorrectly at line {idx}. This is the first row triggering this error, but it may not be the only one.")
+				mimick_console.log(f"[Error] The input file is formatted incorrectly at line {idx}. This is the first row triggering this error, but it may not be the only one.", highlight=False, style = "red")
 				sys.exit(1)
 			if start > end:
-				mimick_console.log(f"The interval start position is greater than the interval end position at row {idx}. This is the first row triggering this error, but it may not be the only one.")
+				mimick_console.log(f"[Error] The interval start position is greater than the interval end position at row {idx}. This is the first row triggering this error, but it may not be the only one.", highlight=False, style = "red")
 				sys.exit(1)
 			intervals.append([row[0], start, end])
 	return [Interval(*i) for i in sorted(intervals)]
@@ -56,19 +57,19 @@ def validate_barcodes(bc_list):
 	'''Takes a file with barcodes and validates them to be ATGCU nucleotides and barcodes same length'''
 	# check first row for multiple columns, if there are multiple, it's haplotagging
 	if len(bc_list[0].strip().split()) != 1:
-		mimick_console.log(f'[Error] Barcode file is expected to only have one barcode per line)')
+		mimick_console.log(f'[Error] Barcode file is expected to only have one barcode per line', highlight=False, style = "red")
 		sys.exit(1)
 	else:
 		bc_lens = set()
 		for i in bc_list:
 			bc_lens.add(len(i))
 			if len(bc_lens) > 1:
-				mimick_console.log(f'[Error] Barcodes provided must all be the same length')
+				mimick_console.log(f'[Error] Barcodes provided must all be the same length', highlight=False, style = "red")
 				sys.exit(1)
 		# validate barcodes are only ATCGU nucleotides
 		for bc in bc_list:
 			if not bool(re.fullmatch(r'^[ATCGU]+$', bc, flags = re.IGNORECASE)):
-				mimick_console.log(f'[Error] Barcodes can only contain nucleotides A,T,C,G,U, but invalid barcode(s) provided: {bc}. This was first invalid barcode identified, but it may not be the only one.')
+				mimick_console.log(f'[Error] Barcodes can only contain nucleotides A,T,C,G,U, but invalid barcode(s) provided: {bc}. This was first invalid barcode identified, but it may not be the only one.', highlight=False, style = "red")
 				sys.exit(1)
 
 def interpret_barcodes(infile, lr_type):
