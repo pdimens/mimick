@@ -37,7 +37,6 @@ jobs:
         run: |
           python3 -m pip install --upgrade build && python3 -m build
           pip install dist/*.whl
-          resources/buildforCI.sh
       - name: haplotagging
         shell: micromamba-shell {0}
         run: mimick --lr-type haplotagging test/test.bc test/test.fa.gz test/test.fa.gz 2> haptag.log
