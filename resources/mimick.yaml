@@ -1,0 +1,12 @@
+name: mimick
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - biopython
+  - numpy
+  - rich-click
+  - pyfaidx
+  - pysam
+  - python
+  - pywgsim

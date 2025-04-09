@@ -44,7 +44,7 @@ click.rich_click.OPTION_GROUPS = {
     ]
 }
 
-@click.version_option("0.0.1", prog_name="mimick")
+@click.version_option("0.0.0", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/")
 @click.option('-o','--output', help='output directory', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated", show_default=True)
 @click.option('-p','--prefix', help='output file prefix', type = str, default="SIM", show_default=True)
