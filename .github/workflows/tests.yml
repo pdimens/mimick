@@ -39,5 +39,4 @@ jobs:
           pip install dist/*.whl
       - name: haplotagging
         shell: micromamba-shell {0}
-        run: mimick --lr-type haplotagging --coverage 3 test/test.bc test/test.fa.gz test/test.fa.gz 2> haptag.log
-  
+        run: mimick --lr-type haplotagging --coverage 3 test/test.bc test/test.fa.gz test/test.fa.gz  

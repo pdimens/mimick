@@ -6,6 +6,7 @@ dependencies:
   - biopython
   - numpy
   - rich-click
+  - click =8
   - pyfaidx
   - pysam
   - python
