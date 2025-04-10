@@ -1,7 +1,7 @@
 # Mimick
 Linked-read sequence simulator
 
-![mimick_logo](resources/mimick_logo.svg)
+![mimick_logo](resources/mimick_logo.png)
 
 Formerly known as XENIA from the [VISOR](https://github.com/davidebolo1993/VISOR) project, Mimick is a 
 simulator for linked-read FASTQ data (10x, haplotagging, stlfr, tellseq). Mimick allows
