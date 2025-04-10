@@ -17,6 +17,7 @@ env:
 
 jobs:
   Tests:
+    name: Test ${{ matrix.lr_from }} to ${{ matrix.lr_to }}
     strategy:
       matrix:
         lr_from: [10x, haplotagging, stlfr, tellseq]
