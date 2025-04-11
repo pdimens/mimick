@@ -27,9 +27,9 @@ requirements:
     - setuptools-scm >=3.4
   run:
     - biopython >= 1.8
+    - click >=8
     - numpy >=1.15.3
     - rich-click >= 1.8
-    - click >=8
     - pyfaidx >=0.8
     - pysam >=0.22.0
     - python >= 3.11
@@ -46,7 +46,7 @@ about:
   license_file: LICENSE
   summary: "Simulate linked-read data"
   description: |
-    Mimick, originally XENIA from the VISOR project, is a simple but effective way of
+    Mimick, formerly known as XENIA from the VISOR project, is a simple but effective way of
     simulating linked-read FASTQ data (10x, haplotagging, stlfr, tellseq). Mimick allows
     you to simulate an arbitrary number of haplotypes, set overall coverage, molecule coverage,
     and mix-match barcodes with linked-read chemistries.
