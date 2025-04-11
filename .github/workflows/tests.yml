@@ -53,37 +53,7 @@ jobs:
         run: |
           mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 test.bc test.hap1.fa test.hap2.fa
           rm -r ${{ matrix.lr_from }}_${{ matrix.lr_to }}
-#          mimick --lr-type haplotagging -o haptag --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type haplotagging -o haptag_10x -O 10x --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type haplotagging -o haptag_stlfr -O stlfr --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type haplotagging -o haptag_tellseq -O tellseq --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type haplotagging -o haptag_standard -O standard --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#
-#      - name: 10x
-#        shell: micromamba-shell {0}
-#        run: |
-#          mimick --lr-type 10x -o 10x_ --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type 10x -o 10x_haptag -O haplotagging --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type 10x -o 10x_stlfr -O stlfr --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type 10x -o 10x_tellseq -O tellseq --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type 10x -o 10x_standard -O standard --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          rm -r 10x_*
-#
-#      - name: tellseq
-#        shell: micromamba-shell {0}
-#        run: |
-#          mimick --lr-type tellseq -o tellseq_ --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type tellseq -o tellseq_10x -O 10x --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type tellseq -o tellseq_stlfr -O stlfr --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type tellseq -o tellseq_haptag -O haplotagging --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type tellseq -o tellseq_standard -O standard --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          rm -r 10x_*
-#
-#      - name: stlfr
-#        shell: micromamba-shell {0}
-#        run: |
-#          mimick --lr-type stlfr -o stlfr_ --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type stlfr -o stlfr_10x -O haplotagging --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type stlfr -o stlfr_tellseq -O tellseq --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type stlfr -o stlfr_haptag -O haplotagging --coverage 10 test.bc test.hap1.fa test.hap2.fa
-#          mimick --lr-type stlfr -o stlfr_standard -O standard --coverage 10 test.bc test.hap1.fa test.hap2.fa
+          
+          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 3 16,1000 test.hap1.fa test.hap2.fa
+          rm -r ${{ matrix.lr_from }}_${{ matrix.lr_to }}
+
