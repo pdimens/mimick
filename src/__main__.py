@@ -15,10 +15,7 @@ from .common import *
 from .file_ops import *
 from .simulate import *
 import pysam
-from rich.progress import Progress
 
-#TODO add progressbar (just one)
-#TODO have the print statements appear below the progress bar
 click.rich_click.USE_MARKDOWN = True
 click.rich_click.SHOW_METAVARS_COLUMN = False
 click.rich_click.APPEND_METAVARS_HELP = False
@@ -95,140 +92,138 @@ def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverag
     |`stlfr`         | appended to sequence ID via `#1_2_3` | `@SEQID#1_354_39` |
     |`tellseq`       | appended to sequence ID via `:ATCG` | `@SEQID:TATTAGCAC` |
     """
-    with Progress(transient=True, console=mimick_console, disable=True) as progress:
-        progbar = progress.add_task("[magenta]Running...", total=None)
-        c.OUT = os.path.dirname(output_prefix)
-        os.makedirs(c.OUT, exist_ok= True)
-        c.FASTADIR = fasta
-        c.PREFIX = os.path.basename(output_prefix)
-        c.threads = threads
-        c.barcodetype=lr_type.lower()
-        c.coverage=coverage
-        c.error=error
-        c.distance=distance
-        c.stdev=stdev
-        c.length=length
-        c.mutation=mutation
-        c.indels=indels
-        c.extindels=extindels
-        c.molnum=molecule_number
-        c.mollen=molecule_length
-        c.molcov=molecule_coverage
-        if isinstance(barcodes, str):
-            c.barcodepath=barcodes
-        else:
-            c.barcodepath = f"{output_prefix}.generated.barcodes"
-            bp,count = barcodes
-            mimick_console.log(f'Generating {count} {bp}bp barcodes')
-            with open(f"{c.barcodepath}", "w") as bc_out:
-                for i,bc in enumerate(generate_barcodes(bp),1):
-                    bc_out.write("".join(bc) + "\n")
-                    if i == count:
-                        break
-        if regions:
-            # use the provided BED file
-            mimick_console.log('Reading the input regions')
-            intervals = readBED(regions)
-        else:
-            # derive intervals from the first FASTA file
-            mimick_console.log('Inferring regions from the first FASTA file')
-            intervals = FASTAtoBED(fasta[0])
-        progress.update(progbar, advance=1)
-        mimick_console.log('Validating the input barcodes')
-        try:
-            with gzip.open(c.barcodepath, 'rt') as filein:
-                c.barcodes, c.barcodebp, c.totalbarcodes = interpret_barcodes(filein, c.barcodetype)
-        except gzip.BadGzipFile:
-            with open(c.barcodepath, 'r') as filein:
-                c.barcodes, c.barcodebp, c.totalbarcodes = interpret_barcodes(filein, c.barcodetype)
-        except:
-            click.BadParameter(f'Cannot open {c.barcodepath} for reading', param_hint= "BARCODES")
-            #mimick_errorterminate(f'[Error] Cannot open {c.barcodepath} for reading', False)
-        progress.update(progbar, advance=1)
-        # fill c with wgsim and general linked-read parameters 
-        c.remainingbarcodes = c.totalbarcodes
-        c.barcodelist= open(f'{c.OUT}/{c.PREFIX}.barcodes', 'w')
+    c.OUT = os.path.dirname(output_prefix)
+    os.makedirs(c.OUT, exist_ok= True)
+    c.FASTADIR = fasta
+    c.PREFIX = os.path.basename(output_prefix)
+    c.threads = threads
+    c.barcodetype=lr_type.lower()
+    c.coverage=coverage
+    c.error=error
+    c.distance=distance
+    c.stdev=stdev
+    c.length=length
+    c.mutation=mutation
+    c.indels=indels
+    c.extindels=extindels
+    c.molnum=molecule_number
+    c.mollen=molecule_length
+    c.molcov=molecule_coverage
+    if isinstance(barcodes, str):
+        c.barcodepath=barcodes
+    else:
+        c.barcodepath = f"{output_prefix}.generated.barcodes"
+        bp,count = barcodes
+        mimick_console.log(f'Generating {count} {bp}bp barcodes')
+        with open(f"{c.barcodepath}", "w") as bc_out:
+            for i,bc in enumerate(generate_barcodes(bp),1):
+                bc_out.write("".join(bc) + "\n")
+                if i == count:
+                    break
+    if regions:
+        # use the provided BED file
+        mimick_console.log('Reading the input regions')
+        intervals = readBED(regions)
+    else:
+        # derive intervals from the first FASTA file
+        mimick_console.log('Inferring regions from the first FASTA file')
+        intervals = FASTAtoBED(fasta[0])
+    
+    mimick_console.log('Validating the input barcodes')
+    try:
+        with gzip.open(c.barcodepath, 'rt') as filein:
+            c.barcodes, c.barcodebp, c.totalbarcodes = interpret_barcodes(filein, c.barcodetype)
+    except gzip.BadGzipFile:
+        with open(c.barcodepath, 'r') as filein:
+            c.barcodes, c.barcodebp, c.totalbarcodes = interpret_barcodes(filein, c.barcodetype)
+    except:
+        click.BadParameter(f'Cannot open {c.barcodepath} for reading', param_hint= "BARCODES")
+        #mimick_errorterminate(f'[Error] Cannot open {c.barcodepath} for reading', False)
+    
+    # fill c with wgsim and general linked-read parameters 
+    c.remainingbarcodes = c.totalbarcodes
+    c.barcodelist= open(f'{c.OUT}/{c.PREFIX}.barcodes', 'w')
 
-        if c.barcodetype in ["10x", "tellseq"]:
-            # barcode at beginning of read 1
-            c.len_r1 = c.length - c.barcodebp
-            if c.len_r1 <= 5:
-                click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
-                #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
-            c.len_r2 = c.length
-        elif c.barcodetype == "stlfr":
-            # barcode at the end of read 2
-            c.len_r1 = c.length
-            c.len_r2 = c.length - c.barcodebp
-            if c.len_r2 <= 5:
-                click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
-                #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
-        else:
-            # would be 4-segment haplotagging where AC on read 1 and BD on read 2
-            c.len_r1 = c.length - c.barcodebp
-            c.len_r2 = c.length - c.barcodebp
-            if c.len_r1 <= 5 or c.len_r2 <= 5:
-                click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
-                #mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
-                sys.exit(1)
-        if output_type:
-            c.outformat = output_type.lower()
-        else:
-            c.outformat = c.barcodetype
-        if c.outformat == "haplotagging":
-            bc_range = [f"{i}".zfill(2) for i in range(1,97)]
-            c.bc_generator = product("A", bc_range, "C", bc_range, "B", bc_range, "D", bc_range)
-        if c.outformat == "stlfr":
-            bc_range = range(1, 1537)
-            c.bc_generator = product(bc_range, bc_range, bc_range)
-        c.ffiles = fasta 
-        c.regioncoverage = c.coverage/len(c.ffiles)
+    if c.barcodetype in ["10x", "tellseq"]:
+        # barcode at beginning of read 1
+        c.len_r1 = c.length - c.barcodebp
+        if c.len_r1 <= 5:
+            click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
+            #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
+        c.len_r2 = c.length
+    elif c.barcodetype == "stlfr":
+        # barcode at the end of read 2
+        c.len_r1 = c.length
+        c.len_r2 = c.length - c.barcodebp
+        if c.len_r2 <= 5:
+            click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
+            #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
+    else:
+        # would be 4-segment haplotagging where AC on read 1 and BD on read 2
+        c.len_r1 = c.length - c.barcodebp
+        c.len_r2 = c.length - c.barcodebp
+        if c.len_r1 <= 5 or c.len_r2 <= 5:
+            click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
+            #mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
+            sys.exit(1)
+    if output_type:
+        c.outformat = output_type.lower()
+    else:
+        c.outformat = c.barcodetype
+    if c.outformat == "haplotagging":
+        bc_range = [f"{i}".zfill(2) for i in range(1,97)]
+        c.bc_generator = product("A", bc_range, "C", bc_range, "B", bc_range, "D", bc_range)
+    if c.outformat == "stlfr":
+        bc_range = range(1, 1537)
+        c.bc_generator = product(bc_range, bc_range, bc_range)
+    c.ffiles = fasta 
+    c.regioncoverage = c.coverage/len(c.ffiles)
+    
+    # check that the haplotagging output format can support the supplied number of barcodes
+    if c.outformat == "haplotagging":
+        if c.totalbarcodes > 96**4:
+            click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes', param_hint= '--lr-type --output-format')
+            #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+    # check that the stlfr output format can support the supplied number of barcodes
+    if c.outformat == "stlfr":
+        if c.totalbarcodes > 1537**3:
+            click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {1537**3} barcodes', param_hint= '--lr-type --output-format')
+            #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+
+    for k,s in enumerate(c.ffiles):
+        haplotype_table = log_table()
+        haplotype_table.add_row(f'Processing haplotype {k+1}', f'[blue]{os.path.basename(s)}[/]')
+        mimick_console.log(haplotype_table)
+        #mimick_console.log(f'Processing haplotype {k+1}: [blue]{os.path.basename(s)}[/]')
+        c.hapnumber = f'{k+1}'
+        c.ffile = c.ffiles[k]
+        for w in intervals:
+            region_table = log_table()
+            region_table.add_row('Region being simulated', f'[green]{w.chrom}:{w.start}-{w.end}[/]')
+            mimick_console.log(region_table)
+            try:
+                LinkedSim(w,c)
+                
+            except KeyboardInterrupt:
+                mimick_keyboardterminate()
+    n_fq = len(fasta) * 2
+    # gzip multiprocessing
+    allfastq = glob.glob(os.path.abspath(c.OUT) + '/*.fastq')
+    chunk_size = len(allfastq)/c.threads
+    slices = Chunks(allfastq, math.ceil(chunk_size))
+    processes = []
+
+    for i,sli in enumerate(slices):
+        #for _s in sli:
+        #    mimick_console.log(f'Compressing [blue]{os.path.basename(_s)}[/]')
+        p = multiprocessing.Process(target=BGzipper, args=(sli,))
+        p.start()
+        processes.append(p)
+    for p in processes:
+        p.join()
         
-        # check that the haplotagging output format can support the supplied number of barcodes
-        if c.outformat == "haplotagging":
-            if c.totalbarcodes > 96**4:
-                click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes', param_hint= '--lr-type --output-format')
-                #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
-        # check that the stlfr output format can support the supplied number of barcodes
-        if c.outformat == "stlfr":
-            if c.totalbarcodes > 1537**3:
-                click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {1537**3} barcodes', param_hint= '--lr-type --output-format')
-                #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
-
-        for k,s in enumerate(c.ffiles):
-            haplotype_table = log_table()
-            haplotype_table.add_row(f'Processing haplotype {k+1}', f'[blue]{os.path.basename(s)}[/]')
-            mimick_console.log(haplotype_table)
-            #mimick_console.log(f'Processing haplotype {k+1}: [blue]{os.path.basename(s)}[/]')
-            c.hapnumber = f'{k+1}'
-            c.ffile = c.ffiles[k]
-            for w in intervals:
-                region_table = log_table()
-                region_table.add_row('Region being simulated', f'[green]{w.chrom}:{w.start}-{w.end}[/]')
-                mimick_console.log(region_table)
-                try:
-                    LinkedSim(w,c)
-                    progress.update(progbar, advance=1)
-                except KeyboardInterrupt:
-                    mimick_keyboardterminate()
-        n_fq = len(fasta) * 2
-        # gzip multiprocessing
-        allfastq = glob.glob(os.path.abspath(c.OUT) + '/*.fastq')
-        chunk_size = len(allfastq)/c.threads
-        slices = Chunks(allfastq, math.ceil(chunk_size))
-        processes = []
-
-        for i,sli in enumerate(slices):
-            #for _s in sli:
-            #    mimick_console.log(f'Compressing [blue]{os.path.basename(_s)}[/]')
-            p = multiprocessing.Process(target=BGzipper, args=(sli,))
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
-            progress.update(progbar, advance=1)
-        c.barcodelist.close()
-        mimick_console.log(f'Done\n')
+    c.barcodelist.close()
+    mimick_console.log(f'Done\n')
 
 if __name__ =='__main__':
     try:
