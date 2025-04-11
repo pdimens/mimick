@@ -3,6 +3,9 @@ Linked-read sequence simulator
 
 ![mimick_logo](/docs/_media/mimick_logo.png)
 
+[![gitHub release](https://img.shields.io/github/v/release/pdimens/mimick?style=for-the-badge&logo=anaconda&logoColor=ffffff)](https://github.com/pdimens/mimick/releases)
+[![documentation badge](https://img.shields.io/badge/read%20the-docs-daa355?style=for-the-badge&logo=quicklook&logoColor=ffffff)](https://pdimens.github.io/mimick)
+
 Originally known as XENIA from the [VISOR](https://github.com/davidebolo1993/VISOR) project, Mimick is a 
 simulator for linked-read FASTQ data. Mimick allows you to simulate an
 arbitrary number of haplotypes, set overall coverage, molecule coverage,
