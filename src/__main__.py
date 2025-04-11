@@ -28,7 +28,7 @@ click.rich_click.OPTION_GROUPS = {
     "mimick": [
         {
             "name": "General Options",
-            "options": ["--help", "--output", "--output-format", "--prefix", "--regions", "--threads", "--version"],
+            "options": ["--help", "--output-format", "--output-prefix", "--regions", "--threads", "--version"],
             "panel_styles": {"border_style": "dim"}
         },
         {
@@ -46,8 +46,7 @@ click.rich_click.OPTION_GROUPS = {
 
 @click.version_option("0.0.0", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/")
-@click.option('-o','--output', help='output directory', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated", show_default=True)
-@click.option('-p','--prefix', help='output file prefix', type = str, default="SIM", show_default=True)
+@click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
 @click.option('-O','--output-format', help='output format of FASTQ files', default="standard", show_default=True, type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
 #@click.option('-q','--quiet', help='output format of FASTQ files', default="standard", show_default=True, type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-r','--regions', help='one or more regions to simulate, in BED format', type = click.Path(dir_okay=False, readable=True, resolve_path=True))
@@ -66,14 +65,20 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-c','--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
 @click.option('-m','--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=50))
 @click.option('-n','--molecule-number', help='mean number of unrelated molecules per barcode', default=3, show_default=True, type=click.IntRange(min=1))
-@click.argument('barcodes', type = click.Path(dir_okay=False, readable=True, exists=True, resolve_path=True))
+@click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecule_number):
+def mimick(barcodes, fasta, output_prefix, output_format, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecule_number):
     """
-    Simulate linked-read FASTQ using genome haplotypes and file of nucleotide barcodes, 1 per line.
+    Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
+   
+    1. let Mimick randomly generate barcodes based on a specification of `length,count`
+        - two integers, comma-separated, no space
+        - e.g. `16,400000` would generate 400,000 unique 16bp barcodes 
+    2. you can provide a file of specific nucleotide barcodes, 1 per line
+
     You can specify the linked-read barcode chemistry to simulate via `--barcode-type` as well as
     the output format of FASTQ files (default is the same as barcode type). For example, you
-    can provide a file of 96 barcodes (common haplotagging style), select `--barcode-type stlfr`
+    can generate 96 barcodes (common haplotagging style), select `--barcode-type stlfr`
     (combinatorial 3-barcode on R2 read), and have `--output-format tellseq` (`@seqid:barcode` header format).
 
     | --lr-type | Format |
@@ -92,13 +97,11 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
     """
     with Progress(transient=True, console=mimick_console, disable=True) as progress:
         progbar = progress.add_task("[magenta]Running...", total=None)
-        # block pywgsim stdout
-        #redirect_stdout()
-        c.OUT = output
+        c.OUT = os.path.dirname(output_prefix)
+        os.makedirs(c.OUT, exist_ok= True)
         c.FASTADIR = fasta
-        c.PREFIX = prefix
+        c.PREFIX = os.path.basename(output_prefix)
         c.threads = threads
-        c.barcodepath=barcodes
         c.barcodetype=lr_type.lower()
         c.coverage=coverage
         c.error=error
@@ -111,8 +114,17 @@ def mimick(barcodes, fasta, output, output_format, prefix, regions, threads,cove
         c.molnum=molecule_number
         c.mollen=molecule_length
         c.molcov=molecule_coverage
-
-        os.makedirs(c.OUT, exist_ok= True)
+        if isinstance(barcodes, str):
+            c.barcodepath=barcodes
+        else:
+            c.barcodepath = f"{output_prefix}.generated.barcodes"
+            bp,count = barcodes
+            mimick_console.log(f'Generating {count} {bp}bp barcodes')
+            with open(f"{c.barcodepath}", "w") as bc_out:
+                for i,bc in enumerate(generate_barcodes(bp),1):
+                    bc_out.write("".join(bc) + "\n")
+                    if i == count:
+                        break
         if regions:
             # use the provided BED file
             mimick_console.log('Reading the input regions')

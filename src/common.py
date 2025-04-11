@@ -4,6 +4,8 @@ import os
 import re
 import sys
 from datetime import datetime
+from itertools import product
+from random import sample
 import numpy as np
 from rich.console import Console
 from rich.table import Table
@@ -41,3 +43,11 @@ def Chunks(l,n):
     '''Split list in chunks based on number of threads'''
     n = max(1,n)
     return [l[i:i+n] for i in range(0, len(l), n)]
+
+def generate_barcodes(bp):
+    '''
+    Given a `bp` length, create a barcode generator. The nucleotide orders are randomized for each position
+    so the barcodes don't all start with AAAAAAAAAAAAA and look more visually distinct. The randomization doesn't
+    serve a functional purpose beyond that.
+    '''
+    return product(*[sample("ATCG", 4) for i in range(bp)])
