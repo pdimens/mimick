@@ -1,5 +1,5 @@
-{% set version = "" %}
-{% set sha256 = "" %}
+{% set version = "1.0" %}
+{% set sha256 = "4a858eaa6abf06b0eba66e2d5d66064e491139905ff97b751579a63e90e98c58" %}
 
 package:
   name: mimick
@@ -11,7 +11,7 @@ source:
 
 build:
   number: 0
-  skip: True  # [osx or py < 39]
+  noarch: python
   script_env:
     - SETUPTOOLS_SCM_PRETEND_VERSION={{ version }}
   run_exports:
@@ -26,13 +26,13 @@ requirements:
     - pip
     - setuptools-scm >=3.4
   run:
-    - biopython >= 1.8
+    - biopython >=1.8
     - click >=8
     - numpy >=1.15.3
-    - rich-click >= 1.8
+    - rich-click >=1.8
     - pyfaidx >=0.8
     - pysam >=0.22.0
-    - python >= 3.11
+    - python >=3.11
     - pywgsim >=0.3.3
 
 test:
