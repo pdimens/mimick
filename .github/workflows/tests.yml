@@ -54,6 +54,6 @@ jobs:
           mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 test.bc test.hap1.fa test.hap2.fa
           rm -r ${{ matrix.lr_from }}_${{ matrix.lr_to }}
           
-          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 3 16,1000 test.hap1.fa test.hap2.fa
-          rm -r ${{ matrix.lr_from }}_${{ matrix.lr_to }}
+          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }}_bc -O ${{ matrix.lr_to }} --coverage 3 16,1000 test.hap1.fa test.hap2.fa
+          rm -r ${{ matrix.lr_from }}_${{ matrix.lr_to }}_bc
 
