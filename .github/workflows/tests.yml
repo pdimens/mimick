@@ -56,4 +56,4 @@ jobs:
       - name: Test Generated Barcodes
         shell: micromamba-shell {0}
         run: |
-          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_standard -O standard --coverage 3 16,1000 test.hap1.fa test.hap2.fa
+          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_standard -O standard --coverage 3 16,200 test.hap1.fa test.hap2.fa
