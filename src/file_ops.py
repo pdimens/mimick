@@ -4,9 +4,8 @@ import os
 import re
 import sys
 from itertools import product
-import click as _click
 import pysam
-from .common import mimick_console
+from .common import mimick_console, mimick_errorterminate
 from .classes import Interval
 
 def readfq(fp): # this is a fast generator function
@@ -46,10 +45,9 @@ def readBED(bedfile):
                 start = int(row[1])
                 end = int(row[2])
             except ValueError:
-                mimick_console.log(f"[Error] The input file is formatted incorrectly at line {idx}. This is the first row triggering this error, but it may not be the only one.", highlight=False, style = "red")
-                sys.exit(1)
+                mimick_errorterminate(f"[Error] The input file is formatted incorrectly at line {idx}. This is the first row triggering this error, but it may not be the only one.")
             if start > end:
-                mimick_console.log(f"[Error] The interval start position is greater than the interval end position at row {idx}. This is the first row triggering this error, but it may not be the only one.", highlight=False, style = "red")
+                mimick_errorterminate(f"[Error] The interval start position is greater than the interval end position at row {idx}. This is the first row triggering this error, but it may not be the only one.")
                 sys.exit(1)
             intervals.append([row[0], start, end])
     return [Interval(*i) for i in sorted(intervals)]
@@ -58,19 +56,17 @@ def validate_barcodes(bc_list):
     '''Takes a file with barcodes and validates them to be ATGCU nucleotides and barcodes same length'''
     # check first row for multiple columns, if there are multiple, it's haplotagging
     if len(bc_list[0].strip().split()) != 1:
-        mimick_console.log(f'[Error] Barcode file is expected to only have one barcode per line', highlight=False, style = "red")
-        sys.exit(1)
+        mimick_errorterminate(f'[Error] Barcode file is expected to only have one barcode per line')
     else:
         bc_lens = set()
         for i in bc_list:
             bc_lens.add(len(i))
             if len(bc_lens) > 1:
-                mimick_console.log(f'[Error] Barcodes provided must all be the same length', highlight=False, style = "red")
-                sys.exit(1)
+                mimick_errorterminate(f'[Error] Barcodes provided must all be the same length')
         # validate barcodes are only ATCGU nucleotides
         for bc in bc_list:
             if not bool(re.fullmatch(r'^[ATCGU]+$', bc, flags = re.IGNORECASE)):
-                mimick_console.log(f'[Error] Barcodes can only contain nucleotides A,T,C,G,U, but invalid barcode(s) provided: {bc}. This was first invalid barcode identified, but it may not be the only one.', highlight=False, style = "red")
+                mimick_errorterminate(f'[Error] Barcodes can only contain nucleotides A,T,C,G,U, but invalid barcode(s) provided: {bc}. This was first invalid barcode identified, but it may not be the only one.')
                 sys.exit(1)
 
 def interpret_barcodes(infile, lr_type):
@@ -91,22 +87,3 @@ def interpret_barcodes(infile, lr_type):
     else:
         return iter(bc), bc_len, len(bc)
 
-class Barcodes(_click.ParamType):
-    """A class for a click type which accepts either a file or two integers, separated by a comma."""
-    name = "barcodes"
-    def convert(self, value, param, ctx):
-        if os.path.isfile(value):
-            return os.path.abspath(value)
-        try:
-            bp,count = value.split(",")
-        except ValueError:
-            self.fail(f"{value} is not a file, not in int,int format", param, ctx)
-        try:
-            bp = int(bp)
-        except ValueError:
-            self.fail(f"{value} is not an integer.", param, ctx)
-        try:
-            count = int(count)
-        except ValueError:
-            self.fail(f"{value} is not an integer.", param, ctx)
-        return [bp, count]

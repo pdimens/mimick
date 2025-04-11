@@ -5,10 +5,11 @@ import sys
 import re
 import math
 import multiprocessing
+import time
 from tempfile import mkstemp
 from .classes import *
 from .file_ops import *
-from .common import RNG, log_table, mimick_console, Chunks
+from .common import *
 import pyfaidx
 from pywgsim import wgsim
 
@@ -104,47 +105,52 @@ def randomlong(Par,seq_,EXPM):
 
 def deternumdroplet(molecules,molnum):
     '''Determine the number of droplets'''
-    large_droplet=c.totalbarcodes
-    assign_drop=[]
-    frag_drop = RNG.poisson(molnum,large_droplet)
-    totalfrag=0
+    large_droplet = c.totalbarcodes
+    assign_drop = []
+    if molnum < 0:
+        frag_drop = [abs(molnum)]
+    else:
+        try:
+            frag_drop = RNG.poisson(molnum,large_droplet)
+        except np._core._exceptions._ArrayMemoryError as e:
+            mimick_errorterminate(f"The barcode and type combination yields far too many barcodes to sample. Error as reported by numpy:\n{e}")
+    totalfrag = 0
     
     for i in range(large_droplet):
-        totalfrag=totalfrag+frag_drop[i]
-        if totalfrag<=len(molecules):
+        totalfrag += frag_drop[i]
+        if totalfrag <= len(molecules):
             assign_drop.append(frag_drop[i])
         else:
-            last=len(molecules)-(totalfrag-frag_drop[i])
+            last = len(molecules) - (totalfrag-frag_drop[i])
             assign_drop.append(last)
             break
     return assign_drop
 
 def selectbarcode(drop,molecules,c):
     '''Select barcode to use for droplet/partition'''
-    permutnum=RNG.permutation(len(molecules))
-    N_droplet=len(drop)
-    assigned_barcodes=set()
-    droplet_container=[]
-    start=0
+    permutnum = RNG.permutation(len(molecules))
+    N_droplet = len(drop)
+    assigned_barcodes = set()
+    droplet_container = []
+    start = 0
     
     for i in range(N_droplet):
-        num_molecule_per_partition=drop[i]
-        index_molecule=permutnum[start:start+num_molecule_per_partition]
-        totalseqlen=0
-        temp=[]
-        start=start+num_molecule_per_partition
+        num_molecule_per_partition = drop[i]
+        index_molecule = permutnum[start:start + num_molecule_per_partition]
+        totalseqlen = 0
+        temp = []
+        start = start + num_molecule_per_partition
         try:
             bc = next(c.barcodes) if c.barcodetype in ["10x", "tellseq"] else "".join(next(c.barcodes))
         except StopIteration:
-            mimick_console.log(f'[Error] No more barcodes left for simulation. The requested parameters require more barcodes.', highlight=False, style = "red")
-            sys.exit(1)
+            mimick_errorterminate('[Error] No more barcodes left for simulation. The requested parameters require more barcodes.')
         c.remainingbarcodes -= 1
         for j in range(num_molecule_per_partition):
-            index=index_molecule[j]
+            index = index_molecule[j]
             temp.append(index)
-            molecules[index].index_droplet=i
-            molecules[index].barcode=bc
-            totalseqlen=totalseqlen+molecules[index].length
+            molecules[index].index_droplet = i
+            molecules[index].barcode = bc
+            totalseqlen += molecules[index].length
         assigned_barcodes.add(bc)
         droplet_container.append(temp)
     return droplet_container, assigned_barcodes
@@ -159,10 +165,10 @@ def MolSim(processor,molecule,_fasta,w,c):
         chromend = w.start + mol.end
 
         header = f'MOL:{moleculenumber}_GEM:{moleculedroplet}_BAR:{barcodestring}_CHROM:{w.chrom}_START:{chromstart}_END:{chromend}'
-        #mimick_console.log("[DEBUG]" + f"MOL {mol.start} {mol.end} | W {w.start} {w.end}")
-        #mimick_console.log("[DEBUG]" + f"fasta[{w.chrom}][{w.start-1 + mol.start-1}:{w.start-1+mol.end-1}]")
-
-        seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end-1].seq
+        try:
+            seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end-1].seq
+        except Exception as e:
+            mimick_errorterminate(f"[Error] There was an issue with pyfaidx accessing the genomic interval requested. Error reported by pyfaidx:\n{e}", False)
         truedim = mol.length-seq__.count('N')
         if c.molcov < 1:
             N = int(truedim*c.molcov)/(c.length*2)
@@ -199,12 +205,10 @@ def MolSim(processor,molecule,_fasta,w,c):
                     is_fixed = 0,
                     seed = 0
                 )
-                with open(f'{c.OUT}/{c.PREFIX}.wgsim.log', 'a') as f:
+                with open(f'{c.OUT}/{c.PREFIX}.wgsim.mutations', 'a') as f:
                     f.write(stdout)
             except KeyboardInterrupt:
-                mimick_console.print("")
-                mimick_console.rule("[bold]Terminating Mimick", style = "yellow")
-                sys.exit(1)
+                mimick_keyboardterminate()
 
             os.remove(molfa)
             if os.stat(R1tmp).st_size == 0:
@@ -230,8 +234,7 @@ def LinkedSim(w,c):
     try:
         _fasta = pyfaidx.Fasta(c.ffile)
     except ValueError as e:
-        mimick_console.log(f'[Error] {e} in {os.path.basename(c.ffile)}', highlight=False, style = "red")
-        sys.exit(1)
+        mimick_errorterminate(f'[Error] {e} in {os.path.basename(c.ffile)}')
     if w.chrom not in _fasta:
         mimick_console.log(f'[Warning] Chromosome {w.chrom} not found in {c.ffile}. Skipping.', style = "yellow")
         return
@@ -261,12 +264,38 @@ def LinkedSim(w,c):
     slices = Chunks(molecules,math.ceil(chunk_size))
 
     processes=[]
-
+    error_occurred = multiprocessing.Event()
     for i,molecule in enumerate(slices,1):
         processor = f'p{i}'
-        p = multiprocessing.Process(target=MolSim, args=(processor,molecule,_fasta,w,c))
+        p = multiprocessing.Process(target=MolSim, args=(processor,molecule,_fasta,w,c), daemon=True)
         p.start()
         processes.append(p)
 
-    for p in processes:
-        p.join()
+    try:
+        while processes:
+            for p in processes[:]:  # Iterate over a copy of the list
+                if not p.is_alive():  # Process finished
+                    p.join()  # Get exit code
+                    if p.exitcode != 0:  # Process failed
+                        error_occurred.set()
+                    processes.remove(p)
+            
+            if error_occurred.is_set():
+                mimick_console.rule("Terminating Mimick due to an error", style = "red")
+                break
+            
+            time.sleep(0.1)  # Small delay to prevent busy waiting
+
+    finally:
+        # Cleanup - terminate any remaining processes if error occurred
+        if error_occurred.is_set():
+            for p in processes:
+                if p.is_alive():
+                    p.terminate()
+        
+        # Wait for all processes to finish (either normally or terminated)
+        for p in processes:
+            p.join()
+
+    if error_occurred.is_set():
+        sys.exit(1)

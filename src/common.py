@@ -14,6 +14,17 @@ from rich import box
 mimick_console = Console(stderr=True, log_path=False)
 RNG = np.random.default_rng()
 
+def mimick_keyboardterminate():
+    mimick_console.print("")
+    mimick_console.rule("[bold]Terminating Mimick", style = "yellow")
+    sys.exit(1)
+
+def mimick_errorterminate(text: str, rule: bool = True):
+    mimick_console.log(text, highlight=False, style = "red")
+    if rule:
+        mimick_console.rule("[bold]Terminating Mimick due to an error", style = "red")
+    sys.exit(1)
+
 def log_table():
     '''Create a pre-formatted Rich Table to add rows to later'''
     _t = Table(show_header=False,pad_edge=False, show_edge=False, padding = (0,0), min_width = 55, box=box.SIMPLE)

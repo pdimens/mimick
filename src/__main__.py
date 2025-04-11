@@ -10,6 +10,7 @@ import gzip
 import multiprocessing
 from itertools import product
 from .classes import *
+from .cli_classes import *
 from .common import *
 from .file_ops import *
 from .simulate import *
@@ -28,7 +29,7 @@ click.rich_click.OPTION_GROUPS = {
     "mimick": [
         {
             "name": "General Options",
-            "options": ["--help", "--output-format", "--output-prefix", "--regions", "--threads", "--version"],
+            "options": ["--help", "--output-prefix", "--output-type", "--regions", "--threads", "--version"],
             "panel_styles": {"border_style": "dim"}
         },
         {
@@ -45,10 +46,9 @@ click.rich_click.OPTION_GROUPS = {
 }
 
 @click.version_option("0.0.0", prog_name="mimick")
-@click.command(epilog = "Documentation: https://pdimens.github.io/mimick/")
+@click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
 @click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
-@click.option('-O','--output-format', help='output format of FASTQ files', default="standard", show_default=True, type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
-#@click.option('-q','--quiet', help='output format of FASTQ files', default="standard", show_default=True, type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
+@click.option('-O','--output-type', help='output format of FASTQ files', type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-r','--regions', help='one or more regions to simulate, in BED format', type = click.Path(dir_okay=False, readable=True, resolve_path=True))
 @click.option('-t','--threads', help='number of threads to use for simulation', type=click.IntRange(min=1), default=2, show_default=True)
 #Paired-end FASTQ simulation using pywgsim
@@ -61,13 +61,13 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('--mutation', help='mutation rate', default=0.001, show_default=True, type=click.FloatRange(min=0))
 @click.option('--stdev', help='standard deviation of --distance', default=50, show_default=True, type=click.IntRange(min=0))
 #Linked-read simulation
-@click.option('-l', '--lr-type', help='Type of linked-read experiment', default = "haplotagging", show_default=True, show_choices=True, type= click.Choice(["10x", "stlfr", "haplotagging", "tellseq"], case_sensitive=False))
+@click.option('-l', '--lr-type', help='type of linked-read experiment', default = "haplotagging", show_default=True, show_choices=True, type= click.Choice(["10x", "stlfr", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-c','--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
 @click.option('-m','--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=50))
-@click.option('-n','--molecule-number', help='mean number of unrelated molecules per barcode', default=3, show_default=True, type=click.IntRange(min=1))
+@click.option('-n','--molecule-number', help='mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Poisson distribution', default=3, show_default=True, type=int)
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output_prefix, output_format, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecule_number):
+def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecule_number):
     """
     Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
    
@@ -76,10 +76,10 @@ def mimick(barcodes, fasta, output_prefix, output_format, regions, threads,cover
         - e.g. `16,400000` would generate 400,000 unique 16bp barcodes 
     2. you can provide a file of specific nucleotide barcodes, 1 per line
 
-    You can specify the linked-read barcode chemistry to simulate via `--barcode-type` as well as
+    You can specify the linked-read barcode chemistry to simulate via `--lr-type` as well as
     the output format of FASTQ files (default is the same as barcode type). For example, you
-    can generate 96 barcodes (common haplotagging style), select `--barcode-type stlfr`
-    (combinatorial 3-barcode on R2 read), and have `--output-format tellseq` (`@seqid:barcode` header format).
+    can generate 96 barcodes (common haplotagging style), select `--lr-type stlfr`
+    (combinatorial 3-barcode on R2 read), and have `--output-type tellseq` (`@seqid:barcode` header format).
 
     | --lr-type | Format |
     |:------------------|:-------|
@@ -142,8 +142,8 @@ def mimick(barcodes, fasta, output_prefix, output_format, regions, threads,cover
             with open(c.barcodepath, 'r') as filein:
                 c.barcodes, c.barcodebp, c.totalbarcodes = interpret_barcodes(filein, c.barcodetype)
         except:
-            mimick_console.log(f'[Error] Cannot open {c.barcodepath} for reading', highlight=False, style = "red")
-            sys.exit(1)
+            click.BadParameter(f'Cannot open {c.barcodepath} for reading', param_hint= "BARCODES")
+            #mimick_errorterminate(f'[Error] Cannot open {c.barcodepath} for reading', False)
         progress.update(progbar, advance=1)
         # fill c with wgsim and general linked-read parameters 
         c.remainingbarcodes = c.totalbarcodes
@@ -153,25 +153,26 @@ def mimick(barcodes, fasta, output_prefix, output_format, regions, threads,cover
             # barcode at beginning of read 1
             c.len_r1 = c.length - c.barcodebp
             if c.len_r1 <= 5:
-                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', highlight=False, style = "red")
-                sys.exit(1)
+                click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
+                #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
             c.len_r2 = c.length
         elif c.barcodetype == "stlfr":
             # barcode at the end of read 2
             c.len_r1 = c.length
             c.len_r2 = c.length - c.barcodebp
             if c.len_r2 <= 5:
-                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', highlight=False, style = "red")
-                sys.exit(1)
+                click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
+                #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
         else:
             # would be 4-segment haplotagging where AC on read 1 and BD on read 2
             c.len_r1 = c.length - c.barcodebp
             c.len_r2 = c.length - c.barcodebp
             if c.len_r1 <= 5 or c.len_r2 <= 5:
-                mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', highlight=False, style = "red")
+                click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
+                #mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
                 sys.exit(1)
-        if output_format:
-            c.outformat = output_format.lower()
+        if output_type:
+            c.outformat = output_type.lower()
         else:
             c.outformat = c.barcodetype
         if c.outformat == "haplotagging":
@@ -186,13 +187,13 @@ def mimick(barcodes, fasta, output_prefix, output_format, regions, threads,cover
         # check that the haplotagging output format can support the supplied number of barcodes
         if c.outformat == "haplotagging":
             if c.totalbarcodes > 96**4:
-                mimick_console.log(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes', highlight=False, style = "red")
-                sys.exit(1)
+                click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes', param_hint= '--lr-type --output-format')
+                #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
         # check that the stlfr output format can support the supplied number of barcodes
         if c.outformat == "stlfr":
             if c.totalbarcodes > 1537**3:
-                mimick_console.log(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in stlfr format is limited to {1537**3} barcodes', highlight=False, style = "red")
-                sys.exit(1)
+                click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {1537**3} barcodes', param_hint= '--lr-type --output-format')
+                #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
 
         for k,s in enumerate(c.ffiles):
             haplotype_table = log_table()
@@ -205,8 +206,11 @@ def mimick(barcodes, fasta, output_prefix, output_format, regions, threads,cover
                 region_table = log_table()
                 region_table.add_row('Region being simulated', f'[green]{w.chrom}:{w.start}-{w.end}[/]')
                 mimick_console.log(region_table)
-                LinkedSim(w,c)
-                progress.update(progbar, advance=1)
+                try:
+                    LinkedSim(w,c)
+                    progress.update(progbar, advance=1)
+                except KeyboardInterrupt:
+                    mimick_keyboardterminate()
         n_fq = len(fasta) * 2
         # gzip multiprocessing
         allfastq = glob.glob(os.path.abspath(c.OUT) + '/*.fastq')
@@ -230,8 +234,4 @@ if __name__ =='__main__':
     try:
         mimick()
     except KeyboardInterrupt:
-        mimick_console.print("")
-        mimick_console.rule("[bold]Terminating Mimick", style = "yellow")
-        sys.exit(1)
-
-
+        mimick_keyboardterminate()
