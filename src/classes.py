@@ -22,6 +22,7 @@ class c():
     #bulk
     ffiles=None
     ffile=None
+    fa_name=None
     outformat=None
     hapnumber=0
     threads=0

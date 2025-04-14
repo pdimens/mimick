@@ -106,9 +106,12 @@ def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverag
     c.mutation=mutation
     c.indels=indels
     c.extindels=extindels
-    c.molnum=molecule_number
     c.mollen=molecule_length
-    c.molcov=molecule_coverage
+    if molecule_number == 0:
+        mimick_errorterminate("The value for [yellow]--molecule-number[/] cannot be 0.")
+    else:
+        c.molnum=molecule_number
+    c.molcov = molecule_coverage
     if isinstance(barcodes, str):
         c.barcodepath=barcodes
     else:
@@ -137,8 +140,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverag
         with open(c.barcodepath, 'r') as filein:
             c.barcodes, c.barcodebp, c.totalbarcodes = interpret_barcodes(filein, c.barcodetype)
     except:
-        click.BadParameter(f'Cannot open {c.barcodepath} for reading', param_hint= "BARCODES")
-        #mimick_errorterminate(f'[Error] Cannot open {c.barcodepath} for reading', False)
+        mimick_errorterminate(f'Cannot open {c.barcodepath} for reading')
     
     # fill c with wgsim and general linked-read parameters 
     c.remainingbarcodes = c.totalbarcodes
@@ -148,23 +150,21 @@ def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverag
         # barcode at beginning of read 1
         c.len_r1 = c.length - c.barcodebp
         if c.len_r1 <= 5:
-            click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
-            #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
+            mimick_errorterminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}')
         c.len_r2 = c.length
     elif c.barcodetype == "stlfr":
         # barcode at the end of read 2
         c.len_r1 = c.length
         c.len_r2 = c.length - c.barcodebp
         if c.len_r2 <= 5:
-            click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
-            #mimick_errorterminate(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
+            mimick_errorterminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}')
+            
     else:
         # would be 4-segment haplotagging where AC on read 1 and BD on read 2
         c.len_r1 = c.length - c.barcodebp
         c.len_r2 = c.length - c.barcodebp
         if c.len_r1 <= 5 or c.len_r2 <= 5:
-            click.BadParameter(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', param_hint='--lr-type BARCODES')
-            #mimick_console.log(f'[Error] Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}', False)
+            mimick_errorterminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {c.length}, Barcode length: {c.barcodebp}')
             sys.exit(1)
     if output_type:
         c.outformat = output_type.lower()
@@ -182,21 +182,25 @@ def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverag
     # check that the haplotagging output format can support the supplied number of barcodes
     if c.outformat == "haplotagging":
         if c.totalbarcodes > 96**4:
-            click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes', param_hint= '--lr-type --output-format')
-            #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+            mimick_errorterminate(f'The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
     # check that the stlfr output format can support the supplied number of barcodes
     if c.outformat == "stlfr":
         if c.totalbarcodes > 1537**3:
-            click.BadParameter('The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {1537**3} barcodes', param_hint= '--lr-type --output-format')
-            #mimick_errorterminate(f'[Error] The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+            mimick_errorterminate(f'The barcodes and barcode type supplied will generate a potenial {c.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
 
     for k,s in enumerate(c.ffiles):
         haplotype_table = log_table()
         haplotype_table.add_row(f'Processing haplotype {k+1}', f'[blue]{os.path.basename(s)}[/]')
         mimick_console.log(haplotype_table)
-        #mimick_console.log(f'Processing haplotype {k+1}: [blue]{os.path.basename(s)}[/]')
         c.hapnumber = f'{k+1}'
-        c.ffile = c.ffiles[k]
+        try:
+            c.fa_name = os.path.abspath(c.ffiles[k])
+            pysam.faidx(c.fa_name)
+            if c.fa_name.lower().endswith(".gz") and not os.path.exists(c.fa_name + ".gzi"):
+                os.system(f"bgzip --reindex {c.fa_name}")
+            c.ffile = pysam.FastaFile(c.fa_name)
+        except Exception as e:
+            mimick_errorterminate(f'Failed to index {c.fa_name}. Error reported by samtools:\n{e}', False)
         for w in intervals:
             region_table = log_table()
             region_table.add_row('Region being simulated', f'[green]{w.chrom}:{w.start}-{w.end}[/]')

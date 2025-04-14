@@ -4,10 +4,10 @@ channels:
   - bioconda
 dependencies:
   - biopython
+  - htslib
   - numpy
   - rich-click
   - click =8
-  - pyfaidx
   - pysam
   - python
   - pywgsim

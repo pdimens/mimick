@@ -10,7 +10,7 @@ from tempfile import mkstemp
 from .classes import *
 from .file_ops import *
 from .common import *
-import pyfaidx
+import pysam
 from pywgsim import wgsim
 
 def wrap_wgsim(*args, **kwargs):
@@ -107,21 +107,23 @@ def deternumdroplet(molecules,molnum):
     '''Determine the number of droplets'''
     large_droplet = c.totalbarcodes
     assign_drop = []
-    if molnum < 0:
-        frag_drop = [abs(molnum)]
-    else:
-        try:
-            frag_drop = RNG.poisson(molnum,large_droplet)
-        except np._core._exceptions._ArrayMemoryError as e:
-            mimick_errorterminate(f"The barcode and type combination yields far too many barcodes to sample. Error as reported by numpy:\n{e}")
+    #if molnum < 0:
+    #    frag_drop = [abs(molnum)] * large_droplet
+    #else:
+    #    try:
+    #        frag_drop = RNG.poisson(molnum,large_droplet)
+    #    except np._core._exceptions._ArrayMemoryError as e:
+    #        mimick_errorterminate(f"The barcode and type combination yields far too many barcodes to sample. Error as reported by numpy:\n{e}")
     totalfrag = 0
     
     for i in range(large_droplet):
-        totalfrag += frag_drop[i]
+        #totalfrag += frag_drop[i]
+        frag = abs(molnum) if molnum < 0 else RNG.poisson(molnum,1)[0]
+        totalfrag += frag
         if totalfrag <= len(molecules):
-            assign_drop.append(frag_drop[i])
+            assign_drop.append(frag)
         else:
-            last = len(molecules) - (totalfrag-frag_drop[i])
+            last = len(molecules) - (totalfrag-frag)
             assign_drop.append(last)
             break
     return assign_drop
@@ -143,7 +145,7 @@ def selectbarcode(drop,molecules,c):
         try:
             bc = next(c.barcodes) if c.barcodetype in ["10x", "tellseq"] else "".join(next(c.barcodes))
         except StopIteration:
-            mimick_errorterminate('[Error] No more barcodes left for simulation. The requested parameters require more barcodes.')
+            mimick_errorterminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
         c.remainingbarcodes -= 1
         for j in range(num_molecule_per_partition):
             index = index_molecule[j]
@@ -155,7 +157,7 @@ def selectbarcode(drop,molecules,c):
         droplet_container.append(temp)
     return droplet_container, assigned_barcodes
 
-def MolSim(processor,molecule,_fasta,w,c):
+def MolSim(processor,molecule,fasta,w,c):
     '''Parallelize linked reads simulation'''
     for mol in molecule:
         moleculenumber = mol.seqidx + 1
@@ -166,9 +168,9 @@ def MolSim(processor,molecule,_fasta,w,c):
 
         header = f'MOL:{moleculenumber}_GEM:{moleculedroplet}_BAR:{barcodestring}_CHROM:{w.chrom}_START:{chromstart}_END:{chromend}'
         try:
-            seq__ = _fasta[w.chrom][w.start+mol.start-1:w.start+mol.end-1].seq
+            seq__ = fasta.fetch(w.chrom,chromstart-1, chromend+1)
         except Exception as e:
-            mimick_errorterminate(f"[Error] There was an issue with pyfaidx accessing the genomic interval requested. Error reported by pyfaidx:\n{e}", False)
+            mimick_errorterminate(f"There was an issue with accessing {w.chrom}:{chromstart}-{chromend} requested via indexed random-access. Error reported by pysam:\n{e}\n\n[yellow]If this file was compressed, the solution might be to decompress it, sanitize it with `seqtk seq file.fa | bgzip > file.fa.gz` and try again. If that still doesn't work, try to use a decompressed FASTA file.", False)
         truedim = mol.length-seq__.count('N')
         if c.molcov < 1:
             N = int(truedim*c.molcov)/(c.length*2)
@@ -181,7 +183,7 @@ def MolSim(processor,molecule,_fasta,w,c):
         R2A = os.path.abspath(f'{c.OUT}/{c.PREFIX}_S1_L{c.hapnumber.zfill(3)}_R2_001.fastq')
 
         if N != 0:
-            molfa = os.path.abspath(f'{c.OUT}/{processor}_{moleculenumber}.fa')
+            molfa = os.path.abspath(f'{c.OUT}/{processor}_{w.chrom}_{moleculenumber}.fa')
             with open(molfa, 'w') as faout:
                 faout.write(f'>{header}\n' + '\n'.join(re.findall('.{1,60}', seq__)) + '\n')
             R1tmp = os.path.abspath(f"{c.OUT}/{processor}.R1.tmp.fq")
@@ -231,19 +233,16 @@ def MolSim(processor,molecule,_fasta,w,c):
 
 def LinkedSim(w,c):
     '''Perform linked-reads simulation'''
-    try:
-        _fasta = pyfaidx.Fasta(c.ffile)
-    except ValueError as e:
-        mimick_errorterminate(f'[Error] {e} in {os.path.basename(c.ffile)}')
+    _fasta = c.ffile
     if w.chrom not in _fasta:
         mimick_console.log(f'[Warning] Chromosome {w.chrom} not found in {c.ffile}. Skipping.', style = "yellow")
         return
-    chr_ = _fasta[w.chrom]
-    seq_ = chr_[w.start-1:w.end].seq
+    #chr_ = _fasta[w.chrom]
+    seq_ = _fasta.fetch(w.chrom, w.start-1, w.end + 1)
     region = f"{w.chrom}_{w.start}_{w.end}"
     Ns = seq_.count('N') #normalize coverage on Ns
-
     MRPM = (c.molcov*c.mollen)/(c.length*2) if c.molcov < 1 else c.molcov
+    MRPM = max(1,MRPM)
     TOTALR = round(((c.regioncoverage*(len(seq_)-Ns))/c.length)/2)
     EXPM = round(TOTALR/MRPM)
 
@@ -267,7 +266,7 @@ def LinkedSim(w,c):
     error_occurred = multiprocessing.Event()
     for i,molecule in enumerate(slices,1):
         processor = f'p{i}'
-        p = multiprocessing.Process(target=MolSim, args=(processor,molecule,_fasta,w,c), daemon=True)
+        p = multiprocessing.Process(target=MolSim, args=(processor,molecule,c.ffile,w,c), daemon=True)
         p.start()
         processes.append(p)
 
