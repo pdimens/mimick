@@ -24,5 +24,9 @@ and mix-match barcodes with linked-read chemistries.
 
 <img src="https://avatars.githubusercontent.com/u/39052119?v=4" width="50" height="50" style="border-radius: 50%; object-fit: cover;"/> [@davidebolo1993](https://github.com/davidebolo1993) (VISOR)
 
-
+> [!NOTE]
+> Why name it "mimick"? Well, this software mimics linked-read data, I have an affinity for naming software after
+> [fictional monsters](https://en.wikipedia.org/wiki/Mimic_(Dungeons_%26_Dragons)) and "mimick" (with a "k") is the old-English
+> spelling of the word, leaving `mimic` available for some other bioinformatician to use for a less farcical reason. Despite the
+> lore of mimics being deadly traps, this software is anything but, I promise.
 
