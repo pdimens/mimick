@@ -5,6 +5,9 @@ mimick options... BARCODES FASTA1 FAST2...
 ```
 Use `--help` or `-h` or call `mimick` without arguments to call up the docstring.
 
+The minimum input files required by Mimick is a single FASTA file, uncompressed or **bgzip compressed**.
+A set of paired-end reads will be generated for each provided haplotype (FASTA file). Mimick scales with the number
+of threads provided.
 
 <!-- tabs:start -->
 

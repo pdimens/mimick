@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-class c():
+class Container():
     '''Container. This stores argparser parameters. Used to pass multiple parameters at once.'''
     OUT = ''
     PREFIX = ''
@@ -22,7 +22,6 @@ class c():
     #bulk
     ffiles=None
     ffile=None
-    fa_name=None
     outformat=None
     hapnumber=0
     threads=0

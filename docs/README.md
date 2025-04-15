@@ -94,6 +94,8 @@ $| mimick
  Documentation: https://pdimens.github.io/mimick/    
 ```
 
+!> Why "mimick"? It's simple, really. This software mimics linked-read data, Pavel has an affinity for naming software after [fictional monsters](https://en.wikipedia.org/wiki/Mimic_(Dungeons_%26_Dragons)) and "mimick" (with a "k") is the old-English spelling of the word, leaving `mimic` available for some other bioinformatician to use for a less farcical reason. Despite the lore of mimics being deadly traps, this software is anything but, we promise.
+
 ### Authors
 <img src="https://avatars.githubusercontent.com/u/19176506?v=4" width="50" height="50" style="border-radius: 50%; object-fit: cover;"/> [@pdimens](https://github.com/pdimens) (Mimick)
 

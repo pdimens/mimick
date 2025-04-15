@@ -3,8 +3,6 @@
 There are three ways you can install Mimick: conda, pixi, pip. Make note of the names of the code blocks, as they
 describe installation and usage variations.
 
-!> WIP: mimick is not yet available on conda.
-
 <!-- tabs:start -->
 #### **conda**
 

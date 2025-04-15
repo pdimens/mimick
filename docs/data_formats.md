@@ -27,9 +27,7 @@ resulting R1 reads will be 16bp shorter, because that's where that barcodes woul
 Unlike `10x` and `tellseq`, which use barcodes directly, you need far fewer barcodes as input for
 `haplotagging` and `stlfr`. For example, standard haplotagging uses 96 barcodes per segment and standard
 stlfr uses 1537 barcodes per segment. Haplotagging will make $N^4$ barcode combinations, whereas stLFR
-will make $N^3$ combinations. As a result, you will need far fewer barcodes as input for these two methods.
-
-!> Haplotagging typically uses 96 barcodes. stLFR typically uses 1537 barcodes. Using too many barcodes for the combinatorial methods may result in an error
+will make $N^3$ combinations.
 
 ## Linked-read output types
 Like discussed above, there are _options_ for how the resulting linked-read data can look. Why would you want one
