@@ -8,8 +8,8 @@ input and output linked-read types.
 
 You can specify the linked-read barcode chemistry to simulate via `--lr-type` as well as
 the output format of FASTQ files (default is the same as barcode type). For example, you
-can generate 96 barcodes (common haplotagging style), select `--barcode-type stlfr`
-(combinatorial 3-barcode on R2 read), and have `--output-format tellseq` (`@seqid:barcode` header format).
+can generate 96 barcodes (common haplotagging style), select `--lr-type stlfr`
+(combinatorial 3-barcode on R2 read), and have `--output-type tellseq` (`@seqid:barcode` header format).
 
 ## Linked-read simulation types
 These are the options available to `--lr-type`. Each has a different approach to using the
@@ -33,7 +33,7 @@ will make $N^3$ combinations.
 Like discussed above, there are _options_ for how the resulting linked-read data can look. Why would you want one
 format over another? Well, it could be personal preference or the software you want to use is configured for a very
 specific format (which is a **problem** for the linked-read ecosystem). Regardless of the _kind_ of linked-read
-experiment you chose with `--lr-type`, you can specify any of the linked-read types as the output format with `--output-format`.
+experiment you chose with `--lr-type`, you can specify any of the linked-read types as the output format with `--output-type`.
 
 | --output-type | Barcode Location | Example |
 |:-----------------|:-------|:---------------------|

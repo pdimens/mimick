@@ -50,11 +50,11 @@ These options control inputs/outputs and resources
 | short name | long name | description | default |
 |:---:|:------|:-------------|:--------|
 `-o` |`--output-prefix` | output file prefix | `simulated/SIM`|
-`-O` |`--output-format` | output format of FASTQ files | same as input |
+`-O` |`--output-type` | output format of FASTQ files | same as input |
 `-r` |`--regions` | one or more regions to simulate, in BED format | |
 `-t` |`--threads` | number of threads to use for simulation | `2` |
 
-#### Output format
+#### Output type
 Mimick lets you specify different output fastq types regardless of the intended linked-read
 simulation type. See [Data Formats](data_formats.md) for more information.
 
@@ -89,7 +89,7 @@ For completeness, the table below is all the command line arguments and options
 |     | `BARCODES` | input barcode file or length,count | | REQUIRED |
 |     | `FASTA` | input fasta file(s) | | REQUIRED |
 |`-o` |`--output-prefix` | output file prefix | `simulated/SIM`| |
-|`-O` |`--output-format` | output format of FASTQ files | `standard` | |
+|`-O` |`--output-type` | output format of FASTQ files | `standard` | |
 |`-r` |`--regions` | one or more regions to simulate, in BED format | | |
 |`-t` |`--threads` | number of threads to use for simulation | `2` | |
 |     | `--coverage` | 'mean coverage target for simulated data' | `30` | |
