@@ -211,6 +211,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverag
                 
             except KeyboardInterrupt:
                 mimick_keyboardterminate()
+    Container.barcodelist.close()
     n_fq = len(fasta) * 2
     # gzip multiprocessing
     allfastq = glob.glob(os.path.abspath(Container.OUT) + '/*.fastq')
@@ -223,8 +224,17 @@ def mimick(barcodes, fasta, output_prefix, output_type, regions, threads,coverag
         processes.append(p)
     for p in processes:
         p.join()
-        
-    Container.barcodelist.close()
+
+    mimick_console.log(f"Concatenating and compressing [blue]Mutation GFF files[/]")
+    with gzip.open(f'{Container.OUT}/{Container.PREFIX}.wgsim.mutations.gff.gz', "wb", compresslevel=6) as gff:
+        gff.write("##gff-version 3\n#\n".encode("utf-8"))
+        for i in range(1, Container.threads + 1):
+            with open(f'{Container.OUT}/{Container.PREFIX}.p{i}.wgsim.mutations', 'r') as mut:
+                for line in mut:
+                    if not line.startswith("#"):
+                        gff.write(line.encode("utf-8"))
+            os.remove(f'{Container.OUT}/{Container.PREFIX}.p{i}.wgsim.mutations')
+
     mimick_console.log(f'Done!\n')
 
 if __name__ =='__main__':

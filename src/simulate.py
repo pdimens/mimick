@@ -200,7 +200,7 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                         is_fixed = 0,
                         seed = 0
                     )
-                    with open(f'{container.OUT}/{container.PREFIX}.wgsim.mutations', 'a') as f:
+                    with open(f'{container.OUT}/{container.PREFIX}.p{processor}.wgsim.mutations', 'a') as f:
                         f.write(stdout)
                 except KeyboardInterrupt:
                     mimick_keyboardterminate()
