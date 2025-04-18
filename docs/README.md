@@ -54,6 +54,8 @@ $| mimick
 │ --output-prefix  -o  output file prefix                                                          │
 │                      [default: simulated/SIM]                                                    │
 │ --output-type    -O  output format of FASTQ files                                                │
+│ --quiet          -q  0 all output, 1 no progress bar, 2 no output                                │
+│                      [default: 0]                                                                │
 │ --regions        -r  one or more regions to simulate, in BED format                              │
 │ --threads        -t  number of threads to use for simulation                                     │
 │                      [default: 2; x>=1]                                                          │
