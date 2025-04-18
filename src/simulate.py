@@ -137,7 +137,7 @@ def selectbarcode(drop,molecules,container):
         try:
             bc = "".join(next(container.barcodes))
         except StopIteration:
-            mimick_errorterminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
+            error_terminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
         container.remainingbarcodes -= 1
         for j in range(num_molecule_per_partition):
             index = index_molecule[j]
@@ -163,7 +163,7 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
             try:
                 seq__ = _fasta.fetch(w.chrom,chromstart-1, chromend+1)
             except Exception as e:
-                mimick_errorterminate(f"There was an issue with accessing {w.chrom}:{chromstart}-{chromend} requested via indexed random-access. Error reported by pysam:\n{e}\n\n[yellow]If this file was compressed, make sure it, the solution might be to decompress it, sanitize it with `seqtk seq file.fa | bgzip > file.fa.gz` and try again.", False)
+                error_terminate(f"There was an issue with accessing {w.chrom}:{chromstart}-{chromend} requested via indexed random-access. Error reported by pysam:\n{e}\n\n[yellow]If this file was compressed, make sure it, the solution might be to decompress it, sanitize it with `seqtk seq file.fa | bgzip > file.fa.gz` and try again.", False)
             truedim = mol.length-seq__.count('N')
             if container.molcov < 1:
                 N = int(truedim*container.molcov)/(container.length*2)
@@ -172,15 +172,13 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                 N = max(0, int(RNG.normal(container.molcov, container.molcov/3)))
                 # set ceiling to avoid N being greater than can be sampled
                 N = min(N, int(truedim/(container.length*2)))
-            R1A = os.path.abspath(f'{container.OUT}/{container.PREFIX}_S1_L{container.hapnumber.zfill(3)}_R1_001.fastq')
-            R2A = os.path.abspath(f'{container.OUT}/{container.PREFIX}_S1_L{container.hapnumber.zfill(3)}_R2_001.fastq')
 
             if N != 0:
                 molfa = os.path.abspath(f'{container.OUT}/p{processor}_{moleculenumber}.fa')
                 with open(molfa, 'w') as faout:
                     faout.write(f'>{header}\n' + '\n'.join(re.findall('.{1,60}', seq__)) + '\n')
-                R1tmp = os.path.abspath(f"{container.OUT}/p{processor}.R1.tmp.fq")
-                R2 = os.path.abspath(f"{container.OUT}/p{processor}.R2.fq")
+                R1tmp = os.path.abspath(f"{container.OUT}/p{processor}.R1.tmp.fastq")
+                R2 = os.path.abspath(f"{container.OUT}/p{processor}.R2.fastq")
                 try:
                     stdout = wrap_wgsim(
                         r1 = R1tmp,
@@ -210,6 +208,9 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                     os.remove(R1tmp)
                     os.remove(R2)
                 else:
+                    R1A = os.path.abspath(f'{container.OUT}/{container.PREFIX}.hap_{container.hapnumber.zfill(3)}.R1.fq')
+                    R2A = os.path.abspath(f'{container.OUT}/{container.PREFIX}.hap_{container.hapnumber.zfill(3)}.R2.fq')
+
                     with open(R1tmp,'r') as infile, open(R1A,'a') as outfile:
                         for name,seq,qual in readfq(infile):
                             read = format_linkedread(name, barcodestring, seq, qual, True)
@@ -228,7 +229,7 @@ def LinkedSim(w: Molecule, container: Container) -> None:
     '''Perform linked-reads simulation'''
     with pysam.FastaFile(container.ffile) as _fasta:
         if w.chrom not in _fasta:
-            mimick_console.log(f'[Warning] Chromosome {w.chrom} not found in {container.ffile}. Skipping.', style = "yellow")
+            container.CONSOLE.log(f'[Warning] Chromosome {w.chrom} not found in {container.ffile}. Skipping.', style = "yellow")
             return
         seq_ = _fasta.fetch(w.chrom, w.start-1, w.end + 1)
     Ns = seq_.count('N') #normalize coverage on Ns
@@ -249,7 +250,7 @@ def LinkedSim(w: Molecule, container: Container) -> None:
     info_table.add_row('Available barcodes', f'{container.remainingbarcodes}')
     droplet_container,assigned_barcodes = selectbarcode(drop,molecules, container)
     info_table.add_row('Barcodes remaining after molecule assignment', f'{container.remainingbarcodes}')
-    mimick_console.log(info_table)
+    container.CONSOLE.log(info_table)
     chunk_size = len(molecules)/container.threads
     slices = Chunks(molecules,math.ceil(chunk_size))
 
@@ -270,7 +271,7 @@ def LinkedSim(w: Molecule, container: Container) -> None:
                     processes.remove(p)
             
             if error_occurred.is_set():
-                mimick_console.rule("Terminating Mimick due to an error", style = "red")
+                container.CONSOLE.rule("Terminating Mimick due to an error", style = "red")
                 break
             
             time.sleep(0.1)  # Small delay to prevent busy waiting

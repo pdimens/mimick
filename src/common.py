@@ -19,7 +19,7 @@ def mimick_keyboardterminate():
     mimick_console.rule("[bold]Terminating Mimick", style = "yellow")
     sys.exit(1)
 
-def mimick_errorterminate(text: str, rule: bool = True):
+def error_terminate(text: str, rule: bool = True):
     mimick_console.log(f"[Error] {text}", highlight=False, style = "red")
     if rule:
         mimick_console.rule("[bold]Terminating Mimick due to an error", style = "red")

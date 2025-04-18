@@ -5,7 +5,8 @@ class Container():
     OUT = ''
     PREFIX = ''
     FASTADIR = ''
-
+    CONSOLE = None
+    PROGRESS = None
     #pywgsim
     coverage=0
     regioncoverage=0
