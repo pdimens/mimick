@@ -63,16 +63,16 @@ simulation type. See [Data Formats](data_formats.md) for more information.
 These options govern how `wgsim` will simulate FASTQ files from genomic regions. These are no short names for
 these options.
 
-|     name      | default | description                                 | notes                                             |
-|:-------------:|:--------|:--------------------------------------------|:--------------------------------------------------|
-| `--coverage`  | `30`    | 'mean coverage target for simulated data'   |                                                   |
-| `--distance`  | `500`   | 'outer distance between the two ends in bp' | must be >`--length`                               |
-|   `--error`   | `0.02`  | 'base error rate'                           | must be between 0-1, will be fixed for this value |
-| `--extindels` | `0.25`  | 'indels extension rate'                     | must be between 0-1                               |
-|  `--indels`   | `0.15`  | 'indels creation rate'                      | must be between 0-1                               |
-|  `--length`   | `150`   | 'length of reads in bp'                     | must be >30                                       |
-| `--mutation`  | `0.001` | 'mutation rate'                             | must be between 0-1                               |
-|   `--stdev`   | `50`    | 'standard deviation of --distance'          |                                                   |
+|     name      | default | description                               | notes                                             |
+|:-------------:|:--------|:------------------------------------------|:--------------------------------------------------|
+| `--coverage`  | `30`    | mean coverage target for simulated data   |                                                   |
+| `--distance`  | `500`   | outer distance between the two ends in bp | must be >`--length`                               |
+|   `--error`   | `0.02`  | base error rate                           | must be between 0-1, will be fixed for this value |
+| `--extindels` | `0.25`  | indels extension rate                     | must be between 0-1                               |
+|  `--indels`   | `0.15`  | indels creation rate                      | must be between 0-1                               |
+|  `--length`   | `150`   | length of reads in bp                     | must be >30                                       |
+| `--mutation`  | `0.001` | mutation rate                             | must be between 0-1                               |
+|   `--stdev`   | `50`    | standard deviation of --distance          |                                                   |
 
 ### Linked-read simulation
 | short name | long name             | default        | description                                                                                                                                                                                 |
@@ -80,7 +80,7 @@ these options.
 |    `-l`    | `--lr-type`           | `haplotagging` | type of linked-read experiment                                                                                                                                                              |
 |    `-c`    | `--molecule-coverage` | `0.2`          | mean percent coverage per molecule if <1, else mean number of reads per molecule'                                                                                                           |
 |    `-m`    | `--molecule-length`   | `80000`        | mean length of molecules in bp'                                                                                                                                                             |
-|    `-n`    | `--molecule-number`   | 3              | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Poisson distribution |
+|    `-n`    | `--molecule-number`   | `3`            | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Poisson distribution |
 
 #### **All Options**
 For completeness, the table below is all the command line arguments and options
@@ -94,17 +94,17 @@ For completeness, the table below is all the command line arguments and options
 |    `-q`    | `--quiet`             | `0`             | `0` all output, `1` no progress bar, `2` no output                                                                                                                                          |                                                   |
 |    `-r`    | `--regions`           |                 | one or more regions to simulate, in BED format                                                                                                                                              |                                                   |
 |    `-t`    | `--threads`           | `2`             | number of threads to use for simulation                                                                                                                                                     |                                                   |
-|            | `--coverage`          | `30`            | 'mean coverage target for simulated data'                                                                                                                                                   |                                                   |
-|            | `--distance`          | `500`           | 'outer distance between the two ends in bp'                                                                                                                                                 | must be >`--length`                               |
-|            | `--error`             | `0.02`          | 'base error rate'                                                                                                                                                                           | must be between 0-1, will be fixed for this value |
-|            | `--extindels`         | `0.25`          | 'indels extension rate'                                                                                                                                                                     | must be between 0-1                               |
-|            | `--indels`            | `0.15`          | 'indels creation rate'                                                                                                                                                                      | must be between 0-1                               |
-|            | `--length`            | `150`           | 'length of reads in bp'                                                                                                                                                                     | must be >30                                       |
-|            | `--mutation`          | `0.001`         | 'mutation rate'                                                                                                                                                                             | must be between 0-1                               |
-|            | `--stdev`             | `50`            | 'standard deviation of --distance'                                                                                                                                                          |                                                   |
+|            | `--coverage`          | `30`            | mean coverage target for simulated data                                                                                                                                                     |                                                   |
+|            | `--distance`          | `500`           | outer distance between the two ends in bp                                                                                                                                                   | must be >`--length`                               |
+|            | `--error`             | `0.02`          | base error rate                                                                                                                                                                             | must be between 0-1, will be fixed for this value |
+|            | `--extindels`         | `0.25`          | indels extension rate                                                                                                                                                                       | must be between 0-1                               |
+|            | `--indels`            | `0.15`          | indels creation rate                                                                                                                                                                        | must be between 0-1                               |
+|            | `--length`            | `150`           | length of reads in bp                                                                                                                                                                       | must be >30                                       |
+|            | `--mutation`          | `0.001`         | mutation rate                                                                                                                                                                               | must be between 0-1                               |
+|            | `--stdev`             | `50`            | standard deviation of --distance                                                                                                                                                            |                                                   |
 |    `-l`    | `--lr-type`           | `haplotagging`  | type of linked-read experiment                                                                                                                                                              |                                                   |
-|    `-c`    | `--molecule-coverage` | `0.2`           | mean percent coverage per molecule if <1, else mean number of reads per molecule'                                                                                                           |                                                   |
-|    `-m`    | `--molecule-length`   | `80000`         | mean length of molecules in bp'                                                                                                                                                             |                                                   |
+|    `-c`    | `--molecule-coverage` | `0.2`           | mean percent coverage per molecule if <1, else mean number of reads per molecule                                                                                                            |                                                   |
+|    `-m`    | `--molecule-length`   | `80000`         | mean length of molecules in bp                                                                                                                                                              |                                                   |
 |    `-n`    | `--molecule-number`   | `3`             | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Poisson distribution |                                                   |
 
 <!-- tabs:end -->
