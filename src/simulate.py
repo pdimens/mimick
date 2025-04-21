@@ -69,7 +69,7 @@ def format_linkedread(name, bc, seq, qual, forward: bool):
         if bc not in Container.used_bc:
             Container.used_bc[bc] = bc
             Container.barcodelist.write(f"{bc}\n")
-        read = [f'@{name}{fr}\tBV:i:1\tBX:Z:{bc}', seq, '+', qual]
+        read = [f'@{name}{fr}\tVX:i:1\tBX:Z:{bc}', seq, '+', qual]
     elif Container.outformat == "stlfr":
         fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
         if bc not in Container.used_bc:
