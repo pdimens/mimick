@@ -216,7 +216,7 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                             read = format_linkedread(name, barcodestring, seq, qual, True)
                             outfile.write('\n'.join(read) + '\n')
                     os.remove(R1tmp)
-                    with open(R2,'r') as infile, open(R2A,'a') as outfile:
+                    with open(R2tmp,'r') as infile, open(R2A,'a') as outfile:
                         for name,seq,qual in readfq(infile):
                             if container.outformat == "10x":
                                 read = [f'@{name}',seq,'+',qual]
