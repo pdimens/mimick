@@ -29,7 +29,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Setup Mamba
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           init-shell: bash
           generate-run-shell: true
