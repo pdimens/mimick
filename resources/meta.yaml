@@ -26,7 +26,6 @@ requirements:
     - pip
     - setuptools-scm >=3.4
   run:
-    - biopython >=1.8
     - click >=8
     - htslib
     - numpy >=1.15.3

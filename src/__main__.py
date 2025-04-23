@@ -228,7 +228,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
             Container.PROGRESS.update(pbar, advance=1)
 
     Container.barcodelist.close()
-    n_fq = len(fasta) * 2
     # gzip multiprocessing
     allfastq = glob.glob(os.path.abspath(Container.OUT) + '/*.fq')
     chunk_size = len(allfastq)/Container.threads

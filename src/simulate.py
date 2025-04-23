@@ -178,11 +178,11 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                 with open(molfa, 'w') as faout:
                     faout.write(f'>{header}\n' + '\n'.join(re.findall('.{1,60}', seq__)) + '\n')
                 R1tmp = os.path.abspath(f"{container.OUT}/p{processor}.R1.tmp.fastq")
-                R2 = os.path.abspath(f"{container.OUT}/p{processor}.R2.fastq")
+                R2tmp = os.path.abspath(f"{container.OUT}/p{processor}.R2.fastq")
                 try:
                     stdout = wrap_wgsim(
                         r1 = R1tmp,
-                        r2 =R2,
+                        r2 =R2tmp,
                         ref = molfa,
                         err_rate = container.error,
                         mut_rate = container.mutation,
@@ -206,7 +206,7 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                 os.remove(molfa)
                 if os.stat(R1tmp).st_size == 0:
                     os.remove(R1tmp)
-                    os.remove(R2)
+                    os.remove(R2tmp)
                 else:
                     R1A = os.path.abspath(f'{container.OUT}/{container.PREFIX}.hap_{container.hapnumber.zfill(3)}.R1.fq')
                     R2A = os.path.abspath(f'{container.OUT}/{container.PREFIX}.hap_{container.hapnumber.zfill(3)}.R2.fq')
@@ -223,7 +223,7 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                             else:
                                 read = format_linkedread(name, barcodestring, seq, qual, False)
                             outfile.write('\n'.join(read) + '\n')
-                    os.remove(R2)
+                    os.remove(R2tmp)
 
 def LinkedSim(w: Molecule, container: Container) -> None:
     '''Perform linked-reads simulation'''
