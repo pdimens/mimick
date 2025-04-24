@@ -178,7 +178,7 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                 with open(molfa, 'w') as faout:
                     faout.write(f'>{header}\n' + '\n'.join(re.findall('.{1,60}', seq__)) + '\n')
                 R1tmp = os.path.abspath(f"{container.OUT}/p{processor}.R1.tmp.fastq")
-                R2tmp = os.path.abspath(f"{container.OUT}/p{processor}.R2.fastq")
+                R2tmp = os.path.abspath(f"{container.OUT}/p{processor}.R2.tmp.fastq")
                 try:
                     stdout = wrap_wgsim(
                         r1 = R1tmp,

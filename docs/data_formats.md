@@ -42,3 +42,18 @@ experiment you chose with `--lr-type`, you can specify any of the linked-read ty
 |`standard`      | sequence header as `BX:Z:BARCODE`, no specific format | `@SEQID BX:Z:ATACGAGACA` |
 |`stlfr`         | appended to sequence ID via `#1_2_3` | `@SEQID#1_354_39` |
 |`tellseq`       | appended to sequence ID via `:ATCG` | `@SEQID:TATTAGCAC` |
+
+## Proper read pairing
+A consideration for downstream application using the simulated linked reads is that you might need to
+make sure the paired-end reads are properly paired, since Mimick does not enforce validating proper
+read pairs from `wgsim`. Sometimes software gets fussy when it expects proper (synchronized) reads pairs
+and doesn't get them, like `bwa`, for example. A quick way to accomplish this is using `seqkit` (or similar):
+
+```bash
+# if the forward/reverse specification is the /1 /2 format
+seqkit pair --id-regexp '^(\S+)\/[12]' -1 sample_0${i}.R1.fq.gz -2 sample_0${i}.R2.fq.gz
+
+# if the forward/reverse specification is the modern 1:N:0:ATTACA format
+seqkit pair -1 sample_0${i}.R1.fq.gz -2 sample_0${i}.R2.fq.gz
+```
+You can optionally use the `-u` flag to ask `seqkit` to also save the unpaired reads.
