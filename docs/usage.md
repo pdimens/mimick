@@ -80,7 +80,7 @@ these options.
 |    `-l`    | `--lr-type`           | `haplotagging` | type of linked-read experiment                                                                                                                                                              |
 |    `-c`    | `--molecule-coverage` | `0.2`          | mean percent coverage per molecule if <1, else mean number of reads per molecule'                                                                                                           |
 |    `-m`    | `--molecule-length`   | `80000`        | mean length of molecules in bp'                                                                                                                                                             |
-|    `-n`    | `--molecule-number`   | `3`            | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Poisson distribution |
+|    `-n`    | `--molecules-per`   | `3`            | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution |
 
 #### **All Options**
 For completeness, the table below is all the command line arguments and options
@@ -105,6 +105,6 @@ For completeness, the table below is all the command line arguments and options
 |    `-l`    | `--lr-type`           | `haplotagging`  | type of linked-read experiment                                                                                                                                                              |                                                   |
 |    `-c`    | `--molecule-coverage` | `0.2`           | mean percent coverage per molecule if <1, else mean number of reads per molecule                                                                                                            |                                                   |
 |    `-m`    | `--molecule-length`   | `80000`         | mean length of molecules in bp                                                                                                                                                              |                                                   |
-|    `-n`    | `--molecule-number`   | `3`             | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Poisson distribution |                                                   |
+|    `-n`    | `--molecules-per`   | `3`             | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution |                                                   |
 
 <!-- tabs:end -->
