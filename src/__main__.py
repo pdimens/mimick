@@ -37,7 +37,7 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Linked Read Parameters",
-            "options": ["--lr-type", "--molecule-coverage", "--molecule-length", "--molecule-number"],
+            "options": ["--lr-type", "--molecule-coverage", "--molecule-length", "--molecules-per"],
             "panel_styles": {"border_style": "dim magenta"}
         },
     ]
@@ -63,10 +63,10 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-l', '--lr-type', help='type of linked-read experiment', default = "haplotagging", show_default=True, show_choices=True, type= click.Choice(["10x", "stlfr", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-c','--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
 @click.option('-m','--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=50))
-@click.option('-n','--molecule-number', help='mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Poisson distribution', default=3, show_default=True, type=int)
+@click.option('-n','--molecules-per', help='mean number of unrelated molecules per barcode per chromosome, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution', default=2, show_default=True, type=int)
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecule_number):
+def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecules_per):
     """
     Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
    
@@ -120,10 +120,10 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
     Container.indels=indels
     Container.extindels=extindels
     Container.mollen=molecule_length
-    if molecule_number == 0:
+    if molecules_per == 0:
         error_terminate("The value for [yellow]--molecule-number[/] cannot be 0.")
     else:
-        Container.molnum=molecule_number
+        Container.molnum=molecules_per
     Container.molcov = molecule_coverage
     if isinstance(barcodes, str):
         Container.barcodepath=barcodes

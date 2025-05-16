@@ -110,7 +110,8 @@ def deternumdroplet(molecules,molnum):
     totalfrag = 0
     
     for i in range(large_droplet):
-        frag = abs(molnum) if molnum < 0 else RNG.poisson(molnum,1)[0]
+        sd = molnum/(molnum + 2) if molnum > 2 else 3/4
+        frag = abs(molnum) if molnum < 0 else max(1,int(RNG.normal(molnum, sd)))
         totalfrag += frag
         if totalfrag <= len(molecules):
             assign_drop.append(frag)
