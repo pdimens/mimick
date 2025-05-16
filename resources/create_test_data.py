@@ -20,6 +20,6 @@ with open("nucleotides.bc", "w") as bc:
 
 with open("combinatorial.bc", "w") as bc:
     bc_gen = product(*["ATCG" for i in range(6)])
-    for i in range(200):
+    for i in range(96):
         _bc = "".join(next(bc_gen))
         bc.write(_bc + "\n")
