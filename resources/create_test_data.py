@@ -12,8 +12,14 @@ with open("test.hap2.fa", "w") as fa:
     for i in [1,2]:
         _ = fa.write(f">Contig{i}\n" + "".join(choices(nuc, k = 200000)) + "\n")
 
-with open("test.bc", "w") as bc:
-    bc_gen = product(nuc,nuc,nuc,nuc,nuc)
-    for i in range(96):
+with open("nucleotides.bc", "w") as bc:
+    bc_gen = product(*["ATCG" for i in range(18)])
+    for i in range(1000000):
+        _bc = "".join(next(bc_gen))
+        bc.write(_bc + "\n")
+
+with open("combinatorial.bc", "w") as bc:
+    bc_gen = product(*["ATCG" for i in range(6)])
+    for i in range(200):
         _bc = "".join(next(bc_gen))
         bc.write(_bc + "\n")
