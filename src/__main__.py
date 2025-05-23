@@ -204,9 +204,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
             error_terminate(f'The barcodes and barcode type supplied will generate a potenial {Container.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
 
     for k,s in enumerate(Container.ffiles,1):
-        haplotype_table = log_table()
-        haplotype_table.add_row(f'Processing haplotype {k}', f'[blue]{os.path.basename(s)}[/]')
-        Container.CONSOLE.log(haplotype_table)
+        Container.CONSOLE.rule(f"[bold]Haplotype {k}: {os.path.basename(s)}", style = "blue")
         Container.hapnumber = f'{k}'
         try:
             Container.CONSOLE.log(f"Indexing FASTA file")
@@ -217,9 +215,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
         except Exception as e:
             error_terminate(f'Failed to index {Container.ffile}. Error reported by samtools:\n{e}', False)
         for w in intervals:
-            region_table = log_table()
-            region_table.add_row('Region being simulated', f'[green]{w.chrom}:{w.start}-{w.end}[/]')
-            Container.CONSOLE.log(region_table)
+            regiontext = f"{w.chrom}:{w.start}-{w.end}"
+            rule = "─" * int((53 - len(regiontext)) / 2)
+            Container.CONSOLE.log(f"[green]{rule} [default]{regiontext} [green]{rule}[/]")
             try:
                 LinkedSim(w,Container)
             except KeyboardInterrupt:
@@ -233,6 +231,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
     chunk_size = len(allfastq)/Container.threads
     slices = Chunks(allfastq, math.ceil(chunk_size))
     processes = []
+    Container.CONSOLE.rule("Finalizing Outputs", style = "blue")
     for i,sli in enumerate(slices):
         p = multiprocessing.Process(target=BGzipper, args=(sli,))
         p.start()
@@ -240,7 +239,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
     for p in processes:
         p.join()
         Container.PROGRESS.update(pbar, advance=1)
-    Container.CONSOLE.log(f"Concatenating and compressing [blue]Mutation GFF files[/]")
+    tb = log_table()
+    tb.add_row("Concatenating and gzipping", "WGSim GFF files")
+    Container.CONSOLE.log(tb)
     with gzip.open(f'{Container.OUT}/{Container.PREFIX}.mutations.gff.gz', "wb", compresslevel=6) as gff:
         gff.write("##gff-version 3\n#\n".encode("utf-8"))
         for i in range(1, Container.threads + 1):
@@ -250,8 +251,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
                         gff.write(line.encode("utf-8"))
             os.remove(f'{Container.OUT}/{Container.PREFIX}.p{i}.wgsim.mutations')
     Container.PROGRESS.update(pbar, completed=100)
-    Container.CONSOLE.log(f'Done!\n')
     Container.PROGRESS.stop()
+    Container.CONSOLE.rule("Finished Successfully", style = "green bold")
 
 if __name__ =='__main__':
     try:

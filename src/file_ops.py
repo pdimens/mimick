@@ -5,7 +5,7 @@ import re
 import sys
 from itertools import product
 import pysam
-from .common import error_terminate
+from .common import error_terminate, log_table
 from .classes import Interval, Container
 
 def readfq(fp): # this is a fast generator function
@@ -20,7 +20,9 @@ def readfq(fp): # this is a fast generator function
 def BGzipper(sli,):
     '''Use pysam/htslib BGzip and multi-processing to save some time'''
     for s in sli:
-        Container.CONSOLE.log(f'Compressing [blue]{os.path.basename(s)}[/]')
+        tb = log_table()
+        tb.add_row('BGzipping', os.path.basename(s))
+        Container.CONSOLE.log(tb)
         pysam.tabix_compress(s, f'{s}.gz', force=True)
         os.remove(s)
 
