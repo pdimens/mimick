@@ -8,6 +8,7 @@ import math
 import gzip
 import multiprocessing
 from itertools import product
+import numpy as np
 import rich_click as click
 from rich.progress import Progress, TextColumn, TimeElapsedColumn, TaskProgressColumn, BarColumn
 import pysam
@@ -37,7 +38,7 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Linked Read Parameters",
-            "options": ["--lr-type", "--molecule-coverage", "--molecule-length", "--molecules-per"],
+            "options": ["--lr-type", "--molecule-coverage", "--molecule-length", "--molecules-per", "--singletons"],
             "panel_styles": {"border_style": "dim magenta"}
         },
     ]
@@ -50,6 +51,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-q','--quiet', show_default = True, default = "0", type = click.Choice(["0", "1", "2"]), help = '`0` all output, `1` no progress bar, `2` no output')
 @click.option('-r','--regions', help='one or more regions to simulate, in BED format', type = click.Path(dir_okay=False, readable=True, resolve_path=True))
 @click.option('-t','--threads', help='number of threads to use for simulation', type=click.IntRange(min=1), default=2, show_default=True)
+@click.option('-S','--seed', help='random seed for simulation', type=click.IntRange(min=1))
 #Paired-end FASTQ simulation using pywgsim
 @click.option('--coverage', help='mean coverage target for simulated data', show_default=True, default=30.0, type=click.FloatRange(min=0.05))
 @click.option('--distance', help='outer distance between the two ends in bp', default=500, show_default=True, type=click.IntRange(min=0))
@@ -64,9 +66,10 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-c','--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
 @click.option('-m','--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=50))
 @click.option('-n','--molecules-per', help='mean number of unrelated molecules per barcode per chromosome, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution', default=2, show_default=True, type=int)
+@click.option('-s','--singletons', help='what proportion of barcodes will only have a single read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecules_per):
+def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecules_per, singletons):
     """
     Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
    
@@ -109,6 +112,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
     os.makedirs(Container.OUT, exist_ok= True)
     Container.FASTADIR = fasta
     Container.PREFIX = os.path.basename(output_prefix)
+    Container.RNG = np.random.default_rng(seed)
     Container.threads = threads
     Container.barcodetype=lr_type.lower()
     Container.coverage=coverage
@@ -120,6 +124,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
     Container.indels=indels
     Container.extindels=extindels
     Container.mollen=molecule_length
+    Container.singletons = singletons
+    Container.used_bc = dict()
     if molecules_per == 0:
         error_terminate("The value for [yellow]--molecule-number[/] cannot be 0.")
     else:
@@ -159,7 +165,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
     Container.PROGRESS.update(pbar, advance=1)
     # fill Container with wgsim and general linked-read parameters 
     Container.remainingbarcodes = Container.totalbarcodes
-    Container.barcodelist= open(f'{Container.OUT}/{Container.PREFIX}.barcodes', 'w')
+    Container.barcodeslist= open(f'{Container.OUT}/{Container.PREFIX}.barcodes', 'w')
 
     if Container.barcodetype in ["10x", "tellseq"]:
         # barcode at beginning of read 1
@@ -225,7 +231,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, regions, threads,
                 mimick_keyboardterminate()
             Container.PROGRESS.update(pbar, advance=1)
 
-    Container.barcodelist.close()
+    Container.barcodeslist.close()
     # gzip multiprocessing
     allfastq = glob.glob(os.path.abspath(Container.OUT) + '/*.fq')
     chunk_size = len(allfastq)/Container.threads

@@ -6,13 +6,11 @@ import sys
 from datetime import datetime
 from itertools import product
 from random import sample
-import numpy as np
 from rich.console import Console
 from rich.table import Table
 from rich import box
 
 mimick_console = Console(stderr=True, log_path=False)
-RNG = np.random.default_rng()
 
 def mimick_keyboardterminate():
     mimick_console.print("")

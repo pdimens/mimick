@@ -48,19 +48,16 @@ def format_linkedread(name, bc, seq, qual, forward: bool):
         read = [f'@{name} {fr}', f"{bc}{seq}", '+', f'{qual[0] * Container.barcodebp}{qual}']
         if bc not in Container.used_bc:
             Container.used_bc[bc] = True
-            Container.barcodelist.write(f"{bc}\n")
     elif Container.outformat == "tellseq":
         fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
         read = [f'@{name}:{bc} {fr}', seq, '+', qual]
         if bc not in Container.used_bc:
-            Container.barcodelist.write(f"{bc}\n")
             Container.used_bc[bc] = True
     elif Container.outformat == "haplotagging":
         fr = "/1" if forward else "/2"
         if bc not in Container.used_bc:
             acbd = "".join(next(Container.bc_generator))
             Container.used_bc[bc] = acbd
-            Container.barcodelist.write(f"{bc}\n")
         else:
             acbd = Container.used_bc[bc]
         read = [f'@{name}{fr}\tOX:Z:{bc}\tBX:Z:{acbd}', seq, '+', qual]
@@ -68,27 +65,25 @@ def format_linkedread(name, bc, seq, qual, forward: bool):
         fr = "/1" if forward else "/2"
         if bc not in Container.used_bc:
             Container.used_bc[bc] = bc
-            Container.barcodelist.write(f"{bc}\n")
         read = [f'@{name}{fr}\tVX:i:1\tBX:Z:{bc}', seq, '+', qual]
     elif Container.outformat == "stlfr":
         fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
         if bc not in Container.used_bc:
             stlfr_bc = "_".join([str(i) for i in next(Container.bc_generator)])
             Container.used_bc[bc] = stlfr_bc
-            Container.barcodelist.write(f"{bc}\n")
         else:
             stlfr_bc = Container.used_bc[bc]
         read = [f'@{name}#{stlfr_bc} {fr}', seq, '+', qual]
     return read
 
-def randomlong(Par,seq_,EXPM):
+def randomlong(Par,seq_,EXPM, rng):
     '''Length of molecules is randomly distributed according to an exponential distribution'''
     index = 0	
     lensingle = len(seq_)
     molecules = []
     for i in range(EXPM):
-        start = int(RNG.uniform(low = 0,high = lensingle))
-        length = int(RNG.exponential(scale = Container.mollen))
+        start = int(rng.uniform(low = 0,high = lensingle))
+        length = int(rng.exponential(scale = Container.mollen))
         if length != 0:
             end = start + length - 1
             if end>lensingle:
@@ -103,7 +98,7 @@ def randomlong(Par,seq_,EXPM):
             index += 1
     return molecules
 
-def deternumdroplet(molecules,molnum):
+def deternumdroplet(molecules,molnum,rng):
     '''Determine the number of droplets'''
     large_droplet = Container.totalbarcodes
     assign_drop = []
@@ -111,7 +106,7 @@ def deternumdroplet(molecules,molnum):
     
     for i in range(large_droplet):
         sd = molnum/(molnum + 2) if molnum > 2 else 3/4
-        frag = abs(molnum) if molnum < 0 else max(1,int(RNG.normal(molnum, sd)))
+        frag = abs(molnum) if molnum < 0 else max(1,int(rng.normal(molnum, sd)))
         totalfrag += frag
         if totalfrag <= len(molecules):
             assign_drop.append(frag)
@@ -123,12 +118,11 @@ def deternumdroplet(molecules,molnum):
 
 def selectbarcode(drop,molecules,container):
     '''Select barcode to use for droplet/partition'''
-    permutnum = RNG.permutation(len(molecules))
+    permutnum = container.RNG.permutation(len(molecules))
     N_droplet = len(drop)
     assigned_barcodes = set()
     droplet_container = []
     start = 0
-    
     for i in range(N_droplet):
         num_molecule_per_partition = drop[i]
         index_molecule = permutnum[start:start + num_molecule_per_partition]
@@ -137,6 +131,7 @@ def selectbarcode(drop,molecules,container):
         start = start + num_molecule_per_partition
         try:
             bc = "".join(next(container.barcodes))
+            container.barcodeslist.write(f"{bc}\n")
         except StopIteration:
             error_terminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
         container.remainingbarcodes -= 1
@@ -170,9 +165,12 @@ def MolSim(processor: int, molecule: Molecule, w: Molecule, container: Container
                 N = int(truedim*container.molcov)/(container.length*2)
             else:
                 # draw N from a normal distribution with a mean of molcov and stdev of molcov/3, avoiding < 0
-                N = max(0, int(RNG.normal(container.molcov, container.molcov/3)))
+                N = max(0, int(container.RNG.normal(container.molcov, container.molcov/3)))
                 # set ceiling to avoid N being greater than can be sampled
                 N = min(N, int(truedim/(container.length*2)))
+            if container.singletons > 0 and N != 0:
+                if container.RNG.uniform(0,1) > container.singletons:
+                    N = 1
 
             if N != 0:
                 molfa = os.path.abspath(f'{container.OUT}/p{processor}_{moleculenumber}.fa')
@@ -244,9 +242,9 @@ def LinkedSim(w: Molecule, container: Container) -> None:
     info_table.add_row('Reads required to get the expected coverage', f'{TOTALR}')
     info_table.add_row('Expected number of molecules', f'{EXPM}')
     # MolSet
-    molecules = randomlong(container, seq_,EXPM)
+    molecules = randomlong(container, seq_,EXPM, container.RNG)
     info_table.add_row('Molecules generated', f'{len(molecules)}')
-    drop = deternumdroplet(molecules, container.molnum)
+    drop = deternumdroplet(molecules, container.molnum, container.RNG)
     info_table.add_row('Partitions molecules assigned to', f'{len(drop)}')
     info_table.add_row('Available barcodes', f'{container.remainingbarcodes}')
     droplet_container,assigned_barcodes = selectbarcode(drop,molecules, container)

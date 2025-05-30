@@ -7,6 +7,7 @@ class Container():
     FASTADIR = ''
     CONSOLE = None
     PROGRESS = None
+    RNG = None
     #pywgsim
     coverage=0
     regioncoverage=0
@@ -36,10 +37,11 @@ class Container():
     barcodebp=0
     barcodes=None	# will be an iterable to use with next()
     bc_generator = None
-    used_bc={}
+    used_bc=dict()
     totalbarcodes=0
     remainingbarcodes=0
     barcodeslist=None
+    singletons=0
 
 class Interval():
     def __init__(self, chrom, start, end):
