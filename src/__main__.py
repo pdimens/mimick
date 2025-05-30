@@ -28,7 +28,7 @@ click.rich_click.OPTION_GROUPS = {
     "mimick": [
         {
             "name": "General Options",
-            "options": ["--help", "--output-prefix", "--output-type", "--quiet", "--regions", "--threads", "--version"],
+            "options": ["--help", "--output-prefix", "--output-type", "--quiet", "--regions", "--seed", "--threads", "--version"],
             "panel_styles": {"border_style": "dim"}
         },
         {
@@ -66,7 +66,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-c','--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
 @click.option('-m','--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=50))
 @click.option('-n','--molecules-per', help='mean number of unrelated molecules per barcode per chromosome, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution', default=2, show_default=True, type=int)
-@click.option('-s','--singletons', help='what proportion of barcodes will only have a single read pair', default=0, show_default=True, type=click.FloatRange(0,1))
+@click.option('-s','--singletons', help='proportion of barcodes will only have a single read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
 def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecules_per, singletons):
