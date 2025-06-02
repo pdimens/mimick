@@ -16,6 +16,7 @@ from .classes import *
 from .cli_classes import *
 from .common import *
 from .file_ops import *
+from .long_molecule import *
 from .simulate import *
 
 click.rich_click.USE_MARKDOWN = True
@@ -236,9 +237,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         else:
             sd = molecules_per/(molecules_per - 2) if molecules_per > 2 else 3/4
             n_molecules = max(1, int(rng.normal(molecules_per, sd)))
-
+        haplotype = 1
         for target in random.sample(range(len(region_inventory)), k = n_molecules):
-            molecule_recipe = create_long_molecule(region_inventory[target][2], RNG, selected_barcode)
+            molecule_recipe = create_long_molecule(region_inventory[target][2], RNG, selected_barcode, output_bc)
             region_inventory[target][0] += molecule_recipe.read_count
             if molecule_recipe.read_count != 0:
                 linked_simulation(
@@ -247,6 +248,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                     long_molecule = molecule_recipe,
                     molecular_coverage = molecule_coverage,
                     outformat = BARCODE_OUTPUT_FORMAT,
+                    haplotype = haplotype,
                     processor = PROCESSORNUMBER
                 )
         # remove an interval if its target coverage has been achieved

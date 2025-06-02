@@ -6,9 +6,10 @@ from .classes import Schema
 
 class LongMoleculeRecipe(object):
     '''Molecule instance'''
-    def __init__(self,fasta,barcode,chrom,read_count,mol_id):
+    def __init__(self,fasta,barcode,outbarcode,chrom,read_count,mol_id):
         self.fasta=fasta
         self.barcode=barcode
+        self.output_barcode=outbarcode
         self.chrom=chrom
         self.read_count=read_count
         self.mol_id=mol_id
@@ -21,7 +22,7 @@ class LongMoleculeRecipe(object):
                 outstring += f"{i}: " + j[:min(30, len(j))] + f"(length = {len(j)})\n"
         return outstring
 
-def create_long_molecule(schema: Schema, rng, barcode) -> LongMoleculeRecipe:
+def create_long_molecule(schema: Schema, rng, barcode, outputbarcode) -> LongMoleculeRecipe:
     '''
     Randomly generates a long molecule and writes it to a FASTA file.
     Length of molecules is randomly distributed using an exponential distribution, with a minimum of 300bp.
@@ -56,4 +57,4 @@ def create_long_molecule(schema: Schema, rng, barcode) -> LongMoleculeRecipe:
     if schema.singletons > 0 and N != 0:
         if rng.uniform(0,1) > schema.singletons:
             N = 1    
-    return LongMoleculeRecipe(molecule_fasta, barcode, schema.chrom, N, molnumber)
+    return LongMoleculeRecipe(molecule_fasta, barcode, outputbarcode, schema.chrom, N, molnumber)

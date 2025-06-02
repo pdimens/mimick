@@ -42,14 +42,14 @@ def wrap_wgsim(*args, **kwargs):
     os.unlink(stdout_path)
     return stdout_content
 
-def linked_simulation(schema: Schema, wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, molecular_coverage: int|float, outformat: str, processor: int) -> None:
+def linked_simulation(schema: Schema, wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, molecular_coverage: int|float, outformat: str, haplotype: int, processor: int) -> None:
     '''
     The real heavy-lifting that uses pywgsim to simulate short reads from a long molecule that was created and stored
     as a LongMoleculeRecipe. The output FASTQ files are reformatted to include the barcode stored in `long_molecule` in the
     format given by `outformat`.
     '''
-    R1tmp = os.path.abspath(f"{container.OUT}/p{processor}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp.fastq")
-    R2tmp = os.path.abspath(f"{container.OUT}/p{processor}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp.fastq")
+    R1tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}_p{processor}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp.fastq")
+    R2tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}_p{processor}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp.fastq")
     try:
         stdout = wrap_wgsim(
             r1 = R1tmp,
@@ -69,7 +69,7 @@ def linked_simulation(schema: Schema, wgsimparams: wgsimParams,long_molecule: Lo
             is_fixed = 0,
             seed = wgsimparams.randomseed
         )
-        with open(f'{container.OUT}/{container.PREFIX}.p{processor}.wgsim.mutations', 'a') as f:
+        with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.p{processor}.wgsim.mutations', 'a') as f:
             f.write(stdout)
     except KeyboardInterrupt:
         mimick_keyboardterminate()
@@ -79,12 +79,20 @@ def linked_simulation(schema: Schema, wgsimparams: wgsimParams,long_molecule: Lo
         os.remove(R1tmp)
         os.remove(R2tmp)
     else:
-        R1A = os.path.abspath(f'{container.OUT}/{container.PREFIX}.hap_{container.hapnumber.zfill(3)}.R1.fq')
-        R2A = os.path.abspath(f'{container.OUT}/{container.PREFIX}.hap_{container.hapnumber.zfill(3)}.R2.fq')
+        R1A = os.path.abspath(f'{wgsimparams.outdir}/{wgsimparams.prefix}.hap_{haplotype.zfill(3)}.R1.fq')
+        R2A = os.path.abspath(f'{wgsimparams.outdir}/{wgsimparams.prefix}.hap_{haplotype.zfill(3)}.R2.fq')
 
         with open(R1tmp,'r') as infile, open(R1A,'a') as outfile:
             for name,seq,qual in readfq(infile):
-                read = format_linkedread(name, barcodestring, seq, qual, True)
+                read = format_linkedread(
+                    name = name,
+                    bc = long_molecule.barcode,
+                    outbc = long_molecule.output_barcode,
+                    outformat = outformat,
+                    seq = seq,
+                    qual = qual,
+                    forward = True
+                )
                 outfile.write('\n'.join(read) + '\n')
         os.remove(R1tmp)
         with open(R2tmp,'r') as infile, open(R2A,'a') as outfile:
@@ -92,7 +100,15 @@ def linked_simulation(schema: Schema, wgsimparams: wgsimParams,long_molecule: Lo
                 if outformat == "10x":
                     read = [f'@{name}',seq,'+',qual]
                 else:
-                    read = format_linkedread(name, barcodestring, seq, qual, False)
+                    read = format_linkedread(
+                        name = name,
+                        bc = long_molecule.barcode,
+                        outbc = long_molecule.output_barcode,
+                        outformat = outformat,
+                        seq = seq,
+                        qual = qual,
+                        forward = False
+                    )
                 outfile.write('\n'.join(read) + '\n')
         os.remove(R2tmp)
 
