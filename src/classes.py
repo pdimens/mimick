@@ -1,62 +1,45 @@
 #! /usr/bin/env python3
 
-class Container():
-    '''Container. This stores argparser parameters. Used to pass multiple parameters at once.'''
-    OUT = ''
-    PREFIX = ''
-    FASTADIR = ''
-    CONSOLE = None
-    PROGRESS = None
-    RNG = None
-    #pywgsim
-    coverage=0
-    regioncoverage=0
-    error=0
-    distance=0
-    stdev=0
-    length=0
-    length_r1=0
-    length_r2=0
-    mutation=0
-    indels=0
-    extindels=0
+import os
 
-    #bulk
-    ffiles=None
-    ffile=None
-    outformat=None
-    hapnumber=0
-    threads=0
+class wgsimParams():
+    def __init__(self, error, mutation, indels, extindels, distance, stdev, length_r1, length_r2, seed, outprefix):
+        self.error = error
+        self.mutation = mutation
+        self.indels = indels
+        self.extindels = extindels
+        self.read_distance = distance
+        self.distance_stdev = stdev
+        self.length_R1 = length_r1
+        self.length_R2 = length_r2
+        self.randomseed = seed
+        self.outdir =  os.path.dirname(outprefix)
+        self.prefix = os.path.basename(outprefix)
+    def __str__(self):
+        outstring = ""
+        for i,j in self.__dict__.items():
+            outstring += f"{i}: {j}\n"
+        return outstring
 
-    #molecules
-    barcodepath=None
-    molnum=0
-    mollen=0
-    molcov=0
-    barcodetype=None
-    barcodebp=0
-    barcodes=None	# will be an iterable to use with next()
-    bc_generator = None
-    used_bc=dict()
-    totalbarcodes=0
-    remainingbarcodes=0
-    barcodeslist=None
-    singletons=0
-
-class Interval():
-    def __init__(self, chrom, start, end):
+class Schema():
+    def __init__(self, chrom, start, end, length, read_pairs_per_mol, reads_req, n_mol, mol_length, mol_cov, seq):
         self.chrom = chrom
         self.start = start
         self.end = end
-
-class Molecule(object):
-    '''Molecule instance'''
-    def __init__(self,length,start,end,index):
-        self.seqidx=index
-        self.length=length
-        self.index_droplet=0
-        self.barcode=None
-        self.start=start
-        self.end=end
+        self.read_length = length
+        self.read_pairs_per_mol = read_pairs_per_mol
+        self.reads_req = reads_req
+        self.n_mol = n_mol
+        self.mol_length = mol_length
+        self.seq = seq
+        self.singletons = None
+        self.mol_coverage = mol_cov
     def __str__(self):
-        return str(self.__class__) + ": " + str(self.__dict__)
+        outstring = ""
+        for i,j in self.__dict__.items():
+            if i != "seq":
+                outstring += f"{i}: {j}\n"
+            else:
+                outstring += f"{i}: " + j[:min(30, len(j))] + f"(length = {len(j)})\n"
+        return outstring
+

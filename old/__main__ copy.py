@@ -107,158 +107,104 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         console=Container.CONSOLE,
         disable=quiet > 0
     )
-    WGSIMPARAMS = wgsimParams(
-        error,
-        mutation,
-        indels,
-        extindels,
-        distance,
-        stdev,
-        length_r1,
-        length_r2,
-        seed,
-        os.path.dirname(output_prefix)
-    )
 
+    Container.OUT = os.path.dirname(output_prefix)
+    os.makedirs(Container.OUT, exist_ok= True)
+    Container.FASTADIR = fasta
+    Container.PREFIX = os.path.basename(output_prefix)
+    Container.RNG = np.random.default_rng(seed)
+    Container.threads = threads
+    Container.barcodetype=lr_type.lower()
+    Container.coverage=coverage
+    Container.error=error
+    Container.distance=distance
+    Container.stdev=stdev
+    Container.length=length
+    Container.mutation=mutation
+    Container.indels=indels
+    Container.extindels=extindels
+    Container.mollen=molecule_length
+    Container.singletons = singletons
+    Container.used_bc = dict()
     if molecules_per == 0:
         error_terminate("The value for [yellow]--molecule-number[/] cannot be 0.")
-
-    if regions:
-        # use the provided BED file
-        Container.CONSOLE.log('Processing the input regions')
-        SIMULATION_SCHEMA = BEDtoSchema(regions, fasta[0], coverage/len(fasta), molecule_coverage, molecule_length, length, molecule_length)
     else:
-        # derive intervals from the first FASTA file
-        Container.CONSOLE.log(f'Inferring regions from [blue]{os.path.basename(fasta[0])}[/]')
-        SIMULATION_SCHEMA = FASTAtoSchema(fasta[0], coverage/len(fasta), molecule_coverage, molecule_length, length)
-
-    SIMULATION_SCHEMA.singletons = singletons
-    THREADS = threads
-    LR_CHEMISTRY = lr_type.lower()
-
-    os.makedirs(OUT, exist_ok= True)
+        Container.molnum=molecules_per
+    Container.molcov = molecule_coverage
     if isinstance(barcodes, str):
-        BARCODE_PATH = barcodes
-        Container.CONSOLE.log('Validating the input barcodes')
-        try:
-            with gzip.open(BARCODE_PATH, 'rt') as filein:
-                BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-        except gzip.BadGzipFile:
-            with open(BARCODE_PATH, 'r') as filein:
-                BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-        except:
-            error_terminate(f'Cannot open {BARCODE_PATH} for reading')
+        Container.barcodepath=barcodes
     else:
-        BARCODE_PATH = f"{output_prefix}.generated.barcodes"
+        Container.barcodepath = f"{output_prefix}.generated.barcodes"
         bp,count = barcodes
         Container.CONSOLE.log(f'Generating {count} {bp}bp barcodes')
-        with open(f"{BARCODE_PATH}", "w") as bc_out:
+        with open(f"{Container.barcodepath}", "w") as bc_out:
             for i,bc in enumerate(generate_barcodes(bp),1):
                 bc_out.write("".join(bc) + "\n")
                 if i == count:
                     break
-        with open(BARCODE_PATH, 'r') as filein:
-            BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
+    if regions:
+        # use the provided BED file
+        Container.CONSOLE.log('Reading the input regions')
+        intervals = readBED(regions)
+    else:
+        # derive intervals from the first FASTA file
+        Container.CONSOLE.log(f'Inferring regions from [blue]{os.path.basename(fasta[0])}[/]')
+        intervals = FASTAtoBED(fasta[0])
+    if quiet == 0:
+        Container.PROGRESS.start()
+    pbar = Container.PROGRESS.add_task("[yellow]Progress", total=len(fasta) * len(intervals) + 1 + 1 + (2 * len(fasta)))
+    Container.CONSOLE.log('Validating the input barcodes')
+    try:
+        with gzip.open(Container.barcodepath, 'rt') as filein:
+            Container.barcodes, Container.barcodebp, Container.totalbarcodes = interpret_barcodes(filein, Container.barcodetype)
+    except gzip.BadGzipFile:
+        with open(Container.barcodepath, 'r') as filein:
+            Container.barcodes, Container.barcodebp, Container.totalbarcodes = interpret_barcodes(filein, Container.barcodetype)
+    except:
+        error_terminate(f'Cannot open {Container.barcodepath} for reading')
+    Container.PROGRESS.update(pbar, advance=1)
+    # fill Container with wgsim and general linked-read parameters 
+    Container.remainingbarcodes = Container.totalbarcodes
+    Container.barcodeslist= open(f'{Container.OUT}/{Container.PREFIX}.barcodes', 'w')
 
-    for _fasta in fasta:
-        # MAKE THIS A SEPARATE PROGRESS BAR
-        try:
-            Container.CONSOLE.log(f"Indexing FASTA file")
-            __fa = os.path.abspath(_fasta)
-            pysam.faidx(__fa)
-            if __fa.lower().endswith(".gz") and not os.path.exists(__fa + ".gzi"):
-                os.system(f"bgzip --reindex {__fa}")
-        except Exception as e:
-            error_terminate(f'Failed to index {__fa}. Error reported by samtools:\n{e}', False)
-
-    #if quiet == 0:
-    #    Container.PROGRESS.start()
-    #pbar = Container.PROGRESS.add_task("[yellow]Progress", total=len(fasta) * len(intervals) + 1 + 1 + (2 * len(fasta)))
-
-    #Container.PROGRESS.update(pbar, advance=1)
-    BARCODES_REMAINING = BARCODES_TOTAL_COUNT
-    BARCODESlist= open(f'{Container.OUT}/{Container.PREFIX}.barcodes', 'w')
-
-    if LR_CHEMISTRY in ["10x", "tellseq"]:
+    if Container.barcodetype in ["10x", "tellseq"]:
         # barcode at beginning of read 1
-        WGSIMPARAMS.length_R1 = SIMULATION_SCHEMA.read_length - BARCODE_LENGTH_BP
-        if WGSIMPARAMS.length_R1 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {SIMULATION_SCHEMA.read_length}, Barcode length: {BARCODE_LENGTH_BP}')
-        WGSIMPARAMS.length_R2 = SIMULATION_SCHEMA.read_length
-    elif LR_CHEMISTRY == "stlfr":
+        Container.len_r1 = Container.length - Container.barcodebp
+        if Container.len_r1 <= 5:
+            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {Container.length}, Barcode length: {Container.barcodebp}')
+        Container.len_r2 = Container.length
+    elif Container.barcodetype == "stlfr":
         # barcode at the end of read 2
-        WGSIMPARAMS.length_R1 = SIMULATION_SCHEMA.read_length
-        WGSIMPARAMS.length_R2 = SIMULATION_SCHEMA.read_length - BARCODE_LENGTH_BP
-        if WGSIMPARAMS.length_R2 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {SIMULATION_SCHEMA.read_length}, Barcode length: {BARCODE_LENGTH_BP}')
+        Container.len_r1 = Container.length
+        Container.len_r2 = Container.length - Container.barcodebp
+        if Container.len_r2 <= 5:
+            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {Container.length}, Barcode length: {Container.barcodebp}')
     else:
         # would be 4-segment haplotagging where AC on read 1 and BD on read 2, but in index read, so read not shortened
-        WGSIMPARAMS.length_R1 = SIMULATION_SCHEMA.read_length
-        WGSIMPARAMS.length_R2 = SIMULATION_SCHEMA.read_length
+        Container.len_r1 = Container.length
+        Container.len_r2 = Container.length
 
-    BARCODE_OUTPUT_FORMAT = output_type.lower() if output_type else LR_CHEMISTRY
+    if output_type:
+        Container.outformat = output_type.lower()
+    else:
+        Container.outformat = Container.barcodetype
 
-    if BARCODE_OUTPUT_FORMAT == "haplotagging":
-        if BARCODES_TOTAL_COUNT > 96**4:
-            error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+    if Container.outformat == "haplotagging":
         bc_range = [f"{i}".zfill(2) for i in range(1,97)]
-        #TODO bc_generator to be all-caps global
-        BARCODE_OUTPUT_GENERATOR = product("A", bc_range, "C", bc_range, "B", bc_range, "D", bc_range)
+        Container.bc_generator = product("A", bc_range, "C", bc_range, "B", bc_range, "D", bc_range)
+        # check that the haplotagging output format can support the supplied number of barcodes
+        if Container.totalbarcodes > 96**4:
+            error_terminate(f'The barcodes and barcode type supplied will generate a potenial {Container.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
 
-    if BARCODE_OUTPUT_FORMAT == "stlfr":
-        if BARCODES_TOTAL_COUNT > 1537**3:
-            error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+    if Container.outformat == "stlfr":
         bc_range = range(1, 1537)
-        BARCODE_OUTPUT_GENERATOR = product(bc_range, bc_range, bc_range)
+        Container.bc_generator = product(bc_range, bc_range, bc_range)
+        # check that the stlfr output format can support the supplied number of barcodes
+        if Container.totalbarcodes > 1537**3:
+            error_terminate(f'The barcodes and barcode type supplied will generate a potenial {Container.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
 
-    # this will be the counter object to track the target coverage, takes the form interval: [n_reads, reads_needed, Schema]
-    region_inventory = {}
-    RNG = np.random.default_rng(seed)
-    for idx,_interval in enumerate(SIMULATION_SCHEMA):
-        region_inventory[idx] = [0,_interval.reads_req, _interval]
-        #rule = "─" * int((53 - len(regiontext)) / 2)
-        #Container.CONSOLE.log(f"[green]{rule} [default]{regiontext} [green]{rule}[/]")'
-
-    while True:
-        try:
-            selected_bc = next(BARCODES)
-            BARCODES_REMAINING -= 1
-        except StopIteration:
-            error_terminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
-        if BARCODE_OUTPUT_FORMAT == "haplotagging":
-            output_bc = "".join(next(BARCODE_OUTPUT_GENERATOR))
-        elif BARCODE_OUTPUT_FORMAT == "stlfr":
-            output_bc = "_".join(next(BARCODE_OUTPUT_GENERATOR))
-        else:
-            output_bc = selected_bc
-        if molecules_per < 0:
-            n_molecules = molecules_per
-        else:
-            sd = molecules_per/(molecules_per - 2) if molecules_per > 2 else 3/4
-            n_molecules = max(1, int(rng.normal(molecules_per, sd)))
-
-        for target in random.sample(range(len(region_inventory)), k = n_molecules):
-            molecule_recipe = create_long_molecule(region_inventory[target][2], RNG, selected_barcode)
-            region_inventory[target][0] += molecule_recipe.read_count
-            if molecule_recipe.read_count != 0:
-                linked_simulation(
-                    schema = region_inventory[target][2],
-                    wgsimparams = WGSIMPARAMS,
-                    long_molecule = molecule_recipe,
-                    molecular_coverage = molecule_coverage,
-                    outformat = BARCODE_OUTPUT_FORMAT,
-                    processor = PROCESSORNUMBER
-                )
-        # remove an interval if its target coverage has been achieved
-        if region_inventory[target][0] >= region_inventory[target][1]:
-            del region_inventory[target]
-
-        # if the target coverage was reached for all intervals, we can move on to the next haplotype        
-        if not region_inventory:
-            break
-
-###
-
+    Container.ffiles = fasta 
+    Container.regioncoverage = Container.coverage/len(Container.ffiles)
 
     for k,s in enumerate(Container.ffiles,1):
         Container.CONSOLE.rule(f"[bold]Haplotype {k}: {os.path.basename(s)}", style = "blue")
@@ -282,7 +228,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 mimick_keyboardterminate()
             Container.PROGRESS.update(pbar, advance=1)
 
-    BARCODESlist.close()
+    Container.barcodeslist.close()
     # gzip multiprocessing
     allfastq = glob.glob(os.path.abspath(Container.OUT) + '/*.fq')
     chunk_size = len(allfastq)/Container.threads

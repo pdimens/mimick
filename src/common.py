@@ -60,3 +60,40 @@ def generate_barcodes(bp):
     serve a functional purpose beyond that.
     '''
     return product(*[sample("ATCG", 4) for i in range(bp)])
+
+
+#TODO this needs a significant rework
+def format_linkedread(name, bc, seq, qual, forward: bool):
+    '''Given a linked-read output type, will format the read accordingly and return it'''
+    if Container.outformat == "10x":
+        fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
+        read = [f'@{name} {fr}', f"{bc}{seq}", '+', f'{qual[0] * Container.barcodebp}{qual}']
+        if bc not in Container.used_bc:
+            Container.used_bc[bc] = True
+    elif Container.outformat == "tellseq":
+        fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
+        read = [f'@{name}:{bc} {fr}', seq, '+', qual]
+        if bc not in Container.used_bc:
+            Container.used_bc[bc] = True
+    elif Container.outformat == "haplotagging":
+        fr = "/1" if forward else "/2"
+        if bc not in Container.used_bc:
+            acbd = "".join(next(Container.bc_generator))
+            Container.used_bc[bc] = acbd
+        else:
+            acbd = Container.used_bc[bc]
+        read = [f'@{name}{fr}\tOX:Z:{bc}\tBX:Z:{acbd}', seq, '+', qual]
+    elif Container.outformat == "standard":
+        fr = "/1" if forward else "/2"
+        if bc not in Container.used_bc:
+            Container.used_bc[bc] = bc
+        read = [f'@{name}{fr}\tVX:i:1\tBX:Z:{bc}', seq, '+', qual]
+    elif Container.outformat == "stlfr":
+        fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
+        if bc not in Container.used_bc:
+            stlfr_bc = "_".join([str(i) for i in next(Container.bc_generator)])
+            Container.used_bc[bc] = stlfr_bc
+        else:
+            stlfr_bc = Container.used_bc[bc]
+        read = [f'@{name}#{stlfr_bc} {fr}', seq, '+', qual]
+    return read

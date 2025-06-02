@@ -6,7 +6,7 @@ import sys
 from itertools import product
 import pysam
 from .common import error_terminate, log_table
-from .classes import Interval, Container
+from .classes import Schema, Container
 
 def readfq(fp): # this is a fast generator function
     '''Yield FASTQ record'''
@@ -26,24 +26,32 @@ def BGzipper(sli,):
         pysam.tabix_compress(s, f'{s}.gz', force=True)
         os.remove(s)
 
-def FASTAtoBED(fasta):
-    '''Read a FASTA file and derive the contig name, start, and end positions'''
+def FASTAtoSchema(fasta, coverage, mol_cov, mol_len, read_len) -> Schema:
+    '''Read a FASTA file and derive the contig name, start, and end positions and other simulation schema'''
     intervals = []
+    mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
+    mean_reads_per = max(1, mean_reads_per)
     with pysam.FastxFile(fasta) as fa:
         for contig in fa:
             chrom = contig.name
             start = 1
             end = len(contig.sequence)
-            intervals.append(Interval(chrom,start,end))
+            normalized_length = end - contig.sequence.count('N')
+            reads_req = int((coverage*normalized_length/read_len)/2)
+            expected_n_mol = int(reads_req/mean_reads_per)
+            intervals.append(Schema(chrom,start,end,normalized_length, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, contig.sequence))
     return intervals
 
-def readBED(bedfile):
-    '''Read the BED file, do basic validation, and return a list of Interval objects'''
+def BEDtoSchema(bedfile, fasta, coverage, mol_cov, mol_len, read_len) -> Schema:
+    '''Read the BED file, do validation against the FASTA and derive the schema, and return a list of Schema objects'''
     intervals = []
-    with open(bedfile, "r", encoding="utf-8") as bed:
+    mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
+    mean_reads_per = max(1, mean_reads_per)
+    with open(bedfile, "r", encoding="utf-8") as bed, pysam.FastxFile(fasta) as fa:
         for idx, line in enumerate(bed, 1):
             row = line.split()
             try:
+                chrom = row[0]
                 start = int(row[1])
                 end = int(row[2])
             except ValueError:
@@ -51,8 +59,13 @@ def readBED(bedfile):
             if start > end:
                 error_terminate(f"The interval start position is greater than the interval end position at row {idx}. This is the first row triggering this error, but it may not be the only one.")
                 sys.exit(1)
-            intervals.append([row[0], start, end])
-    return [Interval(*i) for i in sorted(intervals)]
+            
+            _seq = _fasta.fetch(chrom, start-1, end+1)
+            normalized_length = (end-start) - _seq.count('N')
+            reads_req = int((coverage*normalized_length/read_len)/2)
+            expected_n_mol = int(reads_req/mean_reads_per)
+            intervals.append(Schema(chrom,start,end,normalized_length, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, _seq))
+    return intervals
 
 def validate_barcodes(bc_list):
     '''Takes a file with barcodes and validates them to be ATGCU nucleotides and barcodes same length'''
