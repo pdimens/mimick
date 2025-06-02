@@ -5,8 +5,8 @@ channels:
 dependencies:
   - htslib
   - numpy
-  - rich-click
-  - click =8
+  - rich-click =1.8.9
+  - click =8.2
   - pysam
   - python
   - pywgsim

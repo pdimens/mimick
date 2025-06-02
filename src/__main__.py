@@ -48,7 +48,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
 @click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
 @click.option('-O','--output-type', help='output format of FASTQ files', type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
-@click.option('-q','--quiet', show_default = True, default = "0", type = click.Choice(["0", "1", "2"]), help = '`0` all output, `1` no progress bar, `2` no output')
+@click.option('-q','--quiet', show_default = True, default = "0", type = click.Choice([0,1,2]), help = '`0` all output, `1` no progress bar, `2` no output')
 @click.option('-r','--regions', help='one or more regions to simulate, in BED format', type = click.Path(dir_okay=False, readable=True, resolve_path=True))
 @click.option('-t','--threads', help='number of threads to use for simulation', type=click.IntRange(min=1), default=2, show_default=True)
 @click.option('-S','--seed', help='random seed for simulation', type=click.IntRange(min=1))
@@ -83,21 +83,21 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     can generate 96 barcodes (common haplotagging style), select `--lr-type stlfr`
     (combinatorial 3-barcode on R2 read), and have `--output-type tellseq` (`@seqid:barcode` header format).
 
-    | --lr-type | Format |
-    |:------------------|:-------|
-    |`10x`/`tellseq`   | single barcode on R1 |
-    |`haplotagging`  | R1 and R2 each have different combinatorial 2-barcodes |
-    |`stlfr`         | combinatorial 3-barcode on R2 |
+    | --lr-type       | Format                                                 |
+    |:----------------|:-------------------------------------------------------|
+    | `10x`/`tellseq` | single barcode on R1                                   |
+    | `haplotagging`  | R1 and R2 each have different combinatorial 2-barcodes |
+    | `stlfr`         | combinatorial 3-barcode on R2                          |
 
-    | --output-type | Barcode Location | Example |
-    |:-----------------|:-------|:---------------------|
-    |`10x`           | start of R1 sequence | `ATAGACCATAGA`GGACA... |
-    |`haplotagging`  | sequence header as `BX:Z:ACBD` |  `@SEQID BX:Z:A0C331B34D87` |
-    |`standard`      | sequence header as `BX:Z:BARCODE`, no specific format | `@SEQID BX:Z:ATACGAGACA` |
-    |`stlfr`         | appended to sequence ID via `#1_2_3` | `@SEQID#1_354_39` |
-    |`tellseq`       | appended to sequence ID via `:ATCG` | `@SEQID:TATTAGCAC` |
+    | --output-type  | Barcode Location                                      | Example                    |
+    |:---------------|:------------------------------------------------------|:---------------------------|
+    | `10x`          | start of R1 sequence                                  | `ATAGACCATAGA`GGACA...     |
+    | `haplotagging` | sequence header as `BX:Z:ACBD`                        | `@SEQID BX:Z:A0C331B34D87` |
+    | `standard`     | sequence header as `BX:Z:BARCODE`, no specific format | `@SEQID BX:Z:ATACGAGACA`   |
+    | `stlfr`        | appended to sequence ID via `#1_2_3`                  | `@SEQID#1_354_39`          |
+    | `tellseq`      | appended to sequence ID via `:ATCG`                   | `@SEQID:TATTAGCAC`         |
     """
-    Container.CONSOLE = Console(stderr=True, log_path=False, quiet= int(quiet)==2)
+    Container.CONSOLE = Console(stderr=True, log_path=False, quiet= quiet==2)
     Container.PROGRESS = Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -105,7 +105,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         TimeElapsedColumn(),
         transient=True,
         console=Container.CONSOLE,
-        disable=int(quiet) > 0
+        disable=quiet > 0
     )
 
     Container.OUT = os.path.dirname(output_prefix)
@@ -150,7 +150,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         # derive intervals from the first FASTA file
         Container.CONSOLE.log(f'Inferring regions from [blue]{os.path.basename(fasta[0])}[/]')
         intervals = FASTAtoBED(fasta[0])
-    if int(quiet) == 0:
+    if quiet == 0:
         Container.PROGRESS.start()
     pbar = Container.PROGRESS.add_task("[yellow]Progress", total=len(fasta) * len(intervals) + 1 + 1 + (2 * len(fasta)))
     Container.CONSOLE.log('Validating the input barcodes')
@@ -179,35 +179,32 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         Container.len_r2 = Container.length - Container.barcodebp
         if Container.len_r2 <= 5:
             error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {Container.length}, Barcode length: {Container.barcodebp}')
-            
     else:
-        # would be 4-segment haplotagging where AC on read 1 and BD on read 2
-        Container.len_r1 = Container.length - Container.barcodebp
-        Container.len_r2 = Container.length - Container.barcodebp
-        if Container.len_r1 <= 5 or Container.len_r2 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {Container.length}, Barcode length: {Container.barcodebp}')
-            sys.exit(1)
+        # would be 4-segment haplotagging where AC on read 1 and BD on read 2, but in index read, so read not shortened
+        Container.len_r1 = Container.length
+        Container.len_r2 = Container.length
+
     if output_type:
         Container.outformat = output_type.lower()
     else:
         Container.outformat = Container.barcodetype
+
     if Container.outformat == "haplotagging":
         bc_range = [f"{i}".zfill(2) for i in range(1,97)]
         Container.bc_generator = product("A", bc_range, "C", bc_range, "B", bc_range, "D", bc_range)
+        # check that the haplotagging output format can support the supplied number of barcodes
+        if Container.totalbarcodes > 96**4:
+            error_terminate(f'The barcodes and barcode type supplied will generate a potenial {Container.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+
     if Container.outformat == "stlfr":
         bc_range = range(1, 1537)
         Container.bc_generator = product(bc_range, bc_range, bc_range)
-    Container.ffiles = fasta 
-    Container.regioncoverage = Container.coverage/len(Container.ffiles)
-    
-    # check that the haplotagging output format can support the supplied number of barcodes
-    if Container.outformat == "haplotagging":
-        if Container.totalbarcodes > 96**4:
-            error_terminate(f'The barcodes and barcode type supplied will generate a potenial {Container.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
-    # check that the stlfr output format can support the supplied number of barcodes
-    if Container.outformat == "stlfr":
+        # check that the stlfr output format can support the supplied number of barcodes
         if Container.totalbarcodes > 1537**3:
             error_terminate(f'The barcodes and barcode type supplied will generate a potenial {Container.totalbarcodes} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
+
+    Container.ffiles = fasta 
+    Container.regioncoverage = Container.coverage/len(Container.ffiles)
 
     for k,s in enumerate(Container.ffiles,1):
         Container.CONSOLE.rule(f"[bold]Haplotype {k}: {os.path.basename(s)}", style = "blue")
