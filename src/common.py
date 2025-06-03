@@ -60,23 +60,3 @@ def generate_barcodes(bp):
     serve a functional purpose beyond that.
     '''
     return product(*[sample("ATCG", 4) for i in range(bp)])
-
-#TODO this needs a significant rework
-def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
-    '''Given a linked-read output type, will format the read accordingly and return it'''
-    if outformat == "10x":
-        fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
-        read = [f'@{name} {fr}', f"{bc}{seq}", '+', f'{qual[0] * Container.barcodebp}{qual}']
-    elif outformat == "tellseq":
-        fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
-        read = [f'@{name}:{bc} {fr}', seq, '+', qual]
-    elif outformat == "haplotagging":
-        fr = "/1" if forward else "/2"
-        read = [f'@{name}{fr}\tOX:Z:{bc}\tBX:Z:{outbc}', seq, '+', qual]
-    elif outformat == "standard":
-        fr = "/1" if forward else "/2"
-        read = [f'@{name}{fr}\tVX:i:1\tBX:Z:{bc}', seq, '+', qual]
-    elif outformat == "stlfr":
-        fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
-        read = [f'@{name}#{stlfr_bc} {fr}', seq, '+', qual]
-    return read

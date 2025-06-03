@@ -5,8 +5,8 @@ import re
 import sys
 from itertools import product
 import pysam
-from .common import error_terminate, log_table
-from .classes import Schema, Container
+from .common import error_terminate, log_table, mimick_console
+from .classes import Schema
 
 def readfq(fp): # this is a fast generator function
     '''Yield FASTQ record'''
@@ -22,11 +22,11 @@ def BGzipper(sli,):
     for s in sli:
         tb = log_table()
         tb.add_row('BGzipping', os.path.basename(s))
-        Container.CONSOLE.log(tb)
+        mimick_console.log(tb)
         pysam.tabix_compress(s, f'{s}.gz', force=True)
         os.remove(s)
 
-def FASTAtoSchema(fasta, coverage, mol_cov, mol_len, read_len) -> Schema:
+def FASTAtoSchema(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
     '''Read a FASTA file and derive the contig name, start, and end positions and other simulation schema'''
     intervals = []
     mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
@@ -39,10 +39,10 @@ def FASTAtoSchema(fasta, coverage, mol_cov, mol_len, read_len) -> Schema:
             normalized_length = end - contig.sequence.count('N')
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            intervals.append(Schema(chrom,start,end,normalized_length, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, contig.sequence))
+            intervals.append(Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, contig.sequence))
     return intervals
 
-def BEDtoSchema(bedfile, fasta, coverage, mol_cov, mol_len, read_len) -> Schema:
+def BEDtoSchema(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
     '''Read the BED file, do validation against the FASTA and derive the schema, and return a list of Schema objects'''
     intervals = []
     mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
@@ -64,7 +64,7 @@ def BEDtoSchema(bedfile, fasta, coverage, mol_cov, mol_len, read_len) -> Schema:
             normalized_length = (end-start) - _seq.count('N')
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            intervals.append(Schema(chrom,start,end,normalized_length, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, _seq))
+            intervals.append(Schema(chrom,start,end,normalized_length, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, _seq))
     return intervals
 
 def validate_barcodes(bc_list):
@@ -101,4 +101,3 @@ def interpret_barcodes(infile, lr_type):
         return product(bc,bc,bc), 3 * bc_len, len(bc)**3
     else:
         return iter(bc), bc_len, len(bc)
-

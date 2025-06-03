@@ -3,6 +3,9 @@
 import os
 
 class wgsimParams():
+    '''
+    The container for pywgsim parameters. This gets sent per-thread for execution.
+    '''
     def __init__(self, error, mutation, indels, extindels, distance, stdev, length_r1, length_r2, seed, outprefix):
         self.error = error
         self.mutation = mutation
@@ -22,7 +25,12 @@ class wgsimParams():
         return outstring
 
 class Schema():
-    def __init__(self, chrom, start, end, length, read_pairs_per_mol, reads_req, n_mol, mol_length, mol_cov, seq):
+    '''
+    The container for per-chromosome/contig parameters. This is what guides
+    the creation of LongMolecules. Values like read_length/read_pairs_per_molecule,
+    mol_length etc. are averages.
+    '''
+    def __init__(self, chrom, start, end, length, read_pairs_per_mol, reads_req, n_mol, mol_length, mol_cov, singletons, seq):
         self.chrom = chrom
         self.start = start
         self.end = end
@@ -32,7 +40,7 @@ class Schema():
         self.n_mol = n_mol
         self.mol_length = mol_length
         self.seq = seq
-        self.singletons = None
+        self.singletons = singletons
         self.mol_coverage = mol_cov
     def __str__(self):
         outstring = ""
@@ -40,6 +48,6 @@ class Schema():
             if i != "seq":
                 outstring += f"{i}: {j}\n"
             else:
-                outstring += f"{i}: " + j[:min(30, len(j))] + f"(length = {len(j)})\n"
+                outstring += f"{i}: " + j[:min(30, len(j))] + "...\n"
         return outstring
 

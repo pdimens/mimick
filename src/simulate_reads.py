@@ -7,10 +7,11 @@ import math
 import multiprocessing
 import time
 from tempfile import mkstemp
-from .classes import *
 from .file_ops import *
-from .long_molecule import *
+from .classes import *
 from .common import *
+from .fastq_writer import *
+from .long_molecule import *
 import pysam
 from pywgsim import wgsim
 
@@ -42,14 +43,14 @@ def wrap_wgsim(*args, **kwargs):
     os.unlink(stdout_path)
     return stdout_content
 
-def linked_simulation(schema: Schema, wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, molecular_coverage: int|float, outformat: str, haplotype: int, processor: int) -> None:
+def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, haplotype: int) -> None:
     '''
     The real heavy-lifting that uses pywgsim to simulate short reads from a long molecule that was created and stored
-    as a LongMoleculeRecipe. The output FASTQ files are reformatted to include the barcode stored in `long_molecule` in the
-    format given by `outformat`.
+    as a LongMoleculeRecipe. The output FASTQ files are sent to a separate worker thread to append to the final FASTQ
+    files without incurring a data race.
     '''
-    R1tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}_p{processor}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp.fastq")
-    R2tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}_p{processor}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp.fastq")
+    R1tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp")
+    R2tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp")
     try:
         stdout = wrap_wgsim(
             r1 = R1tmp,
@@ -69,47 +70,16 @@ def linked_simulation(schema: Schema, wgsimparams: wgsimParams,long_molecule: Lo
             is_fixed = 0,
             seed = wgsimparams.randomseed
         )
-        with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.p{processor}.wgsim.mutations', 'a') as f:
+        with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.wgsim.mutations', 'a') as f:
             f.write(stdout)
     except KeyboardInterrupt:
         mimick_keyboardterminate()
+    finally:
+        os.remove(long_molecule.fasta)
 
-    os.remove(molecule_fasta)
     if os.stat(R1tmp).st_size == 0:
         os.remove(R1tmp)
         os.remove(R2tmp)
     else:
-        R1A = os.path.abspath(f'{wgsimparams.outdir}/{wgsimparams.prefix}.hap_{haplotype.zfill(3)}.R1.fq')
-        R2A = os.path.abspath(f'{wgsimparams.outdir}/{wgsimparams.prefix}.hap_{haplotype.zfill(3)}.R2.fq')
-
-        with open(R1tmp,'r') as infile, open(R1A,'a') as outfile:
-            for name,seq,qual in readfq(infile):
-                read = format_linkedread(
-                    name = name,
-                    bc = long_molecule.barcode,
-                    outbc = long_molecule.output_barcode,
-                    outformat = outformat,
-                    seq = seq,
-                    qual = qual,
-                    forward = True
-                )
-                outfile.write('\n'.join(read) + '\n')
-        os.remove(R1tmp)
-        with open(R2tmp,'r') as infile, open(R2A,'a') as outfile:
-            for name,seq,qual in readfq(infile):
-                if outformat == "10x":
-                    read = [f'@{name}',seq,'+',qual]
-                else:
-                    read = format_linkedread(
-                        name = name,
-                        bc = long_molecule.barcode,
-                        outbc = long_molecule.output_barcode,
-                        outformat = outformat,
-                        seq = seq,
-                        qual = qual,
-                        forward = False
-                    )
-                outfile.write('\n'.join(read) + '\n')
-        os.remove(R2tmp)
-
+        WRITER_QUEUE.put((R1tmp, R2tmp, long_molecule.barcode, long_molecule.output_barcode))
 
