@@ -14,6 +14,33 @@ from .fastq_writer import *
 from .long_molecule import *
 import pysam
 from pywgsim import wgsim
+#from contextlib import redirect_stdout, redirect_stderr
+#import ctypes
+#from contextlib import contextmanager
+
+#@contextmanager
+#def redirect_stdouterr(to_file):
+#    # Flush Python's buffers
+#    sys.stdout.flush()
+#    sys.stderr.flush()
+#
+#    # Save original file descriptors
+#    orig_stdout_fd = os.dup(1)
+#    orig_stderr_fd = os.dup(2)
+#
+#    # Open the target file
+#    with open(to_file, 'w') as f:
+#        os.dup2(f.fileno(), 1)  # Replace stdout
+#        os.dup2(f.fileno(), 2)  # Replace stderr
+#
+#        try:
+#            yield
+#        finally:
+#            # Restore original fds
+#            os.dup2(orig_stdout_fd, 1)
+#            os.dup2(orig_stderr_fd, 2)
+#            os.close(orig_stdout_fd)
+#            os.close(orig_stderr_fd)
 
 def wrap_wgsim(*args, **kwargs):
     '''prevents wgsim.core output from being printed to the terminal'''
@@ -43,7 +70,7 @@ def wrap_wgsim(*args, **kwargs):
     os.unlink(stdout_path)
     return stdout_content
 
-def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, haplotype: int) -> None:
+def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, haplotype: int, aggregator) -> None:
     '''
     The real heavy-lifting that uses pywgsim to simulate short reads from a long molecule that was created and stored
     as a LongMoleculeRecipe. The output FASTQ files are sent to a separate worker thread to append to the final FASTQ
@@ -52,6 +79,8 @@ def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe
     R1tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp")
     R2tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp")
     try:
+        #with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.wgsim.mutations', 'a') as f:
+        #    with redirect_stdout(f), redirect_stderr(f):
         stdout = wrap_wgsim(
             r1 = R1tmp,
             r2 =R2tmp,
@@ -70,8 +99,8 @@ def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe
             is_fixed = 0,
             seed = wgsimparams.randomseed
         )
-        with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.wgsim.mutations', 'a') as f:
-            f.write(stdout)
+            #with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.wgsim.mutations', 'a') as f:
+            #f.write(stdout)
     except KeyboardInterrupt:
         mimick_keyboardterminate()
     finally:
@@ -81,5 +110,8 @@ def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe
         os.remove(R1tmp)
         os.remove(R2tmp)
     else:
-        WRITER_QUEUE.put((R1tmp, R2tmp, long_molecule.barcode, long_molecule.output_barcode))
-
+        try:
+            aggregator.put((R1tmp, R2tmp, long_molecule.barcode, long_molecule.output_barcode))
+        except Exception as e:
+            print(f"WHATS GOING ON: {e}")
+            sys.exit(1)

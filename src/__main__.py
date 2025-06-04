@@ -127,16 +127,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     if molecules_per == 0:
         error_terminate("The value for [yellow]--molecule-number[/] cannot be 0.")
 
-    if regions:
-        # use the provided BED file
-        mimick_console.log('Processing the input regions')
-        SIMULATION_SCHEMA = BEDtoSchema(regions, fasta[0], coverage/len(fasta), molecule_coverage, molecule_length, length, molecule_length)
-    else:
-        # derive intervals from the first FASTA file
-        mimick_console.log(f'Inferring regions from [blue]{os.path.basename(fasta[0])}[/]')
-        SIMULATION_SCHEMA = FASTAtoSchema(fasta[0], coverage/len(fasta), molecule_coverage, molecule_length, length, singletons)
-
-    #SIMULATION_SCHEMA.singletons = singletons
     THREADS = threads
     LR_CHEMISTRY = lr_type.lower()
 
@@ -164,17 +154,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         with open(BARCODE_PATH, 'r') as filein:
             BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
 
-    for _fasta in fasta:
-        # MAKE THIS A SEPARATE PROGRESS BAR
-        try:
-            mimick_console.log(f"Indexing [blue]{os.path.basename(_fasta)}[/]")
-            __fa = os.path.abspath(_fasta)
-            pysam.faidx(__fa)
-            if __fa.lower().endswith(".gz") and not os.path.exists(__fa + ".gzi"):
-                os.system(f"bgzip --reindex {__fa}")
-        except Exception as e:
-            error_terminate(f'Failed to index {__fa}. Error reported by samtools:\n{e}', False)
-
     #if quiet == 0:
     #    Container.PROGRESS.start()
     #pbar = Container.PROGRESS.add_task("[yellow]Progress", total=len(fasta) * len(intervals) + 1 + 1 + (2 * len(fasta)))
@@ -184,20 +163,20 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
 
     if LR_CHEMISTRY in ["10x", "tellseq"]:
         # barcode at beginning of read 1
-        WGSIMPARAMS.length_R1 = SIMULATION_SCHEMA[0].read_length - BARCODE_LENGTH_BP
+        WGSIMPARAMS.length_R1 = length - BARCODE_LENGTH_BP
         if WGSIMPARAMS.length_R1 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {SIMULATION_SCHEMA.read_length}, Barcode length: {BARCODE_LENGTH_BP}')
-        WGSIMPARAMS.length_R2 = SIMULATION_SCHEMA[0].read_length
+            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {length}, Barcode length: {BARCODE_LENGTH_BP}')
+        WGSIMPARAMS.length_R2 = length
     elif LR_CHEMISTRY == "stlfr":
         # barcode at the end of read 2
-        WGSIMPARAMS.length_R1 = SIMULATION_SCHEMA[0].read_length
-        WGSIMPARAMS.length_R2 = SIMULATION_SCHEMA[0].read_length - BARCODE_LENGTH_BP
+        WGSIMPARAMS.length_R1 = length
+        WGSIMPARAMS.length_R2 = length - BARCODE_LENGTH_BP
         if WGSIMPARAMS.length_R2 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {SIMULATION_SCHEMA.read_length}, Barcode length: {BARCODE_LENGTH_BP}')
+            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {length}, Barcode length: {BARCODE_LENGTH_BP}')
     else:
         # would be 4-segment haplotagging where AC on read 1 and BD on read 2, but in index read, so read not shortened
-        WGSIMPARAMS.length_R1 = SIMULATION_SCHEMA[0].read_length
-        WGSIMPARAMS.length_R2 = SIMULATION_SCHEMA[0].read_length
+        WGSIMPARAMS.length_R1 = length
+        WGSIMPARAMS.length_R2 = length
 
     BARCODE_OUTPUT_FORMAT = output_type.lower() if output_type else LR_CHEMISTRY
 
@@ -205,7 +184,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         if BARCODES_TOTAL_COUNT > 96**4:
             error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
         bc_range = [f"{i}".zfill(2) for i in range(1,97)]
-        #TODO bc_generator to be all-caps global
         BARCODE_OUTPUT_GENERATOR = product("A", bc_range, "C", bc_range, "B", bc_range, "D", bc_range)
 
     if BARCODE_OUTPUT_FORMAT == "stlfr":
@@ -214,23 +192,27 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         bc_range = range(1, 1537)
         BARCODE_OUTPUT_GENERATOR = product(bc_range, bc_range, bc_range)
 
-    # this will be the counter object to track the target coverage, takes the form interval: [n_reads, reads_needed, Schema]
-    region_inventory = {}
     RNG = np.random.default_rng(seed = seed)
-    for idx,_interval in enumerate(SIMULATION_SCHEMA):
-        region_inventory[idx] = [0,_interval.reads_req, _interval]
-        #rule = "─" * int((53 - len(regiontext)) / 2)
-        #mimick_console.log(f"[green]{rule} [default]{regiontext} [green]{rule}[/]")'
-
-    BARCODESlist= open(f'{output_prefix}.barcodes', 'w')
     n_molecules = abs(molecules_per)
     for idx,haplotype in enumerate(fasta, 1):
-        mimick_console.log(f"Working on Haplotype {idx}")
+        mimick_console.log(f'Processing [blue]{os.path.basename(haplotype)}[/]')
+        # this will be the counter object to track the target coverage, takes the form index: [n_reads, reads_needed, Schema]
+        if regions:
+            SIMULATION_SCHEMA = BEDtoInventory(regions, haplotype, coverage/len(fasta), molecule_coverage, molecule_length, length, molecule_length)
+        else:
+            SIMULATION_SCHEMA = FASTAtoInventory(haplotype, coverage/len(fasta), molecule_coverage, molecule_length, length, singletons)
+
+        schemas = list(SIMULATION_SCHEMA.keys())
+        BARCODESlist = open(f'{output_prefix}.barcodes', 'w')
+        # Create a thread-safe queue to hold (temp1, temp2) tuples
+        WRITER_QUEUE = queue.Queue()
         appender_args = (
             os.path.abspath(f'{output_prefix}.hap_{str(idx).zfill(3)}.R1.fq'),
             os.path.abspath(f'{output_prefix}.hap_{str(idx).zfill(3)}.R2.fq'),
-            BARCODE_OUTPUT_FORMAT
+            BARCODE_OUTPUT_FORMAT,
+            WRITER_QUEUE
         )
+
         fastq_appender = threading.Thread(target=append_worker, args = appender_args)
         fastq_appender.start()
         while True:
@@ -253,25 +235,28 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 sd = molecules_per/(molecules_per - 2) if molecules_per > 2 else 3/4
                 n_molecules = max(1, int(RNG.normal(molecules_per, sd)))
 
-            TARGETS = choices(list(region_inventory.keys()), k = n_molecules)
-            for target in TARGETS:
-                molecule_recipe = create_long_molecule(region_inventory[target][2], RNG, selected_bc, output_prefix, output_bc)
-                region_inventory[target][0] += molecule_recipe.read_count
+            for target in choices(schemas, k = n_molecules):
+                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target][2], RNG, selected_bc, output_prefix, output_bc)
+                SIMULATION_SCHEMA[target][0] += molecule_recipe.read_count
                 if molecule_recipe.read_count != 0:
                     linked_simulation(
                         wgsimparams = WGSIMPARAMS,
                         long_molecule = molecule_recipe,
-                        haplotype = idx
+                        haplotype = idx,
+                        aggregator = WRITER_QUEUE
                     )
             # remove an interval if its target coverage has been achieved
-            for target in region_inventory:
-                if region_inventory[target][0] >= region_inventory[target][1]:
-                    del region_inventory[target]
+            for target in list(SIMULATION_SCHEMA.keys()):
+                if SIMULATION_SCHEMA[target][0] >= SIMULATION_SCHEMA[target][1]:
+                    mimick_console.log(f"Hit target for {target}")
+                    del SIMULATION_SCHEMA[target]
+                    schemas = [i for i in schemas if i != target]
 
             # if the target coverage was reached for all intervals, we can move on to the next haplotype        
-            if not region_inventory:
+            if not schemas:
+                WRITER_QUEUE.put(None)
                 break
-        WRITER_QUEUE.put(None)
+        WRITER_QUEUE.join()
         fastq_appender.join()
     BARCODESlist.close()
 

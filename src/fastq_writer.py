@@ -25,14 +25,12 @@ def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     return read
 
 
-# Create a thread-safe queue to hold (temp1, temp2) tuples
-WRITER_QUEUE = queue.Queue()
-
 # Worker function
-def append_worker(R1_fq, R2_fq, output_format):
+def append_worker(R1_fq, R2_fq, output_format, queue):
     while True:
-        item = WRITER_QUEUE.get()
+        item = queue.get()
         if item is None:
+            queue.task_done()
             break  # Exit signal received
 
         temp1, temp2, barcode, output_barcode = item
@@ -71,4 +69,4 @@ def append_worker(R1_fq, R2_fq, output_format):
         except Exception as e:
             print(f"Error processing {temp1}, {temp2}: {e}")
         finally:
-            WRITER_QUEUE.task_done()
+            queue.task_done()

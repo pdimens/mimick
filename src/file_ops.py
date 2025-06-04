@@ -26,11 +26,26 @@ def BGzipper(sli,):
         pysam.tabix_compress(s, f'{s}.gz', force=True)
         os.remove(s)
 
-def FASTAtoSchema(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
-    '''Read a FASTA file and derive the contig name, start, and end positions and other simulation schema'''
-    intervals = []
+def index_fasta(fasta):
+    try:
+        _fa = os.path.abspath(fasta)
+        pysam.faidx(_fa)
+        if _fa.lower().endswith(".gz") and not os.path.exists(_fa + ".gzi"):
+            os.system(f"bgzip --reindex {_fa}")
+    except Exception as e:
+        error_terminate(f'Failed to index {_fa}. Error reported by samtools:\n{e}', False)
+
+def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
+    '''
+    Read a FASTA file and derive the contig name, start, and end positions and other simulation schema
+    and return a dict of Schema objects that's an inventory tracker in the form of
+    d[idx] = [read_count, reads_required, Schema]
+    '''
+    inventory = {}
     mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
     mean_reads_per = max(1, mean_reads_per)
+    idx = 0
+    index_fasta(fasta)
     with pysam.FastxFile(fasta) as fa:
         for contig in fa:
             chrom = contig.name
@@ -39,33 +54,38 @@ def FASTAtoSchema(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Sc
             normalized_length = end - contig.sequence.count('N')
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            intervals.append(Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, contig.sequence))
-    return intervals
+            inventory[idx] = [0, reads_req, Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, contig.sequence)]
+            idx += 1
+    return inventory
 
-def BEDtoSchema(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
-    '''Read the BED file, do validation against the FASTA and derive the schema, and return a list of Schema objects'''
-    intervals = []
+def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
+    '''
+    Read the BED file, do validation against the FASTA and derive the schema, and return a dict of Schema objects that's an
+    inventory tracker in the form of d[idx] = [read_count, reads_required, Schema]
+    '''
+    inventory = {}
     mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
     mean_reads_per = max(1, mean_reads_per)
+    index_fasta(fasta)
     with open(bedfile, "r", encoding="utf-8") as bed, pysam.FastxFile(fasta) as fa:
-        for idx, line in enumerate(bed, 1):
+        for idx, line in enumerate(bed):
             row = line.split()
             try:
                 chrom = row[0]
                 start = int(row[1])
                 end = int(row[2])
             except ValueError:
-                error_terminate(f"The input file is formatted incorrectly at line {idx}. This is the first row triggering this error, but it may not be the only one.")
+                error_terminate(f"The input file is formatted incorrectly at line {idx+1}. This is the first row triggering this error, but it may not be the only one.")
             if start > end:
-                error_terminate(f"The interval start position is greater than the interval end position at row {idx}. This is the first row triggering this error, but it may not be the only one.")
+                error_terminate(f"The interval start position is greater than the interval end position at line {idx+1}. This is the first row triggering this error, but it may not be the only one.")
                 sys.exit(1)
             
             _seq = _fasta.fetch(chrom, start-1, end+1)
             normalized_length = (end-start) - _seq.count('N')
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            intervals.append(Schema(chrom,start,end,normalized_length, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, _seq))
-    return intervals
+            inventory[idx] = [0, reads_req, Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, _seq)]
+    return inventory
 
 def validate_barcodes(bc_list):
     '''Takes a file with barcodes and validates them to be ATGCU nucleotides and barcodes same length'''
