@@ -42,6 +42,7 @@ class Schema():
         self.seq = seq
         self.singletons = singletons
         self.mol_coverage = mol_cov
+        self.reads_current = 0
     def __str__(self):
         outstring = ""
         for i,j in self.__dict__.items():

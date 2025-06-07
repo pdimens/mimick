@@ -7,8 +7,10 @@ from .classes import Schema
 
 class LongMoleculeRecipe(object):
     '''Molecule instance'''
-    def __init__(self,fasta,barcode,outbarcode,chrom,read_count,mol_id):
+    def __init__(self,fasta,start, end, barcode,outbarcode,chrom,read_count,mol_id):
         self.fasta=fasta
+        self.start=start
+        self.end=end
         self.barcode=barcode
         self.output_barcode=outbarcode
         self.chrom=chrom
@@ -30,12 +32,12 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
     Returns a LongMoleculeRecipe that contains all the necessary information to simulate reads from that molecule.
     '''
     lensingle = len(schema.seq)
-    start = int(rng.uniform(low = 0, high = lensingle))
     while True:
-        # keep trying until a molecule of at least 300bp is created
+        start = int(rng.uniform(low = 0, high = lensingle))
         length = int(rng.exponential(scale = schema.mol_length))
         end = min(start + length - 1, lensingle)
-        if end - start >= 300:
+        # wgsim complains and doesnt simulate if it's less than 650bp anyway
+        if end - start >= 650:
             break
     molnumber = getrandbits(32)
     fasta_header = f'>CHROM:{schema.chrom}_START:{start}_END:{end}_BARCODE:{barcode}_MOL:{molnumber}'
@@ -48,7 +50,7 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
 
     normalized_length = len(fasta_seq)-fasta_seq.count('N')
     if schema.mol_coverage < 1:
-        N = int(normalized_length * schema.mol_coverage)/(schema.read_length*2)
+        N = max(1,int(normalized_length * schema.mol_coverage)/(schema.read_length*2))
     else:
         # draw N from a normal distribution with a mean of molcov and stdev of molcov/3, avoiding < 0
         N = max(0, rng.normal(schema.mol_coverage, schema.mol_coverage/3))
@@ -57,4 +59,4 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
     if schema.singletons > 0 and N != 0:
         if rng.uniform(0,1) > schema.singletons:
             N = 1    
-    return LongMoleculeRecipe(molecule_fasta, barcode, outputbarcode, schema.chrom, int(N), molnumber)
+    return LongMoleculeRecipe(molecule_fasta, start, end, barcode, outputbarcode, schema.chrom, int(N), molnumber)

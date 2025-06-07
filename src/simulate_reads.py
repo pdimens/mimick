@@ -2,116 +2,83 @@
 
 import os
 import sys
-import re
-import math
-import multiprocessing
-import time
-from tempfile import mkstemp
+from contextlib import contextmanager
 from .file_ops import *
 from .classes import *
 from .common import *
-from .fastq_writer import *
+from .process_outputs import *
 from .long_molecule import *
 import pysam
 from pywgsim import wgsim
-#from contextlib import redirect_stdout, redirect_stderr
-#import ctypes
-#from contextlib import contextmanager
 
-#@contextmanager
-#def redirect_stdouterr(to_file):
-#    # Flush Python's buffers
-#    sys.stdout.flush()
-#    sys.stderr.flush()
-#
-#    # Save original file descriptors
-#    orig_stdout_fd = os.dup(1)
-#    orig_stderr_fd = os.dup(2)
-#
-#    # Open the target file
-#    with open(to_file, 'w') as f:
-#        os.dup2(f.fileno(), 1)  # Replace stdout
-#        os.dup2(f.fileno(), 2)  # Replace stderr
-#
-#        try:
-#            yield
-#        finally:
-#            # Restore original fds
-#            os.dup2(orig_stdout_fd, 1)
-#            os.dup2(orig_stderr_fd, 2)
-#            os.close(orig_stdout_fd)
-#            os.close(orig_stderr_fd)
-
-def wrap_wgsim(*args, **kwargs):
-    '''prevents wgsim.core output from being printed to the terminal'''
-    # Create temp files for stdout and stderr
-    stdout_fd, stdout_path = mkstemp()
+@contextmanager
+def redirect_stdout_stderr(stdout_path, stderr_path):
     # Save original file descriptors
-    orig_stdout = os.dup(1)
-    orig_stderr = os.dup(2)
-    try:
-        # Redirect stdout/stderr at OS level
-        os.dup2(stdout_fd, 1)
-        os.dup2(stdout_fd, 2)
-        # Call the function
-        wgsim.core(*args, **kwargs)
-    finally:
-        # Restore original stdout/stderr
-        os.dup2(orig_stdout, 1)
-        os.dup2(orig_stderr, 2)
-        # Close the temp files
-        os.close(stdout_fd)
-        os.close(orig_stdout)
-        os.close(orig_stderr)
-    # Read the captured output
-    with open(stdout_path, 'r') as f:
-        stdout_content = f.read()
-    # Clean up temp files
-    os.unlink(stdout_path)
-    return stdout_content
+    original_stdout_fd = sys.stdout.fileno()
+    original_stderr_fd = sys.stderr.fileno()
 
-def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, haplotype: int, aggregator) -> None:
+    # Open the output files
+    with open(stdout_path, 'w') as out, open(stderr_path, 'w') as err:
+        # Flush any existing content in stdout/stderr
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        # Save copies of original fds
+        saved_stdout_fd = os.dup(original_stdout_fd)
+        saved_stderr_fd = os.dup(original_stderr_fd)
+
+        try:
+            # Redirect stdout and stderr to the file
+            os.dup2(out.fileno(), original_stdout_fd)
+            os.dup2(err.fileno(), original_stderr_fd)
+            yield
+        finally:
+            # Restore original fds
+            os.dup2(saved_stdout_fd, original_stdout_fd)
+            os.dup2(saved_stderr_fd, original_stderr_fd)
+            os.close(saved_stdout_fd)
+            os.close(saved_stderr_fd)
+
+def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, haplotype: int, append_queue) -> None:
     '''
     The real heavy-lifting that uses pywgsim to simulate short reads from a long molecule that was created and stored
     as a LongMoleculeRecipe. The output FASTQ files are sent to a separate worker thread to append to the final FASTQ
     files without incurring a data race.
     '''
-    R1tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp")
-    R2tmp = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp")
+    R1 = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp")
+    R2 = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp")
+    gff = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.gff.tmp")
     try:
-        #with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.wgsim.mutations', 'a') as f:
-        #    with redirect_stdout(f), redirect_stderr(f):
-        stdout = wrap_wgsim(
-            r1 = R1tmp,
-            r2 =R2tmp,
-            ref = long_molecule.fasta,
-            err_rate = wgsimparams.error,
-            mut_rate = wgsimparams.mutation,
-            indel_frac = wgsimparams.indels,
-            indel_ext = wgsimparams.extindels,
-            N = long_molecule.read_count,
-            dist = wgsimparams.read_distance,
-            stdev = wgsimparams.distance_stdev,
-            size_l = wgsimparams.length_R1,
-            size_r = wgsimparams.length_R2,
-            max_n = 0.05,
-            is_hap = 0,
-            is_fixed = 0,
-            seed = wgsimparams.randomseed
-        )
-            #with open(f'{wgsimparams.outdir}/{wgsimparams.prefix}.wgsim.mutations', 'a') as f:
-            #f.write(stdout)
+        stdout_file = gff
+        stderr_file = f"{gff}.stderr"
+        with redirect_stdout_stderr(stdout_file, stderr_file):
+            wgsim.core(
+                r1 = R1,
+                r2 =R2,
+                ref = long_molecule.fasta,
+                err_rate = wgsimparams.error,
+                mut_rate = wgsimparams.mutation,
+                indel_frac = wgsimparams.indels,
+                indel_ext = wgsimparams.extindels,
+                N = long_molecule.read_count,
+                dist = wgsimparams.read_distance,
+                stdev = wgsimparams.distance_stdev,
+                size_l = wgsimparams.length_R1,
+                size_r = wgsimparams.length_R2,
+                max_n = 0.05,
+                is_hap = 0,
+                is_fixed = 0,
+                seed = wgsimparams.randomseed
+            )
     except KeyboardInterrupt:
         mimick_keyboardterminate()
     finally:
         os.remove(long_molecule.fasta)
+        os.remove(stderr_file)
 
-    if os.stat(R1tmp).st_size == 0:
-        os.remove(R1tmp)
-        os.remove(R2tmp)
+    if os.stat(R1).st_size == 0:
+        os.remove(R1)
+        os.remove(R2)
     else:
-        try:
-            aggregator.put((R1tmp, R2tmp, long_molecule.barcode, long_molecule.output_barcode))
-        except Exception as e:
-            print(f"WHATS GOING ON: {e}")
-            sys.exit(1)
+        append_queue.put((R1, R2, gff, long_molecule.barcode, long_molecule.output_barcode))
+        return long_molecule.read_count

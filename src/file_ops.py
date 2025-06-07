@@ -35,7 +35,7 @@ def index_fasta(fasta):
     except Exception as e:
         error_terminate(f'Failed to index {_fa}. Error reported by samtools:\n{e}', False)
 
-def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
+def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> dict:
     '''
     Read a FASTA file and derive the contig name, start, and end positions and other simulation schema
     and return a dict of Schema objects that's an inventory tracker in the form of
@@ -54,11 +54,11 @@ def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) ->
             normalized_length = end - contig.sequence.count('N')
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            inventory[idx] = [0, reads_req, Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, contig.sequence)]
+            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, contig.sequence)
             idx += 1
     return inventory
 
-def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> Schema:
+def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> dict:
     '''
     Read the BED file, do validation against the FASTA and derive the schema, and return a dict of Schema objects that's an
     inventory tracker in the form of d[idx] = [read_count, reads_required, Schema]
@@ -84,7 +84,7 @@ def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singlet
             normalized_length = (end-start) - _seq.count('N')
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            inventory[idx] = [0, reads_req, Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, _seq)]
+            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, _seq)
     return inventory
 
 def validate_barcodes(bc_list):
