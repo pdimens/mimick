@@ -6,7 +6,7 @@ from .classes import Schema
 
 class LongMoleculeRecipe(object):
     '''Molecule instance'''
-    def __init__(self, chrom, start, end, barcode,outbarcode,mol_id,out_prefix):
+    def __init__(self, chrom, start, end, barcode,outbarcode,mol_id, read_count, out_prefix):
         self.fasta = ""
         self.chrom=chrom
         self.start=start
@@ -15,7 +15,7 @@ class LongMoleculeRecipe(object):
         self.output_barcode=outbarcode
         self.mol_id=mol_id
         self.out_prefix = out_prefix
-        self.read_count = 0
+        self.read_count = read_count
     def __str__(self):
         outstring = ""
         for i,j in self.__dict__.items():
@@ -37,29 +37,16 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
         if end - start >= 650:
             break
     molnumber = getrandbits(32)
-    return LongMoleculeRecipe(schema.chrom, start, end, barcode, outputbarcode, molnumber, outprefix)
-   
-   
-   
-   
-    #fasta_header = f'>CHROM:{schema.chrom}_START:{start}_END:{end}_BARCODE:{barcode}_MOL:{molnumber}'
-    #fasta_seq = schema.seq[start-1:end+1]
-    #molecule_fasta = os.path.abspath(f'{outprefix}{schema.chrom}.{barcode}.{molnumber}.fa')
-    #with open(molecule_fasta, 'w') as faout:
-    #    faout.write(
-    #        "\n".join([fasta_header, '\n'.join(re.findall('.{1,60}', fasta_seq))]) + "\n"
-    #    )
-
-    #normalized_length = len(fasta_seq)-fasta_seq.count('N')
-    #if schema.mol_coverage < 1:
-    #    N = max(1,int(normalized_length * schema.mol_coverage)/(schema.read_length*2))
-    #else:
-    #    # draw N from a normal distribution with a mean of molcov and stdev of molcov/3, avoiding < 0
-    #    N = max(0, rng.normal(schema.mol_coverage, schema.mol_coverage/3))
-    #    # set ceiling to avoid N being greater than can be sampled
-    #    N = min(N, normalized_length/(schema.read_length*2))
-    #if schema.singletons > 0 and N != 0:
-    #    if rng.uniform(0,1) > schema.singletons:
-    #        N = 1    
-    #return LongMoleculeRecipe(molecule_fasta, schema.chrom, start, end, barcode, outputbarcode, int(N), molnumber)
-    
+    fasta_seq = schema.sequence[start-1:end+1]
+    normalized_length = len(fasta_seq)-fasta_seq.count('N')
+    if schema.mol_coverage < 1:
+        N = max(1,int(normalized_length * schema.mol_coverage)/(schema.read_length*2))
+    else:
+        # draw N from a normal distribution with a mean of molcov and stdev of molcov/3, avoiding < 0
+        N = max(0, rng.normal(schema.mol_coverage, schema.mol_coverage/3))
+        # set ceiling to avoid N being greater than can be sampled
+        N = min(N, normalized_length/(schema.read_length*2))
+    if schema.singletons > 0 and N != 0:
+        if rng.uniform(0,1) > schema.singletons:
+            N = 1    
+    return LongMoleculeRecipe(schema.chrom, start, end, barcode, outputbarcode, molnumber, int(N), outprefix)

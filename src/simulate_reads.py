@@ -2,16 +2,14 @@
 
 import os
 import re
-import sys
 import subprocess
 from .file_ops import *
 from .classes import *
 from .common import *
 from .process_outputs import *
 from .long_molecule import *
-import pysam
 
-def process_recipe(fasta: pysam.FastaFile, long_molecule: LongMoleculeRecipe, schema: Schema, rng):
+def process_recipe(long_molecule: LongMoleculeRecipe, schema: Schema):
     """
     Processess the LongMoleculeRecipe and creates the resulting FASTA file from it using the file connection
     to fasta (the argument). Returns `long_molecule` with the number of reads and the name of the fasta created
@@ -24,29 +22,16 @@ def process_recipe(fasta: pysam.FastaFile, long_molecule: LongMoleculeRecipe, sc
         faout.write(
             "\n".join([fasta_header, '\n'.join(re.findall('.{1,60}', fasta_seq))]) + "\n"
         )
-
-    normalized_length = len(fasta_seq)-fasta_seq.count('N')
-    if schema.mol_coverage < 1:
-        N = max(1,int(normalized_length * schema.mol_coverage)/(schema.read_length*2))
-    else:
-        # draw N from a normal distribution with a mean of molcov and stdev of molcov/3, avoiding < 0
-        N = max(0, rng.normal(schema.mol_coverage, schema.mol_coverage/3))
-        # set ceiling to avoid N being greater than can be sampled
-        N = min(N, normalized_length/(schema.read_length*2))
-    if schema.singletons > 0 and N != 0:
-        if rng.uniform(0,1) > schema.singletons:
-            N = 1
     long_molecule.fasta = molecule_fasta
-    long_molecule.read_count = int(N)
     return long_molecule
 
-def linked_simulation(fasta, wgsimparams: wgsimParams, schema: Schema, long_molecule: LongMoleculeRecipe, rng, append_queue) -> None:
+def linked_simulation(wgsimparams: wgsimParams, schema: Schema, long_molecule: LongMoleculeRecipe, append_queue) -> None:
     '''
     The real heavy-lifting that uses pywgsim to simulate short reads from a long molecule that was created and stored
     as a LongMoleculeRecipe. The output FASTQ files are sent to a separate worker thread to append to the final FASTQ
     files without incurring a data race.
     '''
-    long_molecule = process_recipe(fasta, long_molecule, schema, rng)
+    long_molecule = process_recipe(long_molecule, schema)
     R1 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.R1")
     R2 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.R2")
     gff = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.gff")
@@ -93,6 +78,8 @@ def linked_simulation(fasta, wgsimparams: wgsimParams, schema: Schema, long_mole
     if os.stat(R1).st_size == 0:
         os.remove(R1)
         os.remove(R2)
-    else:
-        append_queue.put((R1, R2, gff, long_molecule.barcode, long_molecule.output_barcode))
-        return long_molecule.read_count
+        os.remove(gff)
+        return 0
+
+    append_queue.put((R1, R2, gff, long_molecule.barcode, long_molecule.output_barcode))
+    return long_molecule.read_count

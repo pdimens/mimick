@@ -30,7 +30,7 @@ def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     return "\n".join(sequence)
 
 # Worker function
-def append_worker(R1_fq, R2_fq, gff, output_format, queue):
+def append_worker(R1_fq, R2_fq, gff, output_format, quiet, queue):
     '''
     This worker function runs on its own thread and monitors a queue
     of input files to append to the output files, then deleting the input files. It's intended to be
@@ -46,10 +46,12 @@ def append_worker(R1_fq, R2_fq, gff, output_format, queue):
         item = queue.get()
         if item is None:
             # Exit signal received
-            mimick_console.log(f"Compressing [blue]{os.path.basename(R1_fq)}[/]")
+            if quiet < 2:
+                mimick_console.log(f"Compressing [blue]{os.path.basename(R1_fq)}[/]")
             pysam.tabix_compress(R1_fq, f'{R1_fq}.gz', force=True)
             os.remove(R1_fq)
-            mimick_console.log(f"Compressing [blue]{os.path.basename(R2_fq)}[/]")
+            if quiet < 2:
+                mimick_console.log(f"Compressing [blue]{os.path.basename(R2_fq)}[/]")
             pysam.tabix_compress(R2_fq, f'{R2_fq}.gz', force=True)
             os.remove(R2_fq)
             queue.task_done()

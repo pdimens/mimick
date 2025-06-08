@@ -5,7 +5,7 @@ import re
 import sys
 from itertools import product
 import pysam
-from .common import error_terminate, log_table, mimick_console
+from .common import error_terminate, mimick_console
 from .classes import Schema
 
 def readfq(fp): # this is a fast generator function
@@ -17,15 +17,6 @@ def readfq(fp): # this is a fast generator function
             yield read[0][1:], read[1], read[3]
             read=[]
 
-def BGzipper(sli,):
-    '''Use pysam/htslib BGzip and multi-processing to save some time'''
-    for s in sli:
-        tb = log_table()
-        tb.add_row('BGzipping', os.path.basename(s))
-        mimick_console.log(tb)
-        pysam.tabix_compress(s, f'{s}.gz', force=True)
-        os.remove(s)
-
 def index_fasta(fasta):
     try:
         _fa = os.path.abspath(fasta)
@@ -34,30 +25,6 @@ def index_fasta(fasta):
             os.system(f"bgzip --reindex {_fa}")
     except Exception as e:
         error_terminate(f'Failed to index {_fa}. Error reported by samtools:\n{e}', False)
-
-def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons, haplotype_num) -> dict:
-    '''
-    Read a FASTA file and derive the contig name, start, and end positions and other simulation schema
-    and return a dict of Schema objects that's an inventory tracker in the form of
-    d[idx] = [read_count, reads_required, Schema]
-    '''
-    inventory = {}
-    mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
-    mean_reads_per = max(1, mean_reads_per)
-    idx = 0
-    with pysam.FastxFile(fasta) as fa:
-        for contig in fa:
-            chrom = contig.name
-            start = 1
-            end = len(contig.sequence)
-            normalized_length = end - contig.sequence.count('N')
-            if normalized_length < 650:
-                error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous (N) bases.")
-            reads_req = int((coverage*normalized_length/read_len)/2)
-            expected_n_mol = int(reads_req/mean_reads_per)
-            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num, contig.sequence)
-            idx += 1
-    return inventory
 
 def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons, haplotype_num) -> dict:
     '''
@@ -87,6 +54,30 @@ def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singlet
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
             inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num, contig.sequence)
+    return inventory
+
+def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons, haplotype_num) -> dict:
+    '''
+    Read a FASTA file and derive the contig name, start, and end positions and other simulation schema
+    and return a dict of Schema objects that's an inventory tracker in the form of
+    d[idx] = [read_count, reads_required, Schema]
+    '''
+    inventory = {}
+    mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
+    mean_reads_per = max(1, mean_reads_per)
+    idx = 0
+    with pysam.FastxFile(fasta) as fa:
+        for contig in fa:
+            chrom = contig.name
+            start = 1
+            end = len(contig.sequence)
+            normalized_length = end - contig.sequence.count('N')
+            if normalized_length < 650:
+                error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous (N) bases.")
+            reads_req = int((coverage*normalized_length/read_len)/2)
+            expected_n_mol = int(reads_req/mean_reads_per)
+            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num, contig.sequence)
+            idx += 1
     return inventory
 
 def validate_barcodes(bc_list):
