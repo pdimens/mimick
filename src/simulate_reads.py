@@ -1,80 +1,95 @@
 #! /usr/bin/env python3
 
 import os
+import re
 import sys
-from contextlib import contextmanager
+import subprocess
 from .file_ops import *
 from .classes import *
 from .common import *
 from .process_outputs import *
 from .long_molecule import *
 import pysam
-from pywgsim import wgsim
 
-@contextmanager
-def redirect_stdout_stderr(stdout_path, stderr_path):
-    # Save original file descriptors
-    original_stdout_fd = sys.stdout.fileno()
-    original_stderr_fd = sys.stderr.fileno()
+def process_recipe(fasta: pysam.FastaFile, long_molecule: LongMoleculeRecipe, schema: Schema, rng):
+    """
+    Processess the LongMoleculeRecipe and creates the resulting FASTA file from it using the file connection
+    to fasta (the argument). Returns `long_molecule` with the number of reads and the name of the fasta created
+    added to it.
+    """
+    fasta_seq = fasta.fetch(region = long_molecule.chrom, start=long_molecule.start-1, end = long_molecule.end+1)
+    #schema.seq[long_molecule.start-1:long_molecule.end+1]
+    fasta_header = f'>CHROM:{long_molecule.chrom}_START:{long_molecule.start}_END:{long_molecule.end}_BARCODE:{long_molecule.barcode}'
+    molecule_fasta = os.path.abspath(f'{long_molecule.out_prefix}_{long_molecule.barcode}.{long_molecule.mol_id}.fa')
+    with open(molecule_fasta, 'w') as faout:
+        faout.write(
+            "\n".join([fasta_header, '\n'.join(re.findall('.{1,60}', fasta_seq))]) + "\n"
+        )
 
-    # Open the output files
-    with open(stdout_path, 'w') as out, open(stderr_path, 'w') as err:
-        # Flush any existing content in stdout/stderr
-        sys.stdout.flush()
-        sys.stderr.flush()
+    normalized_length = len(fasta_seq)-fasta_seq.count('N')
+    if schema.mol_coverage < 1:
+        N = max(1,int(normalized_length * schema.mol_coverage)/(schema.read_length*2))
+    else:
+        # draw N from a normal distribution with a mean of molcov and stdev of molcov/3, avoiding < 0
+        N = max(0, rng.normal(schema.mol_coverage, schema.mol_coverage/3))
+        # set ceiling to avoid N being greater than can be sampled
+        N = min(N, normalized_length/(schema.read_length*2))
+    if schema.singletons > 0 and N != 0:
+        if rng.uniform(0,1) > schema.singletons:
+            N = 1
+    long_molecule.fasta = molecule_fasta
+    long_molecule.read_count = int(N)
+    return long_molecule
 
-        # Save copies of original fds
-        saved_stdout_fd = os.dup(original_stdout_fd)
-        saved_stderr_fd = os.dup(original_stderr_fd)
-
-        try:
-            # Redirect stdout and stderr to the file
-            os.dup2(out.fileno(), original_stdout_fd)
-            os.dup2(err.fileno(), original_stderr_fd)
-            yield
-        finally:
-            # Restore original fds
-            os.dup2(saved_stdout_fd, original_stdout_fd)
-            os.dup2(saved_stderr_fd, original_stderr_fd)
-            os.close(saved_stdout_fd)
-            os.close(saved_stderr_fd)
-
-def linked_simulation(wgsimparams: wgsimParams,long_molecule: LongMoleculeRecipe, haplotype: int, append_queue) -> None:
+def linked_simulation(fasta, wgsimparams: wgsimParams, schema: Schema, long_molecule: LongMoleculeRecipe, rng, append_queue) -> None:
     '''
     The real heavy-lifting that uses pywgsim to simulate short reads from a long molecule that was created and stored
     as a LongMoleculeRecipe. The output FASTQ files are sent to a separate worker thread to append to the final FASTQ
     files without incurring a data race.
     '''
-    R1 = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R1.tmp")
-    R2 = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R2.tmp")
-    gff = os.path.abspath(f"{wgsimparams.outdir}/hap{haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.gff.tmp")
+    long_molecule = process_recipe(fasta, long_molecule, schema, rng)
+    R1 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.R1")
+    R2 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.R2")
+    gff = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.gff")
     try:
-        stdout_file = gff
-        stderr_file = f"{gff}.stderr"
-        with redirect_stdout_stderr(stdout_file, stderr_file):
-            wgsim.core(
-                r1 = R1,
-                r2 =R2,
-                ref = long_molecule.fasta,
-                err_rate = wgsimparams.error,
-                mut_rate = wgsimparams.mutation,
-                indel_frac = wgsimparams.indels,
-                indel_ext = wgsimparams.extindels,
-                N = long_molecule.read_count,
-                dist = wgsimparams.read_distance,
-                stdev = wgsimparams.distance_stdev,
-                size_l = wgsimparams.length_R1,
-                size_r = wgsimparams.length_R2,
-                max_n = 0.05,
-                is_hap = 0,
-                is_fixed = 0,
-                seed = wgsimparams.randomseed
+        with open(gff, "w") as _gff:
+            subprocess.check_call(
+                [
+                    "pywgsim",
+                    "--err",
+                    str(wgsimparams.error),
+                    "--mut",
+                    str(wgsimparams.mutation),
+                    "--frac",
+                    str(wgsimparams.indels),
+                    "--ext",
+                    str(wgsimparams.extindels),
+                    "-N",
+                    str(long_molecule.read_count),
+                    "--dist",
+                    str(wgsimparams.read_distance),
+                    "--stdev",
+                    str(wgsimparams.distance_stdev),
+                    "--L1",
+                    str(wgsimparams.length_R1),
+                    "--L2",
+                    str(wgsimparams.length_R2),
+                    "--amb",
+                    "0.05",
+                    "--seed",
+                    str(wgsimparams.randomseed),
+                    long_molecule.fasta,
+                    R1,
+                    R2
+                ],
+                stdout= _gff
             )
     except KeyboardInterrupt:
         mimick_keyboardterminate()
+    except Exception as e:
+        f"{e}"
     finally:
         os.remove(long_molecule.fasta)
-        os.remove(stderr_file)
 
     if os.stat(R1).st_size == 0:
         os.remove(R1)

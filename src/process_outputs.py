@@ -4,8 +4,11 @@ import queue
 import os
 import shutil
 import pysam
+import threading
 from .common import mimick_console, mimick_keyboardterminate
 from .file_ops import readfq
+
+stop_event = threading.Event()
 
 def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     '''Given a linked-read output type, will format the read accordingly and return it'''
@@ -39,7 +42,7 @@ def append_worker(R1_fq, R2_fq, gff, output_format, queue):
     If the queue received a None value, it will initiate the final process of bgzipping
     R1_fq and R2_fq and deleting the uncompressed files.
     '''
-    while True:
+    while not stop_event.is_set():
         item = queue.get()
         if item is None:
             # Exit signal received
@@ -88,6 +91,7 @@ def append_worker(R1_fq, R2_fq, gff, output_format, queue):
 
         except Exception as e:
             print(f"Error processing {temp1}, {temp2}, {temp_gff}: {e}")
+            stop_event.set()
         finally:
             os.remove(temp1)
             os.remove(temp2)
