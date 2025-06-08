@@ -258,6 +258,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                     if SIMULATION_SCHEMA[target].reads_current >= SIMULATION_SCHEMA[target].reads_req:
                         quota_reached.add(target)
                 # peek the threads to see if any finished and update the progress bar with any that did
+                #TODO I HAVE A FEELING THIS SECTION IS PREVENTING IT FROM BREAKING CLEANLY
                 done = {f for f in futures if f.done()}
                 for f in done:
                     futures.remove(f)

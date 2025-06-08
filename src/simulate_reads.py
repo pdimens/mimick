@@ -17,8 +17,7 @@ def process_recipe(fasta: pysam.FastaFile, long_molecule: LongMoleculeRecipe, sc
     to fasta (the argument). Returns `long_molecule` with the number of reads and the name of the fasta created
     added to it.
     """
-    fasta_seq = fasta.fetch(region = long_molecule.chrom, start=long_molecule.start-1, end = long_molecule.end+1)
-    #schema.seq[long_molecule.start-1:long_molecule.end+1]
+    fasta_seq = schema.sequence[long_molecule.start-1:long_molecule.end+1]
     fasta_header = f'>CHROM:{long_molecule.chrom}_START:{long_molecule.start}_END:{long_molecule.end}_BARCODE:{long_molecule.barcode}'
     molecule_fasta = os.path.abspath(f'{long_molecule.out_prefix}_{long_molecule.barcode}.{long_molecule.mol_id}.fa')
     with open(molecule_fasta, 'w') as faout:

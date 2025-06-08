@@ -6,7 +6,8 @@ from .classes import Schema
 
 class LongMoleculeRecipe(object):
     '''Molecule instance'''
-    def __init__(self,chrom, start, end, barcode,outbarcode,mol_id,out_prefix):
+    def __init__(self, chrom, start, end, barcode,outbarcode,mol_id,out_prefix):
+        self.fasta = ""
         self.chrom=chrom
         self.start=start
         self.end=end
@@ -14,7 +15,6 @@ class LongMoleculeRecipe(object):
         self.output_barcode=outbarcode
         self.mol_id=mol_id
         self.out_prefix = out_prefix
-        self.fasta = ""
         self.read_count = 0
     def __str__(self):
         outstring = ""
@@ -37,6 +37,11 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
         if end - start >= 650:
             break
     molnumber = getrandbits(32)
+    return LongMoleculeRecipe(schema.chrom, start, end, barcode, outputbarcode, molnumber, outprefix)
+   
+   
+   
+   
     #fasta_header = f'>CHROM:{schema.chrom}_START:{start}_END:{end}_BARCODE:{barcode}_MOL:{molnumber}'
     #fasta_seq = schema.seq[start-1:end+1]
     #molecule_fasta = os.path.abspath(f'{outprefix}{schema.chrom}.{barcode}.{molnumber}.fa')
@@ -44,7 +49,7 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
     #    faout.write(
     #        "\n".join([fasta_header, '\n'.join(re.findall('.{1,60}', fasta_seq))]) + "\n"
     #    )
-#
+
     #normalized_length = len(fasta_seq)-fasta_seq.count('N')
     #if schema.mol_coverage < 1:
     #    N = max(1,int(normalized_length * schema.mol_coverage)/(schema.read_length*2))
@@ -56,5 +61,5 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
     #if schema.singletons > 0 and N != 0:
     #    if rng.uniform(0,1) > schema.singletons:
     #        N = 1    
-    #return LongMoleculeRecipe(molecule_fasta, start, end, barcode, outputbarcode, schema.chrom, int(N), molnumber)
-    return LongMoleculeRecipe(schema.chrom, start, end, barcode, outputbarcode, molnumber, outprefix)
+    #return LongMoleculeRecipe(molecule_fasta, schema.chrom, start, end, barcode, outputbarcode, int(N), molnumber)
+    

@@ -55,7 +55,7 @@ def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons, ha
                 error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous (N) bases.")
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num)
+            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num, contig.sequence)
             idx += 1
     return inventory
 
@@ -86,7 +86,7 @@ def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singlet
             normalized_length = (end-start) - _seq.count('N')
             reads_req = int((coverage*normalized_length/read_len)/2)
             expected_n_mol = int(reads_req/mean_reads_per)
-            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num)
+            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num, contig.sequence)
     return inventory
 
 def validate_barcodes(bc_list):
