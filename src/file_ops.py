@@ -18,13 +18,17 @@ def readfq(fp): # this is a fast generator function
             read=[]
 
 def index_fasta(fasta):
+    outs = []
     try:
         _fa = os.path.abspath(fasta)
         pysam.faidx(_fa)
+        outs.append(_fa + ".fai")
         if _fa.lower().endswith(".gz") and not os.path.exists(_fa + ".gzi"):
             os.system(f"bgzip --reindex {_fa}")
+            outs.append(_fa + ".gzi")
     except Exception as e:
         error_terminate(f'Failed to index {_fa}. Error reported by samtools:\n{e}', False)
+    return outs
 
 def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> dict:
     '''

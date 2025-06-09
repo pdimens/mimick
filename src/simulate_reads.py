@@ -16,7 +16,7 @@ def process_recipe(long_molecule: LongMoleculeRecipe, schema: Schema):
     added to it.
     """
     fasta_seq = schema.sequence[long_molecule.start-1:long_molecule.end+1]
-    fasta_header = f'>CHROM:{long_molecule.chrom}_START:{long_molecule.start}_END:{long_molecule.end}_BARCODE:{long_molecule.barcode}'
+    fasta_header = f'>HAP:{schema.haplotype}_CHROM:{long_molecule.chrom}_START:{long_molecule.start}_END:{long_molecule.end}_BARCODE:{long_molecule.barcode}'
     molecule_fasta = os.path.abspath(f'{long_molecule.out_prefix}_{long_molecule.barcode}.{long_molecule.mol_id}.fa')
     with open(molecule_fasta, 'w') as faout:
         faout.write(

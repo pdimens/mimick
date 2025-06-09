@@ -207,10 +207,11 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     styles = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
     _index_fasta = PROGRESS.add_task(f"[bold magenta]Process inputs", total=len(fasta))
 
+    fasta_indexes = []
     for haplotype in fasta:
         if quiet < 2:
             mimick_console.log(f"Indexing [blue]{os.path.basename(haplotype)}[/]")
-        index_fasta(haplotype)
+        fasta_indexes += index_fasta(haplotype)
         PROGRESS.update(_index_fasta, advance=1)
     PROGRESS.update(_index_fasta, visible=False)
     # to be more accurate with target read calculation, get the average read length after accounting for the sequencing
@@ -225,6 +226,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             mimick_console.log(f'Processing sequences')
         SIMULATION_SCHEMA = FASTAtoInventory(fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, singletons)
 
+    # indices are no longer needed, so remove them
+    for fai in fasta_indexes:
+        os.remove(fai)
 
     # initialize total progress bar
     _progress_sim = PROGRESS.add_task(f"[blue]Total Progress", total=sum([i.reads_required for i in SIMULATION_SCHEMA.values()]))
