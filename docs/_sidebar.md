@@ -1,4 +1,5 @@
 * [Home](/)
 * [Install](install.md)
+* [Simulation Process](simulation_process.md)
 * [Using Mimick](usage.md)
 * [Data Formats](data_formats.md)
