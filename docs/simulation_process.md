@@ -5,7 +5,7 @@ Or algorithm, if you want to be fancy about it. Note that mentions of "contig" b
 
 Mimick 2.0 had a complete overhaul that rewrote the entire simulation process and we detail that process below.
 This description will ignore all the checks and validations Mimick does before beginning simulation because it's
-more of a user-experience techincaltechnical detail and not directly relevant to simulation itself.
+more of a user-experience technical detail and not directly relevant to simulation itself.
 
 ```mermaid
 %%{init: {"themeVariables": { "lineColor": "#C9C9C9", "mainBkg": "#f5f6f9" }}}%%
