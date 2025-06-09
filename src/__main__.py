@@ -180,8 +180,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         WGSIMPARAMS.length_R2 = length
 
     # setup barcode generator #
-    
-
     if BARCODE_OUTPUT_FORMAT == "haplotagging":
         if BARCODES_TOTAL_COUNT > 96**4:
             error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
@@ -191,7 +189,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     if BARCODE_OUTPUT_FORMAT == "stlfr":
         if BARCODES_TOTAL_COUNT > 1537**3:
             error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
-        bc_range = (str(_i) for _i in range(1, 1537))
+        bc_range = range(1, 1537)
         BARCODE_OUTPUT_GENERATOR = product(bc_range, bc_range, bc_range)
 
     # number of molecules is fixed if option was < 0
