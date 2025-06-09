@@ -191,156 +191,136 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
         bc_range = range(1, 1537)
         BARCODE_OUTPUT_GENERATOR = product(bc_range, bc_range, bc_range)
- 
+
+    # number of molecules is fixed if option was < 0
+    n_molecules = abs(molecules_per)
+    # only need to calculate the stdev once in the event n_molecules needs to be sampled in the main loop
+    sd = molecules_per/(molecules_per - 2) if molecules_per > 2 else 3/4
+    
     if quiet == 0:
         PROGRESS.start()
     # create a countdown progressbar tracking remaining barcodes
-    _progress_bc = PROGRESS.add_task(f"[bold]Barcodes Remaining", total=BARCODES_REMAINING, completed= BARCODES_REMAINING)
+    _progress_bc = PROGRESS.add_task(f"[bold magenta]Barcodes Remaining", total=BARCODES_REMAINING, completed= BARCODES_REMAINING)
     
     # file to record all the molecules that were created
     MOLECULE_INVENTORY = open(f'{output_prefix}.molecules', 'w')
-    MOLECULE_INVENTORY.write(
-        "\t".join(["haplotype", "chromosome", "start_position", "end_position", "length", "reads", "nucleotide_barcode", "output_barcode"]) + "\n"
-    )
-    
+
     # add variation to the console rules. necessary? no. fun? yes.
     styles = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
-    _index_fasta = PROGRESS.add_task(f"[bold magenta]Process inputs", total=len(fasta))
 
-    for haplotype in fasta:
-        if quiet < 2:
-            mimick_console.log(f"Indexing [blue]{os.path.basename(haplotype)}[/]")
-        index_fasta(haplotype)
-        PROGRESS.update(_index_fasta, advance=1)
-    PROGRESS.update(_index_fasta, visible=False)
-    # to be more accurate with target read calculation, get the average read length after accounting for the sequencing
-    # space occupied by the barcodes
-    avg_adjusted_read_length = (WGSIMPARAMS.length_R1 + WGSIMPARAMS.length_R2) / 2
-    if regions:
-        if quiet < 2:
-            mimick_console.log(f'Processing sequences and intervals')
-        SIMULATION_SCHEMA = BEDtoInventory(regions, fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, molecule_length, singletons)
-    else:
-        if quiet < 2:
-            mimick_console.log(f'Processing sequences')
-        SIMULATION_SCHEMA = FASTAtoInventory(fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, singletons)
-
-
-    # initialize total progress bar
-    _progress_sim = PROGRESS.add_task(f"[blue]Total Progress", total=sum([i.reads_required for i in SIMULATION_SCHEMA.values()]))
-
-    # initialize progress bar for each haplotype
-    styles = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
-    _progress_haplo = []
-    for i,fa in enumerate(fasta,1):
-        _progress_haplo.append(PROGRESS.add_task(f"[{styles[i-1]}]Haplotype {i}", total=sum([j.reads_required for j in SIMULATION_SCHEMA.values() if j.haplotype == i])))
-
-    # this list will be iterated over and have entries removed when their target read counts are met
-    schemas = list(SIMULATION_SCHEMA.keys())
-    quota_reached = set()
-    
-    # housekeeping for multithreading
-    max_queued = 2 * threads
-    futures = set()
-
-    # Create a thread-safe queue to write temp files to final outputs
-    # setup the initialization arguments (final output file names, output type, verbosity, etc.)
-    WRITER_QUEUE = queue.Queue()
-    appender_args = (
-        os.path.abspath(f'{output_prefix}.R1.fq'),
-        os.path.abspath(f'{output_prefix}.R2.fq'),
-        os.path.abspath(f'{output_prefix}.gff'),
-        BARCODE_OUTPUT_FORMAT,
-        quiet,
-        WRITER_QUEUE
-    )
-    output_appender = threading.Thread(target=append_worker, args = appender_args)
-    output_appender.start()
-
-    if quiet < 2:
-        mimick_console.log(f'Simulating molecules and reads')
     with ThreadPoolExecutor(max_workers = threads - 1) as executor:
-        # number of molecules is fixed if option was < 0
-        n_molecules = abs(molecules_per)
-        # only need to calculate the stdev once in the event n_molecules needs to be sampled in the main loop
-        sd = molecules_per/(molecules_per - 2) if molecules_per > 2 else 3/4
-        # finally, iterate over the barcode generator until all quotas in the schema are met
-        # the while loop breaks when there are no more schema left (schema get removed when their targets are achieved)
-        while True:
-            try:
-                selected_bc = "".join(next(BARCODES))
-                BARCODES_REMAINING -= 1
-                PROGRESS.update(_progress_bc, completed= BARCODES_REMAINING)
-            except StopIteration:
-                stop_event.set()
-                executor.shutdown(wait = False, cancel_futures=True)
-                WRITER_QUEUE.put(None)
-                output_appender.join()
-                PROGRESS.stop()
-                error_terminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
-
-            # setup output barcode formats
-            if BARCODE_OUTPUT_FORMAT == "haplotagging":
-                output_bc = "".join(next(BARCODE_OUTPUT_GENERATOR))
-            elif BARCODE_OUTPUT_FORMAT == "stlfr":
-                output_bc = "_".join(str(i) for i in next(BARCODE_OUTPUT_GENERATOR))
-            else:
-                output_bc = selected_bc
-
-            # if necessary, draw n molecules from a normal distribution
-            if molecules_per > 0:
-                n_molecules = max(1, int(RNG.normal(molecules_per, sd)))
+        futures = set()
+        max_queued = 2 * threads
+        for idx,haplotype in enumerate(fasta, 1):
+            if quiet < 2:
+                mimick_console.rule(os.path.basename(haplotype), style = styles[idx-1])
+            index_fasta(haplotype)
+            MOLECULE_INVENTORY.write(
+                "\t".join(["haplotype", "chromosome", "start_position", "end_position", "length", "reads", "nucleotide_barcode", "output_barcode"]) + "\n"
+            )
             
-            # randomly pick a number of intervals equal to the number of molecules associated with the barcode
-            # sampled with replacement, so e.g. it's possible that when n_molecules = 3, 2 of the unrelated molecules come from
-            # interval 1, and 1 molecule comes from interval 2. In other words, this method (crucially!) randomizes
-            # what interval/chromosome the unrelated molecules are drawn from instead of the molecules always being from the same
-            # chromosome/interval 
-            for target in choices(schemas, k = n_molecules):
-                _haplotype = SIMULATION_SCHEMA[target].haplotype
-                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_prefix, output_bc)
-                MOLECULE_INVENTORY.write(
-                    "\t".join([f"haplotype_{_haplotype}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
-                )
-                SIMULATION_SCHEMA[target].reads_current += molecule_recipe.read_count
-                if SIMULATION_SCHEMA[target].reads_current >= SIMULATION_SCHEMA[target].reads_required:
-                    quota_reached.add(target)
+            if regions:
+                if quiet < 2:
+                    mimick_console.log(f'Processing sequences and intervals')
+                SIMULATION_SCHEMA = BEDtoInventory(regions, haplotype, coverage/len(fasta), molecule_coverage, molecule_length, length, molecule_length, singletons, idx)
+            else:
+                if quiet < 2:
+                    mimick_console.log(f'Processing sequences')
+                SIMULATION_SCHEMA = FASTAtoInventory(haplotype, coverage/len(fasta), molecule_coverage, molecule_length, length, singletons, idx)
+            
+            _progress_sim = PROGRESS.add_task(f"[default]Haplotype {idx}", total=sum([i.reads_required for i in SIMULATION_SCHEMA.values()]))
 
-                # Backpressure: wait if too many futures are outstanding
-                while futures and len(futures) >= max_queued:
-                    # Poll for completed futures to reduce pressure
-                    done = {f for f in futures if f.done()}
-                    for f in done:
-                        futures.remove(f)
-                        _hap, _N = f.result()
-                        PROGRESS.update(_progress_sim, advance =_N)
-                        PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
-                    sleep(.1)
-                future = executor.submit(linked_simulation, WGSIMPARAMS, SIMULATION_SCHEMA[target], molecule_recipe, WRITER_QUEUE)
-                futures.add(future)
-            # peek the threads to see if any finished and update the progress bar with any that did
-            # this is duplicated to account for checking when we aren't backlogged with submissions
-            done = {f for f in futures if f.done()}
-            for f in done:
-                futures.remove(f)
-                _hap, _N = f.result()
-                PROGRESS.update(_progress_sim, advance = _N)
-                PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
-            # check to see if read targets were met and if so, remove them from consideration in the next iteration
-            if quota_reached:
-                schemas = list(set(schemas) - quota_reached)
-                quota_reached = set()
-                # if the target coverage was reached for all intervals, we can move on to the next haplotype        
-                if not schemas:
-                    break
-        # finish processing any molecules that were in the thread queue
-        for f in as_completed(futures):
-            _hap, _N = f.result()
-            PROGRESS.update(_progress_sim, advance = _N)
-            PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
-        # wait for the final-output-writer thread to finish
-        WRITER_QUEUE.put(None)
-        output_appender.join()
+            # this list will be iterated over and have entries removed when their target read counts are met
+            schemas = list(SIMULATION_SCHEMA.keys())
+            quota_reached = set()
+
+            # Create a thread-safe queue to write temp files to final outputs
+            # setup the initialization arguments (final output file names, output type, verbosity, etc.)
+            WRITER_QUEUE = queue.Queue()
+            appender_args = (
+                os.path.abspath(f'{output_prefix}.hap_{str(idx).zfill(3)}.R1.fq'),
+                os.path.abspath(f'{output_prefix}.hap_{str(idx).zfill(3)}.R2.fq'),
+                os.path.abspath(f'{output_prefix}.hap_{str(idx).zfill(3)}.gff'),
+                BARCODE_OUTPUT_FORMAT,
+                quiet,
+                WRITER_QUEUE
+            )
+            output_appender = threading.Thread(target=append_worker, args = appender_args)
+            output_appender.start()
+
+            if quiet < 2:
+                mimick_console.log(f'Simulating molecules and reads')
+
+            # finally, iterate over the barcode generator until all quotas in the schema are met
+            # the while loop breaks when there are no more schema left (schema get removed when their targets are achieved)
+            while True:
+                try:
+                    selected_bc = "".join(next(BARCODES))
+                    BARCODES_REMAINING -= 1
+                    PROGRESS.update(_progress_bc, completed= BARCODES_REMAINING)
+                except StopIteration:
+                    stop_event.set()
+                    executor.shutdown(wait = False, cancel_futures=True)
+                    WRITER_QUEUE.put(None)
+                    output_appender.join()
+                    PROGRESS.stop()
+                    error_terminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
+
+                # setup output barcode formats
+                if BARCODE_OUTPUT_FORMAT == "haplotagging":
+                    output_bc = "".join(next(BARCODE_OUTPUT_GENERATOR))
+                elif BARCODE_OUTPUT_FORMAT == "stlfr":
+                    output_bc = "_".join(str(i) for i in next(BARCODE_OUTPUT_GENERATOR))
+                else:
+                    output_bc = selected_bc
+
+                # if necessary, draw n molecules from a normal distribution
+                if molecules_per > 0:
+                    n_molecules = max(1, int(RNG.normal(molecules_per, sd)))
+                
+                # randomly pick a number of intervals equal to the number of molecules associated with the barcode
+                # sampled with replacement, so e.g. it's possible that when n_molecules = 3, 2 of the unrelated molecules come from
+                # interval 1, and 1 molecule comes from interval 2. In other words, this method (crucially!) randomizes
+                # what interval/chromosome the unrelated molecules are drawn from instead of the molecules always being from the same
+                # chromosome/interval 
+                for target in choices(schemas, k = n_molecules):
+                    molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_prefix, output_bc)
+                    MOLECULE_INVENTORY.write(
+                       "\t".join([f"haplotype_{idx}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
+                    )
+                    SIMULATION_SCHEMA[target].reads_current += molecule_recipe.read_count
+                    if SIMULATION_SCHEMA[target].reads_current >= SIMULATION_SCHEMA[target].reads_required:
+                        quota_reached.add(target)
+
+                    # Backpressure: wait if too many futures are outstanding
+                    while futures and len(futures) >= max_queued:
+                        # Poll for completed futures to reduce pressure
+                        done = {f for f in futures if f.done()}
+                        for f in done:
+                            futures.remove(f)
+                            PROGRESS.update(_progress_sim, advance=f.result())
+                        sleep(.1)
+                    future = executor.submit(linked_simulation, WGSIMPARAMS, SIMULATION_SCHEMA[target], molecule_recipe, WRITER_QUEUE)
+                    futures.add(future)
+                # peek the threads to see if any finished and update the progress bar with any that did
+                # this is duplicated to account for checking when we aren't backlogged with submissions
+                done = {f for f in futures if f.done()}
+                for f in done:
+                    futures.remove(f)
+                    PROGRESS.update(_progress_sim, advance=f.result())
+                # check to see if read targets were met and if so, remove them from consideration in the next iteration
+                if quota_reached:
+                    schemas = list(set(schemas) - quota_reached)
+                    quota_reached = set()
+                    # if the target coverage was reached for all intervals, we can move on to the next haplotype        
+                    if not schemas:
+                        break
+            # finish processing any molecules that were in the thread queue
+            for f in as_completed(futures):
+                PROGRESS.update(_progress_sim, advance=f.result())
+            # wait for the final-output-writer thread to finish
+            WRITER_QUEUE.put(None)
+            output_appender.join()
     MOLECULE_INVENTORY.close()
     PROGRESS.stop()
 

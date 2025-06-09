@@ -26,58 +26,63 @@ def index_fasta(fasta):
     except Exception as e:
         error_terminate(f'Failed to index {_fa}. Error reported by samtools:\n{e}', False)
 
-def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons, haplotype_num) -> dict:
+def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> dict:
     '''
-    Read the BED file, do validation against the FASTA and derive the schema, and return a dict of Schema objects that's an
-    inventory tracker in the form of d[idx] = [read_count, reads_required, Schema]
+    Read the BED file, do validation against the FASTA files and derive the schema, and return a dict of Schema objects that's an
+    inventory tracker in the form of d[idx] = [read_count, reads_requireduired, Schema]
     '''
     inventory = {}
     mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
     mean_reads_per = max(1, mean_reads_per)
-    with open(bedfile, "r", encoding="utf-8") as bed, pysam.FastxFile(fasta) as fa:
-        for idx, line in enumerate(bed):
-            row = line.split()
-            try:
-                chrom = row[0]
-                start = int(row[1])
-                end = int(row[2])
-            except ValueError:
-                error_terminate(f"The input file is formatted incorrectly at line {idx+1}. This is the first row triggering this error, but it may not be the only one.")
-            if start > end:
-                error_terminate(f"The interval start position is greater than the interval end position at line {idx+1}. This is the first row triggering this error, but it may not be the only one.")
-                sys.exit(1)
-            if (end - start) < 650:
-                error_terminate(f"Error in {os.path.basename(bedfile)} [yellow]line {idx+1}[/]: the designated interval must be at least 650bp long.")
+    haplotype = 0
+    idx = 0
+    for _fasta in fasta:
+        haplotype += 1
+        with open(bedfile, "r", encoding="utf-8") as bed, pysam.FastxFile(_fasta) as fa:
+            for line in bed:
+                row = line.split()
+                try:
+                    chrom = row[0]
+                    start = int(row[1])
+                    end = int(row[2])
+                except ValueError:
+                    error_terminate(f"The input file is formatted incorrectly at line {idx+1}. This is the first row triggering this error, but it may not be the only one.")
+                if start > end:
+                    error_terminate(f"The interval start position is greater than the interval end position at line {idx+1}. This is the first row triggering this error, but it may not be the only one.")
+                if (end - start) < 650:
+                    error_terminate(f"Error in {os.path.basename(bedfile)} [yellow]line {idx+1}[/]: the designated interval must be at least 650bp long.")
 
-            _seq = _fasta.fetch(chrom, start-1, end+1)
-            normalized_length = (end-start) - _seq.count('N')
-            reads_req = int((coverage*normalized_length/read_len)/2)
-            expected_n_mol = int(reads_req/mean_reads_per)
-            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num, contig.sequence)
+                _seq = _fasta.fetch(chrom, start-1, end+1)
+                normalized_length = (end-start) - _seq.count('N')
+                reads_required = int((coverage*normalized_length/read_len)/2)
+                inventory[idx] = Schema(haplotype, chrom,start, end, read_len, mean_reads_per, reads_required, mol_len, mol_cov, singletons, _seq)
+                idx += 1
     return inventory
 
-def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons, haplotype_num) -> dict:
+def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> dict:
     '''
-    Read a FASTA file and derive the contig name, start, and end positions and other simulation schema
+    Read the FASTA files and derive the contig name, start, and end positions and other simulation schema
     and return a dict of Schema objects that's an inventory tracker in the form of
-    d[idx] = [read_count, reads_required, Schema]
+    d[idx] = Schema
     '''
     inventory = {}
     mean_reads_per = (mol_cov*mol_len)/(read_len*2) if mol_cov < 1 else mol_cov
     mean_reads_per = max(1, mean_reads_per)
+    haplotype = 0
     idx = 0
-    with pysam.FastxFile(fasta) as fa:
-        for contig in fa:
-            chrom = contig.name
-            start = 1
-            end = len(contig.sequence)
-            normalized_length = end - contig.sequence.count('N')
-            if normalized_length < 650:
-                error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous (N) bases.")
-            reads_req = int((coverage*normalized_length/read_len)/2)
-            expected_n_mol = int(reads_req/mean_reads_per)
-            inventory[idx] = Schema(chrom,start,end,read_len, mean_reads_per, reads_req, expected_n_mol, mol_len, mol_cov, singletons, haplotype_num, contig.sequence)
-            idx += 1
+    for _fasta in fasta:
+        haplotype += 1
+        with pysam.FastxFile(_fasta) as fa:
+            for contig in fa:
+                chrom = contig.name
+                start = 1
+                end = len(contig.sequence)
+                normalized_length = end - contig.sequence.count('N')
+                if normalized_length < 650:
+                    error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous (N) bases.")
+                reads_required = int((coverage*normalized_length/read_len)/2)
+                inventory[idx] = Schema(haplotype, chrom,start,end,read_len, mean_reads_per, reads_required, mol_len, mol_cov, singletons, contig.sequence)
+                idx += 1
     return inventory
 
 def validate_barcodes(bc_list):

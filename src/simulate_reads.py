@@ -32,9 +32,9 @@ def linked_simulation(wgsimparams: wgsimParams, schema: Schema, long_molecule: L
     files without incurring a data race.
     '''
     long_molecule = process_recipe(long_molecule, schema)
-    R1 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.R1")
-    R2 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.R2")
-    gff = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype_number}.{long_molecule.mol_id}.{long_molecule.barcode}.gff")
+    R1 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R1")
+    R2 = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R2")
+    gff = os.path.abspath(f"{wgsimparams.outdir}/hap{schema.haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.gff")
     try:
         with open(gff, "w") as _gff:
             subprocess.check_call(
@@ -82,4 +82,4 @@ def linked_simulation(wgsimparams: wgsimParams, schema: Schema, long_molecule: L
         return 0
 
     append_queue.put((R1, R2, gff, long_molecule.barcode, long_molecule.output_barcode))
-    return long_molecule.read_count
+    return schema.haplotype, long_molecule.read_count

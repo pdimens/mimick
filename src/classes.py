@@ -30,24 +30,24 @@ class Schema():
     the creation of LongMolecules. Values like read_length/read_pairs_per_molecule,
     mol_length etc. are averages.
     '''
-    def __init__(self, chrom, start, end, read_length, read_pairs_per_mol, reads_req, n_mol, mol_length, mol_cov, singletons, haplotype_number, seq):
+    def __init__(self, haplotype, chrom, start, end, read_length, read_pairs_per_mol, reads_required, mol_length, mol_cov, singletons, seq):
+        self.haplotype = haplotype
         self.chrom = chrom
         self.start = start
         self.end = end
         self.read_length = read_length
         self.read_pairs_per_mol = read_pairs_per_mol
         self.reads_current = 0
-        self.reads_req = reads_req
-        self.n_mol = n_mol
+        self.reads_required = reads_required
         self.mol_length = mol_length
         self.mol_coverage = mol_cov
         self.singletons = singletons
-        self.haplotype_number = haplotype_number
         self.sequence = seq
     def __str__(self):
         outstring = ""
         for i,j in self.__dict__.items():
-            outstring += f"{i}: {j}\n"
+            if i != "sequence":
+                outstring += f"{i}: {j}\n"
+            else:
+                outstring += f"{i}: {j[:31]}... (length = {len(j)})"
         return outstring
-
-#TODO RESTORE SEQUENCE
