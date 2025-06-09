@@ -270,7 +270,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 if BARCODE_OUTPUT_FORMAT == "haplotagging":
                     output_bc = "".join(next(BARCODE_OUTPUT_GENERATOR))
                 elif BARCODE_OUTPUT_FORMAT == "stlfr":
-                    output_bc = "_".join(next(BARCODE_OUTPUT_GENERATOR))
+                    output_bc = "_".join(str(i) for i in next(BARCODE_OUTPUT_GENERATOR))
                 else:
                     output_bc = selected_bc
 
