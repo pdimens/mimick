@@ -76,7 +76,7 @@ def format_linkedread(name, bc, seq, qual, forward: bool):
         read = [f'@{name}#{stlfr_bc} {fr}', seq, '+', qual]
     return read
 
-def randomlong(Par,seq_,EXPM, rng):
+def randomlong(seq_,EXPM, rng):
     '''Length of molecules is randomly distributed according to an exponential distribution'''
     index = 0	
     lensingle = len(seq_)
