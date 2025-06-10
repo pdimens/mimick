@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=65", "setuptools_scm[toml]>=3.4"]
+requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -24,13 +24,8 @@ dependencies = [
 where = ["."]
 exclude = ["test"]
 
-[tool.setuptools.package-data]
-"*" = ["*.*"]
-
 [project.scripts]
-mimick = "src.__main__:mimick"
-
-[tool.setuptools_scm]
+mimick = "mimick.__main__:mimick"
 
 [project.urls]
 Homepage = "https://github.com/pdimens/mimick"

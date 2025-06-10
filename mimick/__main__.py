@@ -305,6 +305,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                     done = {f for f in futures if f.done()}
                     for f in done:
                         futures.remove(f)
+                        if f.result() == 0:
+                            continue
                         _hap, _N = f.result()
                         PROGRESS.update(_progress_sim, advance =_N)
                         PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
@@ -316,6 +318,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             done = {f for f in futures if f.done()}
             for f in done:
                 futures.remove(f)
+                if f.result() == 0:
+                    continue
                 _hap, _N = f.result()
                 PROGRESS.update(_progress_sim, advance = _N)
                 PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
@@ -328,6 +332,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                     break
         # finish processing any molecules that were in the thread queue
         for f in as_completed(futures):
+            if f.result() == 0:
+                continue
             _hap, _N = f.result()
             PROGRESS.update(_progress_sim, advance = _N)
             PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
