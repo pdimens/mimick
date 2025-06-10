@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 
-import glob
 import os
 import sys
-import re
-import math
 import gzip
-import multiprocessing
 import threading
 from itertools import product
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -14,7 +10,6 @@ from random import choices, getrandbits
 from time import sleep
 import numpy as np
 import rich_click as click
-from rich.progress import Progress, TextColumn, TimeElapsedColumn, TaskProgressColumn, BarColumn
 import pysam
 from .classes import *
 from .cli_classes import *
@@ -49,14 +44,6 @@ click.rich_click.OPTION_GROUPS = {
     ]
 }
 
-PROGRESS = Progress(
-    TextColumn("[progress.description]{task.description}"),
-    BarColumn(finished_style="purple", complete_style="yellow"),
-    TaskProgressColumn(),
-    TimeElapsedColumn(),
-    transient=True,
-    console=mimick_console
-)
 stop_event = threading.Event()
 
 @click.version_option("0.0.0", prog_name="mimick")
@@ -303,9 +290,11 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             for target in choices(schemas, k = n_molecules):
                 _haplotype = SIMULATION_SCHEMA[target].haplotype
                 molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_prefix, output_bc)
+
                 MOLECULE_INVENTORY.write(
                     "\t".join([f"haplotype_{_haplotype}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
                 )
+
                 SIMULATION_SCHEMA[target].reads_current += molecule_recipe.read_count
                 if SIMULATION_SCHEMA[target].reads_current >= SIMULATION_SCHEMA[target].reads_required:
                     quota_reached.add(target)

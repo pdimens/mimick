@@ -4,8 +4,18 @@ import sys
 from itertools import product
 from random import sample
 from rich.console import Console
+from rich.progress import Progress, TextColumn, TimeElapsedColumn, TaskProgressColumn, BarColumn
 
 mimick_console = Console(stderr=True, log_path=False)
+
+PROGRESS = Progress(
+    TextColumn("[progress.description]{task.description}"),
+    BarColumn(finished_style="purple", complete_style="yellow"),
+    TaskProgressColumn(),
+    TimeElapsedColumn(),
+    transient=True,
+    console=mimick_console
+)
 
 def mimick_keyboardterminate():
     mimick_console.print("")

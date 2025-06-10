@@ -35,8 +35,8 @@ class Schema():
         self.chrom = chrom
         self.start = start
         self.end = end
-        self.read_length = read_length
-        self.read_pairs_per_mol = read_pairs_per_mol
+        self.read_length = int(read_length)
+        self.read_pairs_per_mol = int(read_pairs_per_mol)
         self.reads_current = 0
         self.reads_required = reads_required
         self.mol_length = mol_length
