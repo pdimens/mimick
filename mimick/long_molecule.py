@@ -7,7 +7,7 @@ from .classes import Schema
 
 class LongMoleculeRecipe(object):
     '''Molecule instance'''
-    def __init__(self, chrom, start, end, barcode,outbarcode,mol_id, read_count, out_prefix):
+    def __init__(self, chrom, start, end, barcode,outbarcode,mol_id, read_count):
         self.fasta = ""
         self.chrom=chrom
         self.start=start
@@ -15,7 +15,6 @@ class LongMoleculeRecipe(object):
         self.barcode=barcode
         self.output_barcode=outbarcode
         self.mol_id=mol_id
-        self.out_prefix = out_prefix
         self.read_count = read_count
     def __str__(self):
         outstring = ""
@@ -23,26 +22,26 @@ class LongMoleculeRecipe(object):
             outstring += f"{i}: {j}\n"
         return outstring
 
-def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode) -> LongMoleculeRecipe:
+def create_long_molecule(schema: Schema, rng, barcode, outputbarcode) -> LongMoleculeRecipe:
     '''
     Randomly generates a long molecule and writes it to a FASTA file.
     Length of molecules is randomly distributed using an exponential distribution, with a minimum of 650bp.
     Returns a LongMoleculeRecipe that contains all the necessary information to simulate reads from that molecule.
     '''
+    molnumber = getrandbits(32)
     len_interval = schema.end - schema.start
     # make sure to cap the molecule length to the length of the interval/chromosome
     molecule_length = 0
     # make sure the molecule is greater than 650
-    while molecule_length < 650:
-        molecule_length = min(int(rng.exponential(scale = schema.mol_length)), len_interval)
-    
+    while molecule_length < 650 or molecule_length > len_interval:
+        molecule_length = int(rng.exponential(scale = schema.mol_length))
+
     # set the max position to be length - mol_length to avoid additional computation
     adjusted_end = len_interval - molecule_length
     start = int(rng.uniform(low = 0, high = adjusted_end))
     end = start + molecule_length - 1
 
-    molnumber = getrandbits(32)
-    fasta_seq = schema.sequence[start-1:end+1]
+    fasta_seq = schema.sequence[max(0,start-1):end+1]
     normalized_length = len(fasta_seq)-fasta_seq.count('N')
 
     if schema.mol_coverage < 1:
@@ -56,4 +55,4 @@ def create_long_molecule(schema: Schema, rng, barcode, outprefix, outputbarcode)
         if rng.uniform(0,1) > schema.singletons:
             N = 1
 
-    return LongMoleculeRecipe(schema.chrom, start, end, barcode, outputbarcode, molnumber, int(N), outprefix)
+    return LongMoleculeRecipe(schema.chrom, start, end, barcode, outputbarcode, molnumber, int(N))

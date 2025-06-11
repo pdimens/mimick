@@ -118,8 +118,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         seed if seed else getrandbits(16),
         output_prefix
     )
-
-    os.makedirs(WGSIMPARAMS.outdir, exist_ok= True)
+    tempdir = os.path.join(WGSIMPARAMS.outdir, "temp")
+    os.makedirs(tempdir, exist_ok= True)
 
     if isinstance(barcodes, str):
         BARCODE_PATH = barcodes
@@ -231,7 +231,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     quota_reached = set()
 
     # housekeeping for multithreading
-    max_queued = max(5000, 1000 * threads)
+    max_queued = 100
+    #max_queued = max(5000, 1000 * threads)
     futures = set()
 
     # Create a thread-safe queue to write temp files to final outputs
@@ -288,17 +289,14 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             # what interval/chromosome the unrelated molecules are drawn from instead of the molecules always being from the same
             # chromosome/interval
             for target in choices(schemas, k = n_molecules):
+                #sleep(0.5)
                 _haplotype = SIMULATION_SCHEMA[target].haplotype
-                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_prefix, output_bc)
-
+                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_bc)
+                #print(molecule_recipe)
                 MOLECULE_INVENTORY.write(
                     "\t".join([f"haplotype_{_haplotype}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
                 )
                 # add number of reads to the tracker in the schema
-                SIMULATION_SCHEMA[target].reads_current += molecule_recipe.read_count
-                # if the number of simulated reads reaches the target, add the index to the "remove from schema" list
-                if SIMULATION_SCHEMA[target].reads_current >= SIMULATION_SCHEMA[target].reads_required:
-                    quota_reached.add(target)
                 # Backpressure: wait if too many futures are outstanding
                 while futures and len(futures) >= max_queued:
                     # Poll for completed futures to reduce pressure
@@ -313,6 +311,11 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                     sleep(.05)
                 future = executor.submit(linked_simulation, WGSIMPARAMS, SIMULATION_SCHEMA[target], molecule_recipe, WRITER_QUEUE)
                 futures.add(future)
+
+                SIMULATION_SCHEMA[target].reads_current += molecule_recipe.read_count
+                # if the number of simulated reads reaches the target, add the index to the "remove from schema" list
+                if SIMULATION_SCHEMA[target].reads_current >= SIMULATION_SCHEMA[target].reads_required:
+                    quota_reached.add(target)
 
             # peek the threads to see if any finished and update the progress bar with any that did
             # this is duplicated to account for checking when we aren't backlogged with submissions
@@ -341,8 +344,11 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         # wait for the final-output-writer thread to finish
         WRITER_QUEUE.put(None)
         output_appender.join()
+    os.rmdir(tempdir)
     MOLECULE_INVENTORY.close()
     PROGRESS.stop()
+    if quiet < 2:
+        mimick_console.log("Finished!")
 
 if __name__ =='__main__':
     try:
@@ -350,4 +356,16 @@ if __name__ =='__main__':
     except KeyboardInterrupt:
         mimick_keyboardterminate()
     except Exception as e:
+        try:
+            MOLECULE_INVENTORY.close()
+        except NameError:
+            pass
+        try:
+            WRITER_QUEUE.put(None)
+        except NameError:
+            pass
+        try:
+            output_appender.join()
+        except NameError:
+            pass
         PROGRESS.stop()
