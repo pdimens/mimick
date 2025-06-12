@@ -56,7 +56,10 @@ def append_worker(R1_fq, R2_fq, gff, output_format, quiet, queue):
             os.remove(R2_fq)
             queue.task_done()
             break
-
+        if item is False:
+            # Exit on error, don't compress
+            queue.task_done()
+            break
         temp1, temp2, temp_gff, barcode, output_barcode = item
         try:
             with open(R1_fq, 'a') as out, open(temp1, 'r') as src:

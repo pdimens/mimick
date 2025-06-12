@@ -10,33 +10,6 @@ from .common import *
 from .process_outputs import *
 from .long_molecule import *
 
-def call_with_redirect(func, *args, stdout_file=None, stderr_file=None, **kwargs):
-    # Save original file descriptors
-    original_stdout = os.dup(1)
-    original_stderr = os.dup(2)
-    
-    try:
-        if stdout_file:
-            stdout_fd = os.open(stdout_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
-            os.dup2(stdout_fd, 1)
-            os.close(stdout_fd)
-        
-        if stderr_file:
-            stderr_fd = os.open(stderr_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
-            os.dup2(stderr_fd, 2)
-            os.close(stderr_fd)
-        
-        # Call the function
-        result = func(*args, **kwargs)
-        return result
-        
-    finally:
-        # Restore original file descriptors
-        os.dup2(original_stdout, 1)
-        os.dup2(original_stderr, 2)
-        os.close(original_stdout)
-        os.close(original_stderr)
-
 def process_recipe(long_molecule: LongMoleculeRecipe, schema: Schema, outdir: str, prefix: str):
     """
     Processess the LongMoleculeRecipe and creates the resulting FASTA file from it using the file connection
@@ -67,31 +40,29 @@ def linked_simulation(wgsimparams: wgsimParams, schema: Schema, long_molecule: L
     R2 = f"{tempdir}/hap{schema.haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.R2"
     gff = f"{tempdir}/hap{schema.haplotype}.{long_molecule.mol_id}.{long_molecule.barcode}.gff"
     try:
-        call_with_redirect(
-            wgsim.core, 
+        wgsim.core(
             long_molecule.fasta,
-            R1,
-            R2,
-            wgsimparams.error,
-            wgsimparams.mutation,
-            wgsimparams.indels,
-            wgsimparams.extindels,
-            0.05,
-            0,
-            long_molecule.read_count,
-            wgsimparams.read_distance,
-            wgsimparams.distance_stdev,
-            wgsimparams.length_R1,
-            wgsimparams.length_R2,
-            wgsimparams.randomseed,
-            stdout_file=gff,
-            stderr_file=os.devnull
+            r1 = R1,
+            r2 = R2,
+            err_rate = wgsimparams.error,
+            mut_rate = wgsimparams.mutation,
+            indel_frac = wgsimparams.indels,
+            indel_ext = wgsimparams.extindels,
+            max_n = 0.05,
+            is_hap = 0,
+            N = long_molecule.read_count,
+            dist = wgsimparams.read_distance,
+            stdev = wgsimparams.distance_stdev,
+            size_l = wgsimparams.length_R1,
+            size_r = wgsimparams.length_R2,
+            seed = wgsimparams.randomseed,
+            gff = gff
         )
 
     except KeyboardInterrupt:
         mimick_keyboardterminate()
     except Exception as e:
-        f"{e}"
+        return f"{e}"
     finally:
         os.remove(long_molecule.fasta)
 

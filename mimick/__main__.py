@@ -305,10 +305,16 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                         futures.remove(f)
                         if f.result() == 0:
                             continue
+                        if isinstance(f.result(), str):
+                            executor.shutdown(wait = False, cancel_futures=True)
+                            stop_event.set()
+                            WRITER_QUEUE.put(False)
+                            output_appender.join()
+                            error_terminate(f.result())
                         _hap, _N = f.result()
                         PROGRESS.update(_progress_sim, advance =_N)
                         PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
-                    sleep(.05)
+                    sleep(.01)
                 future = executor.submit(linked_simulation, WGSIMPARAMS, SIMULATION_SCHEMA[target], molecule_recipe, WRITER_QUEUE)
                 futures.add(future)
 
@@ -324,6 +330,12 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 futures.remove(f)
                 if f.result() == 0:
                     continue
+                if isinstance(f.result(), str):
+                    stop_event.set()
+                    executor.shutdown(wait = False, cancel_futures=True)
+                    WRITER_QUEUE.put(False)
+                    output_appender.join()
+                    error_terminate(f.result())
                 _hap, _N = f.result()
                 PROGRESS.update(_progress_sim, advance = _N)
                 PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
@@ -338,6 +350,12 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         for f in as_completed(futures):
             if f.result() == 0:
                 continue
+            if isinstance(f.result(), str):
+                stop_event.set()
+                executor.shutdown(wait = False, cancel_futures=True)
+                WRITER_QUEUE.put(False)
+                output_appender.join()
+                error_terminate(f.result())
             _hap, _N = f.result()
             PROGRESS.update(_progress_sim, advance = _N)
             PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
