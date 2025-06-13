@@ -68,24 +68,33 @@ output_barcode = "A01C23B01D83"
 Based on the `--molecules-per` parameter, Mimick will decide how many unrelated molecules will be associated with the barcode.
 Then, it's a matter of randomly choosing (with replacement) which schema to make molecules from. Remember, each contig for each
 haplotype has its own schema, so unrelated molecules can come from anywhere, which is a very important feature of these simulations.
-At this stage, the "molecules" are just recipes describing which contig/haplotype, which section of it, how many paired
-reads need to be generated from it to meet `--molecule-coverage` targets, etc.:
+The "molecules" are just recipes describing which contig/haplotype, which section of it, how many paired
+reads need to be generated from it to meet `--molecule-coverage` targets, etc. The creation of a recipe also ends with Mimick
+writing a FASTA file of the "molecule" that will be submitted for read simulation. There are a few criteria that need to be met for a molecule:
+- must be at least 650bp (a minimum required for `wgsim`)
+- can't be larger than the source contig/interval
+- start/end positions cannot exceed those of the source contig/interval
+
+The number of reads are calculated based on `--molecule-coverage` and the molecule size, with a minimum of 2 to prevent singletons. If
+a value >0 is set for `--singletons`, then there is that percent chance the number of paired reads are overwritten to be 1
+(e.g. `--singletons 0.5` = 50% chance of singletons for each molecule). 
 
 ```yaml
+haplotype: 2
+fasta: /path/to/temp/molecules/molecule.fa
+output_basename: hapX.mol_id.barcode
 chrom: Contig2
-start: 86259
-end: 199999
-barcode: GAACTGGAACTGGAACTGGAACTG
+start: 5277
+end: 54077
+barcode: GACCCAGACCCAGACCCAGACCCA
 output_barcode: A01C01B01D01
-mol_id: 3986398990
-out_prefix: /path/to/output/prefix
-read_count: 4
+mol_id: 1422882321
+read_count: 1
 ```
 
 ### Step 3: Submitting the molecule recipes for simulation
-This is the part that's multithreaded. Once we have a molecule recipe and its associated schema, Mimick submits the use-wgsim-to-create-reads-from-this
-task to the thread pool. This task will interpret the molecule recipe and create a fasta file from it. The fasta file will then be the input "genome" into
-`wgsim`, which will randomly generate the target number of reads for that molecule.
+This is the part that's multithreaded. Once we have a molecule recipe and its associated fasta file, Mimick hands the information over to `wgsim` via `pywgsim`,
+where the fasta file will then be the input "genome" from which the software will randomly generate the target number of reads for that molecule.
 
 ### Step 4: Monitor schema targets
 The number of reads that were generated for every molecule are added to that molecule's source schema to track the number of reads already produced for
