@@ -146,9 +146,6 @@ def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     elif outformat == "stlfr":
         fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
         sequence = [f'@{name}#{stlfr_bc} {fr}', seq, '+', qual]
-    else:
-        print(outformat)
-        sys.exit(1)
     return "\n".join(sequence)
 
 class FileProcessor:
@@ -170,7 +167,6 @@ class FileProcessor:
         while True:
             try:
                 # Get task from queue (blocks until available)
-                #task = self.task_queue.get(timeout=1)
                 task = self.task_queue.get()
                 if task is None:  # Shutdown signal
                     if not self.quiet:
@@ -192,6 +188,7 @@ class FileProcessor:
                     # Exit on error, don't compress
                     self.task_queue.task_done()
                     break
+
                 _basename, barcode, output_barcode = task
 
                 _basename = os.path.join(self.output_dir, "temp", _basename)
@@ -208,7 +205,7 @@ class FileProcessor:
                                 forward = True
                             )
                             out.write(sequence + '\n')
-                    
+
                     os.remove(f"{_basename}.R1")
 
                     with open(self.R2, 'a') as out, open(f"{_basename}.R2", 'r') as src:
@@ -255,15 +252,14 @@ class FileProcessor:
         """Submit temp files for processing"""
         if not self.running:
             raise RuntimeError("FileProcessor not started. Call start() first.")
-        _basename = long_molecule.output_basename
-        barcode = long_molecule.barcode
-        output_barcode = long_molecule.output_barcode
-        self.task_queue.put((_basename, barcode, output_barcode))
+        self.task_queue.put((long_molecule.output_basename, long_molecule.barcode, long_molecule.output_barcode))
 
     def stop(self):
         """Stop the file processing process"""
         if self.running:
-            self.task_queue.put(None)  # Send shutdown signal
+            # Send shutdown signal
+            self.task_queue.put(None)
+            # Wait for jobs to finish
             self.process.join()
             if self.process.is_alive():
                 self.process.terminate()
