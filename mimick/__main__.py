@@ -197,9 +197,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     _index_fasta = PROGRESS.add_task(f"[bold magenta]Process inputs", total=len(fasta))
 
     fasta_indexes = []
-    for haplotype in fasta:
+    for idx,haplotype in enumerate(fasta):
         if quiet < 2:
-            mimick_console.log(f"Indexing [blue]{os.path.basename(haplotype)}[/]")
+            mimick_console.log(f"Indexing [{STYLES[idx]}]{os.path.basename(haplotype)}[/]")
         fasta_indexes += index_fasta(haplotype)
         PROGRESS.update(_index_fasta, advance=1)
     PROGRESS.update(_index_fasta, visible=False)
@@ -208,11 +208,11 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     avg_adjusted_read_length = (WGSIMPARAMS.length_R1 + WGSIMPARAMS.length_R2) / 2
     if regions:
         if quiet < 2:
-            mimick_console.log(f'Processing sequences and intervals')
+            mimick_console.log(f'Processing haplotypes and intervals')
         SIMULATION_SCHEMA = BEDtoInventory(regions, fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, molecule_length, singletons)
     else:
         if quiet < 2:
-            mimick_console.log(f'Processing sequences')
+            mimick_console.log(f'Processing haplotypes')
         SIMULATION_SCHEMA = FASTAtoInventory(fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, singletons)
 
     # indices are no longer needed, so remove them
@@ -223,10 +223,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     _progress_sim = PROGRESS.add_task(f"[blue]Total Progress", total=sum([i.reads_required for i in SIMULATION_SCHEMA.values()]))
 
     # initialize progress bar for each haplotype
-    styles = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
     _progress_haplo = []
     for i,fa in enumerate(fasta,1):
-        _progress_haplo.append(PROGRESS.add_task(f"[{styles[i-1]}]Haplotype {i}", total=sum([j.reads_required for j in SIMULATION_SCHEMA.values() if j.haplotype == i])))
+        _progress_haplo.append(PROGRESS.add_task(f"[{STYLES[i-1]}]Haplotype {i}", total=sum([j.reads_required for j in SIMULATION_SCHEMA.values() if j.haplotype == i])))
 
     # this list will be iterated over and have entries removed when their target read counts are met
     schemas = list(SIMULATION_SCHEMA.keys())

@@ -1,12 +1,11 @@
 #! /usr/bin/env python3
 
+import gzip
 import multiprocessing
-import queue
-import shutil
-import time
-from pathlib import Path
 import os
+import queue
 import re
+import shutil
 import sys
 from itertools import product
 import pysam
@@ -182,6 +181,12 @@ class FileProcessor:
                         mimick_console.log(f"Compressing [blue]{os.path.basename(self.R2)}[/]")
                     pysam.tabix_compress(self.R1, f'{self.R2}.gz', force=True)
                     os.remove(self.R2)
+                    if not self.quiet:
+                        mimick_console.log(f"Compressing [blue]{os.path.basename(self.GFF)}[/]")
+                    with open(self.GFF, 'rb') as f_in:
+                        with gzip.open(f"{self.GFF}.gz", 'wb') as f_out:
+                            shutil.copyfileobj(f_in, f_out)
+                    os.remove(self.GFF)
                     break
                 if task is False:
                     # Exit on error, don't compress

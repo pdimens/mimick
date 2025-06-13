@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import os
-import re
 from random import getrandbits
 import numpy as np
 from .classes import Schema
@@ -37,11 +36,11 @@ def create_long_molecule(schema: Schema, rng, barcode, outputbarcode, wgsimparam
     molecule_length = 0
     # make sure the molecule is greater than 650
     while molecule_length < 650 or molecule_length > len_interval:
-        molecule_length = int(rng.exponential(scale = schema.mol_length))
+        molecule_length = rng.exponential(scale = schema.mol_length)
 
     # set the max position to be length - mol_length to avoid additional computation
-    adjusted_end = len_interval - molecule_length
-    start = int(rng.uniform(low = 0, high = adjusted_end))
+    molecule_length = int(molecule_length)
+    start = int(rng.uniform(low = 0, high = len_interval - molecule_length))
     end = start + molecule_length - 1
 
     fasta_seq = schema.sequence[start:end+1]
@@ -66,7 +65,7 @@ def create_long_molecule(schema: Schema, rng, barcode, outputbarcode, wgsimparam
 
     with open(fasta_file, 'w') as faout:
         faout.write(
-            "\n".join([fasta_header, '\n'.join(re.findall('.{1,60}', fasta_seq))]) + "\n"
+            "\n".join([fasta_header, fasta_seq])
         )
 
     return LongMoleculeRecipe(schema.haplotype, fasta_file, schema.chrom, start, end, barcode, outputbarcode, molnumber, int(N))

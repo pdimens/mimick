@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.progress import Progress, TextColumn, TimeElapsedColumn, TaskProgressColumn, BarColumn
 
 mimick_console = Console(stderr=True, log_path=False)
+STYLES = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
 
 PROGRESS = Progress(
     TextColumn("[progress.description]{task.description}"),

@@ -1,38 +1,16 @@
 #! /usr/bin/env python3
 
 import os
-import re
-import sys
 from pywgsim import wgsim
-from .file_ops import *
-from .classes import *
+from .classes import wgsimParams
 from .common import *
-from .long_molecule import *
+from .long_molecule import LongMoleculeRecipe
 
-#def process_recipe(long_molecule: LongMoleculeRecipe, schema: Schema, outdir: str, prefix: str):
-#    """
-#    Processess the LongMoleculeRecipe and creates the resulting FASTA file from it using the file connection
-#    to fasta (the argument). Returns `long_molecule` with the number of reads and the name of the fasta created
-#    added to it.
-#    """
-#    fasta_seq = schema.sequence[max(0,long_molecule.start-1):long_molecule.end+1]
-#    fasta_header = f'>HAP:{long_molecule.haplotype}_CHROM:{long_molecule.chrom}_START:{long_molecule.start}_END:{long_molecule.end}_BARCODE:{long_molecule.barcode}'
-#    tempdir = os.path.join(outdir, "temp")
-#    long_molecule.fasta = f'{tempdir}/{prefix}_' + long_molecule.fasta
-#    with open(molecule_fasta, 'w') as faout:
-#        faout.write(
-#            "\n".join([fasta_header, '\n'.join(re.findall('.{1,60}', fasta_seq))]) + "\n"
-#        )
-#    long_molecule.fasta = molecule_fasta
-#    return long_molecule
-
-def linked_simulation(wgsimparams: wgsimParams, long_molecule: LongMoleculeRecipe): #, append_queue) -> None:
+def linked_simulation(wgsimparams: wgsimParams, long_molecule: LongMoleculeRecipe):
     '''
-    The real heavy-lifting that uses pywgsim to simulate short reads from a long molecule that was created and stored
-    as a LongMoleculeRecipe. The output FASTQ files are sent to a separate worker thread to append to the final FASTQ
-    files without incurring a data race.
+    Process a LongMoleculeRecipe into reads using [py]wgsim. Returns the input LongMoleculeRecipe to be parsed
+    later in the quota/progressbar and final output appending process.
     '''
-    #long_molecule = process_recipe(long_molecule, schema, wgsimparams.outdir, wgsimparams.prefix)
     tempdir = os.path.join(wgsimparams.outdir,"temp")
     R1 = f"{tempdir}/{long_molecule.output_basename}.R1"
     R2 = f"{tempdir}/{long_molecule.output_basename}.R2"
