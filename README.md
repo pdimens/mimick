@@ -28,17 +28,19 @@ and mix-match barcodes with linked-read chemistries.
 - proportion of singletons (unlinked barcodes)
 - standard Illumina read characteristics e.g. read length, insert size, etc.
 
-## What makes Mimick special?
-Other than the fun name and logo, Mimick is an improvement over existing linked-read simulators in multiple ways. First,
-it's the only one (we are aware of) that isn't configured for discontinued-in-2019 10X simulations and is instead 
-generalized for existing options, both in terms of data formats, but also the simulation process itself. Second, Mimick
-provides more parameters to tune your simulations for realistic linked-read library simulation in the form of singletons and 
-molecule coverage. Third, as of version 2.0, Mimick uses a barcode-first simulation approach (described in the documentation),
-which allows barcodes to be shared across chromosomes/contigs **and** across haplotypes. This form of barcode sharing is a
-common phenomenon in real linked-read libraries, but a characteristic existing simulators don't capture (e.g. XENIA only
-allowed barcode sharing within a chromosome within a haplotype). Lastly, it's parallelized to simulate reads from one molecule
-per thread, taking full advantage of threads from start to finish, accounting for back-pressure, and molecules are generated
-on the fly-- in other words, it scales well for increasing threads without blowing up RAM or disk usage.
+## Standout Features
+Other than the fun name and logo, Mimick is an improvement over existing linked-read simulators in multiple ways:
+
+1. It's the only simulator (we are aware of) that isn't configured for discontinued-in-2019 10X linked-read chemistry and is instead 
+generalized for existing options, both in terms of data formats and the simulation process itself.
+2. Mimick provides more parameters to tune your simulations for realistic linked-read library simulation in the form of singletons and 
+molecule coverage. These characteristics are **very** important regarding the performance of a linked-read library.
+3. As of version 2.0, Mimick uses a barcode-first simulation approach, which allows barcodes to be shared **across**
+chromosomes/contigs **and** haplotypes. This form of barcode sharing is a common phenomenon in real linked-read
+libraries, but a characteristic existing simulators don't capture (e.g. XENIA only allowed barcode sharing within
+a chromosome within a haplotype). The documentation explains this in better detail.
+4. It's parallelized to simulate reads from one molecule per thread, taking full advantage of threads from start to finish,
+accounting for back-pressure, RAM, and disk usage.
 
 ### Authors
 
