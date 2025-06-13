@@ -184,10 +184,10 @@ class FileProcessor:
                             shutil.copyfileobj(f_in, f_out)
                     os.remove(self.GFF)
                     break
-                if task is False:
-                    # Exit on error, don't compress
-                    self.task_queue.task_done()
-                    break
+                #if task is False:
+                #    # Exit on error, don't compress
+                #    self.task_queue.task_done()
+                #    break
 
                 _basename, barcode, output_barcode = task
 
@@ -253,6 +253,17 @@ class FileProcessor:
         if not self.running:
             raise RuntimeError("FileProcessor not started. Call start() first.")
         self.task_queue.put((long_molecule.output_basename, long_molecule.barcode, long_molecule.output_barcode))
+
+    def error(self):
+        """Stop the file processing cold"""
+        if self.running:
+            # Send shutdown signal
+            self.task_queue.put(False)
+            # Wait for jobs to finish
+            #self.process.join()
+            if self.process.is_alive():
+                self.process.terminate()
+            self.running = False
 
     def stop(self):
         """Stop the file processing process"""

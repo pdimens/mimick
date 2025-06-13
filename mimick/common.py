@@ -23,10 +23,13 @@ def mimick_keyboardterminate():
     mimick_console.rule("[bold]Terminating Mimick", style = "yellow")
     sys.exit(1)
 
-def error_terminate(text: str, rule: bool = True):
-    mimick_console.log(f"[Error] {text}", highlight=False, style = "red")
+def error_terminate(text: str, rule: bool = True, appender = None):
     if rule:
-        mimick_console.rule("[bold]Terminating Mimick due to an error", style = "red")
+        mimick_console.rule("[bold]Error", style = "red")
+    mimick_console.log(f"{text}", highlight=False, style = "red")
+    PROGRESS.stop()
+    if appender:
+        appender.error()
     sys.exit(1)
 
 def generate_barcodes(bp):

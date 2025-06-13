@@ -4,6 +4,7 @@ import os
 from random import getrandbits
 import numpy as np
 from .classes import Schema
+from .common import error_terminate
 
 class LongMoleculeRecipe(object):
     '''Molecule instance'''
@@ -24,7 +25,7 @@ class LongMoleculeRecipe(object):
             outstring += f"{i}: {j}\n"
         return outstring
 
-def create_long_molecule(schema: Schema, rng, barcode, outputbarcode, wgsimparams) -> LongMoleculeRecipe:
+def create_long_molecule(schema: Schema, rng, barcode: str, outputbarcode: str, wgsimparams, attempts: int) -> LongMoleculeRecipe|None:
     '''
     Randomly generates a long molecule and writes it to a FASTA file.
     Length of molecules is randomly distributed using an exponential distribution, with a minimum of 650bp.
@@ -38,13 +39,21 @@ def create_long_molecule(schema: Schema, rng, barcode, outputbarcode, wgsimparam
     while molecule_length < 650 or molecule_length > len_interval:
         molecule_length = rng.exponential(scale = schema.mol_length)
 
-    # set the max position to be length - mol_length to avoid additional computation
     molecule_length = int(molecule_length)
-    start = int(rng.uniform(low = 0, high = len_interval - molecule_length))
-    end = start + molecule_length - 1
-
-    fasta_seq = schema.sequence[start:end+1]
-    normalized_length = len(fasta_seq)-fasta_seq.count('N')
+    # this needs to iterate to a fixed number of times to try to create a molecule below a particular N
+    # percentage else exit the program entirely
+    for i in range(attempts + 1):
+        # set the max position to be length - mol_length to avoid additional computation
+        start = int(rng.uniform(low = 0, high = len_interval - molecule_length))
+        end = start + molecule_length - 1
+        fasta_seq = schema.sequence[start:end+1]
+        N_count = fasta_seq.count('N')
+        N_ratio = N_count/molecule_length
+        if N_ratio < 0.7:
+            normalized_length = molecule_length - N_count
+            break
+        elif i == attempts:
+            return None
 
     # if a singleton proportion is provided, conditionally drop the number of reads to 1
     if schema.singletons > 0 and rng.uniform(0,1) > schema.singletons:

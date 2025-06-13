@@ -39,13 +39,11 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Linked Read Parameters",
-            "options": ["--lr-type", "--molecule-coverage", "--molecule-length", "--molecules-per", "--singletons"],
+            "options": ["--lr-type", "--molecule-attempts", "--molecule-coverage", "--molecule-length", "--molecules-per", "--singletons"],
             "panel_styles": {"border_style": "dim magenta"}
         },
     ]
 }
-
-stop_event = threading.Event()
 
 @click.version_option("0.0.0", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
@@ -66,13 +64,14 @@ stop_event = threading.Event()
 @click.option('--stdev', help='standard deviation of --distance', default=50, show_default=True, type=click.IntRange(min=0))
 #Linked-read simulation
 @click.option('-l', '--lr-type', help='type of linked-read experiment', default = "haplotagging", show_default=True, show_choices=True, type= click.Choice(["10x", "stlfr", "haplotagging", "tellseq"], case_sensitive=False))
+@click.option('-a','--molecule-attempts', help='how many tries to create a molecule with <70% ambiguous bases', show_default=True, default=300, type=click.IntRange(min=5))
 @click.option('-c','--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
 @click.option('-m','--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=650))
 @click.option('-n','--molecules-per', help='mean number of unrelated molecules per barcode per chromosome, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution', default=2, show_default=True, type=int)
 @click.option('-s','--singletons', help='proportion of barcodes will only have a single read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_length, molecules_per, singletons):
+def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons):
     """
     Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
 
@@ -280,7 +279,15 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             # chromosome/interval
             for target in choices(schemas, k = n_molecules):
                 _haplotype = SIMULATION_SCHEMA[target].haplotype
-                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_bc, WGSIMPARAMS)
+                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_bc, WGSIMPARAMS, molecule_attempts)
+                if not molecule_recipe:
+                    executor.shutdown(wait = False, cancel_futures=True)
+                    error_terminate((
+                        f"Unable to create a molecule with <70% ambiguous ([bold yellow]N[/]) bases after {molecule_attempts} tries for [default]"
+                        f"{SIMULATION_SCHEMA[target].chrom}:{SIMULATION_SCHEMA[target].start}:{SIMULATION_SCHEMA[target].end} (haplotype {SIMULATION_SCHEMA[target].haplotype})[/]."
+                        f" Consider increasing [blue]--molecule-attempts[/] or providing intervals to [blue]--regions[/] that avoid very long stretches of ambiguous "
+                        "bases, which is likely the cause of this error."), appender=output_appender)
+                
                 MOLECULE_INVENTORY.write(
                     "\t".join([f"haplotype_{_haplotype}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
                 )
@@ -309,9 +316,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                         continue
                     if isinstance(_result, str):
                         executor.shutdown(wait = False, cancel_futures=True)
-                        stop_event.set()
-                        output_appender.stop()
-                        error_terminate(_result)
+                        #output_appender.stop()
+                        error_terminate(_result, appender=output_appender)
                     _hap = _result.haplotype
                     _N = _result.read_count
                     output_appender.submit_files(_result)
@@ -331,10 +337,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             if _result == 0:
                 continue
             if isinstance(_result, str):
-                stop_event.set()
                 executor.shutdown(wait = False, cancel_futures=True)
-                output_appender.stop()
-                error_terminate(_result)
+                #output_appender.stop()
+                error_terminate(_result, appender=output_appender)
             output_appender.submit_files(_result)
             _hap = _result.haplotype
             _N = _result.read_count
@@ -354,12 +359,5 @@ if __name__ =='__main__':
     except KeyboardInterrupt:
         mimick_keyboardterminate()
     except Exception as e:
-        try:
-            MOLECULE_INVENTORY.close()
-        except NameError:
-            pass
-        try:
-            output_appender.stop()
-        except NameError:
-            pass
+        error_terminate(e)
         PROGRESS.stop()
