@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - htslib
   - numpy
   - rich-click =1.8.9
   - click =8.2
