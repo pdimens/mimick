@@ -9,4 +9,4 @@ dependencies:
   - click =8.2
   - pysam
   - python
-  - pywgsim
+  - pywgsim =0.6

@@ -4,6 +4,7 @@ import os
 import sys
 import gzip
 import threading
+import shutil
 from itertools import product
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from random import choices, getrandbits
@@ -120,6 +121,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     )
     tempdir = os.path.join(WGSIMPARAMS.outdir, "temp")
     os.makedirs(tempdir, exist_ok= True)
+    os.makedirs(os.path.join(tempdir, "molecules"), exist_ok = True)
 
     if isinstance(barcodes, str):
         BARCODE_PATH = barcodes
@@ -231,22 +233,12 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     quota_reached = set()
 
     # housekeeping for multithreading
-    max_queued = 100
-    #max_queued = max(5000, 1000 * threads)
+    max_queued = max(10000, 1000 * threads)
     futures = set()
 
     # Create a thread-safe queue to write temp files to final outputs
     # setup the initialization arguments (final output file names, output type, verbosity, etc.)
-    WRITER_QUEUE = queue.Queue()
-    appender_args = (
-        os.path.abspath(f'{output_prefix}.R1.fq'),
-        os.path.abspath(f'{output_prefix}.R2.fq'),
-        os.path.abspath(f'{output_prefix}.gff'),
-        BARCODE_OUTPUT_FORMAT,
-        quiet,
-        WRITER_QUEUE
-    )
-    output_appender = threading.Thread(target=append_worker, args = appender_args)
+    output_appender = FileProcessor(output_prefix, BARCODE_OUTPUT_FORMAT, quiet)
     output_appender.start()
 
     if quiet < 2:
@@ -266,8 +258,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             except StopIteration:
                 stop_event.set()
                 executor.shutdown(wait = False, cancel_futures=True)
-                WRITER_QUEUE.put(None)
-                output_appender.join()
+                output_appender.stop()
                 PROGRESS.stop()
                 error_terminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
 
@@ -289,80 +280,70 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
             # what interval/chromosome the unrelated molecules are drawn from instead of the molecules always being from the same
             # chromosome/interval
             for target in choices(schemas, k = n_molecules):
-                #sleep(0.5)
                 _haplotype = SIMULATION_SCHEMA[target].haplotype
-                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_bc)
-                #print(molecule_recipe)
+                molecule_recipe = create_long_molecule(SIMULATION_SCHEMA[target], RNG, selected_bc, output_bc, WGSIMPARAMS)
                 MOLECULE_INVENTORY.write(
                     "\t".join([f"haplotype_{_haplotype}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
                 )
                 # add number of reads to the tracker in the schema
-                # Backpressure: wait if too many futures are outstanding
-                while futures and len(futures) >= max_queued:
-                    # Poll for completed futures to reduce pressure
-                    done = {f for f in futures if f.done()}
-                    for f in done:
-                        futures.remove(f)
-                        if f.result() == 0:
-                            continue
-                        if isinstance(f.result(), str):
-                            executor.shutdown(wait = False, cancel_futures=True)
-                            stop_event.set()
-                            WRITER_QUEUE.put(False)
-                            output_appender.join()
-                            error_terminate(f.result())
-                        _hap, _N = f.result()
-                        PROGRESS.update(_progress_sim, advance =_N)
-                        PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
-                    sleep(.01)
-                future = executor.submit(linked_simulation, WGSIMPARAMS, SIMULATION_SCHEMA[target], molecule_recipe, WRITER_QUEUE)
+                    
+                future = executor.submit(linked_simulation, WGSIMPARAMS, molecule_recipe)
                 futures.add(future)
 
                 SIMULATION_SCHEMA[target].reads_current += molecule_recipe.read_count
                 # if the number of simulated reads reaches the target, add the index to the "remove from schema" list
                 if SIMULATION_SCHEMA[target].reads_current >= SIMULATION_SCHEMA[target].reads_required:
                     quota_reached.add(target)
-
-            # peek the threads to see if any finished and update the progress bar with any that did
-            # this is duplicated to account for checking when we aren't backlogged with submissions
-            done = {f for f in futures if f.done()}
-            for f in done:
-                futures.remove(f)
-                if f.result() == 0:
-                    continue
-                if isinstance(f.result(), str):
-                    stop_event.set()
-                    executor.shutdown(wait = False, cancel_futures=True)
-                    WRITER_QUEUE.put(False)
-                    output_appender.join()
-                    error_terminate(f.result())
-                _hap, _N = f.result()
-                PROGRESS.update(_progress_sim, advance = _N)
-                PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
+            
             # check to see if read targets were met and if so, remove them from consideration in the next iteration
             if quota_reached:
                 schemas = list(set(schemas) - quota_reached)
                 quota_reached = set()
-                # if the target coverage was reached for all intervals, we can move on to the next haplotype
-                if not schemas:
+
+            # update progress with backpressure control
+            while True:
+                done = [f for f in futures if f.done()]
+                for f in done:
+                    futures.remove(f)
+                    _result = f.result()
+                    if _result== 0:
+                        continue
+                    if isinstance(_result, str):
+                        executor.shutdown(wait = False, cancel_futures=True)
+                        stop_event.set()
+                        output_appender.stop()
+                        error_terminate(_result)
+                    _hap = _result.haplotype
+                    _N = _result.read_count
+                    output_appender.submit_files(_result)
+                    PROGRESS.update(_progress_sim, advance =_N)
+                    PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
+                if len(futures) < max_queued:
                     break
+                sleep(0.05)
+
+            # if the target coverage was reached for all intervals, we can move on to the next haplotype
+            if not schemas:
+                break
+
         # finish processing any molecules that were in the thread queue
         for f in as_completed(futures):
-            if f.result() == 0:
+            _result = f.result()
+            if _result == 0:
                 continue
-            if isinstance(f.result(), str):
+            if isinstance(_result, str):
                 stop_event.set()
                 executor.shutdown(wait = False, cancel_futures=True)
-                WRITER_QUEUE.put(False)
-                output_appender.join()
-                error_terminate(f.result())
-            _hap, _N = f.result()
+                output_appender.stop()
+                error_terminate(_result)
+            output_appender.submit_files(_result)
+            _hap = _result.haplotype
+            _N = _result.read_count
             PROGRESS.update(_progress_sim, advance = _N)
             PROGRESS.update(_progress_haplo[_hap-1], advance = _N)
         # wait for the final-output-writer thread to finish
-        WRITER_QUEUE.put(None)
-        output_appender.join()
-    os.rmdir(tempdir)
+        output_appender.stop()
+    shutil.rmtree(tempdir, ignore_errors=True)
     MOLECULE_INVENTORY.close()
     PROGRESS.stop()
     if quiet < 2:
@@ -379,11 +360,7 @@ if __name__ =='__main__':
         except NameError:
             pass
         try:
-            WRITER_QUEUE.put(None)
-        except NameError:
-            pass
-        try:
-            output_appender.join()
+            output_appender.stop()
         except NameError:
             pass
         PROGRESS.stop()
