@@ -113,8 +113,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         extindels,
         distance,
         stdev,
-        0,
-        0,
+        length,
+        length,
         seed if seed else getrandbits(16),
         output_prefix
     )
@@ -125,15 +125,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     if isinstance(barcodes, str):
         BARCODE_PATH = barcodes
         if quiet < 2:
-            mimick_console.log(f'Validating barcodes in [blue]{os.path.basename(barcodes)}[/]')
-        try:
-            with gzip.open(BARCODE_PATH, 'rt') as filein:
-                BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-        except gzip.BadGzipFile:
-            with open(BARCODE_PATH, 'r') as filein:
-                BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-        except:
-            error_terminate(f'Cannot open {BARCODE_PATH} for reading')
+            mimick_console.log(f'Validating barcodes in [blue]{os.path.basename(BARCODE_PATH)}[/]')
+        #BARCODES = interpret_barcodes(BARCODE_PATH, LR_CHEMISTRY)
+        #BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(BARCODE_PATH, LR_CHEMISTRY)
     else:
         BARCODE_PATH = f"{output_prefix}.generated.barcodes"
         bp,count = barcodes
@@ -144,30 +138,16 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 bc_out.write("".join(bc) + "\n")
                 if i == count:
                     break
-        with open(BARCODE_PATH, 'r') as filein:
-            BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-
-    BARCODES_REMAINING = BARCODES_TOTAL_COUNT
+        #BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(BARCODE_PATH, LR_CHEMISTRY)
+    BARCODES = interpret_barcodes(BARCODE_PATH, LR_CHEMISTRY)
+    BARCODES.remaining = BARCODES.max
+    #BARCODES_REMAINING = BARCODES_TOTAL_COUNT
 
     # process the read lengths and modify them to account for the type of chemistry desired
-    if LR_CHEMISTRY in ["10x", "tellseq"]:
-        # barcode at beginning of read 1
-        WGSIMPARAMS.length_R1 = length - BARCODE_LENGTH_BP
-        if WGSIMPARAMS.length_R1 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {length}, Barcode length: {BARCODE_LENGTH_BP}')
-        WGSIMPARAMS.length_R2 = length
-    elif LR_CHEMISTRY == "stlfr":
-        # barcode at the end of read 2
-        WGSIMPARAMS.length_R1 = length
-        WGSIMPARAMS.length_R2 = length - BARCODE_LENGTH_BP
-        if WGSIMPARAMS.length_R2 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {length}, Barcode length: {BARCODE_LENGTH_BP}')
-    else:
-        # would be 4-segment haplotagging where AC on read 1 and BD on read 2, but in index read, so read not shortened
-        WGSIMPARAMS.length_R1 = length
-        WGSIMPARAMS.length_R2 = length
+    WGSIMPARAMS.adjust_readlength(LR_CHEMISTRY, BARCODE_LENGTH_BP)
 
-    # setup barcode generator #
+    # setup barcodes #
+
     if BARCODE_OUTPUT_FORMAT == "haplotagging":
         if BARCODES_TOTAL_COUNT > 96**4:
             error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
@@ -183,7 +163,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     if quiet == 0:
         PROGRESS.start()
     # create a countdown progressbar tracking remaining barcodes
-    _progress_bc = PROGRESS.add_task(f"[bold]Barcodes Remaining", total=BARCODES_REMAINING, completed= BARCODES_REMAINING)
+    _progress_bc = PROGRESS.add_task(f"[bold]Barcodes Remaining", total=BARCODES.remaining, completed= BARCODES.remaining)
 
     # file to record all the molecules that were created
     MOLECULE_INVENTORY = open(f'{output_prefix}.molecules', 'w')
@@ -236,7 +216,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     # setup the initialization arguments (final output file names, output type, verbosity, etc.)
     output_appender = FileProcessor(output_prefix, BARCODE_OUTPUT_FORMAT, quiet)
     output_appender.start()
-
+    #TODO UPDATE FOR NEW BARCODE CLASS
     if quiet < 2:
         mimick_console.log(f'Simulating molecules and reads')
     with ThreadPoolExecutor(max_workers = threads - 1) as executor:
@@ -249,8 +229,8 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         while True:
             try:
                 selected_bc = "".join(next(BARCODES))
-                BARCODES_REMAINING -= 1
-                PROGRESS.update(_progress_bc, completed= BARCODES_REMAINING)
+                BARCODES.remaining -= 1
+                PROGRESS.update(_progress_bc, completed= BARCODES.remaining)
             except StopIteration:
                 stop_event.set()
                 executor.shutdown(wait = False, cancel_futures=True)

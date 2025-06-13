@@ -10,7 +10,7 @@ import sys
 from itertools import product
 import pysam
 from .common import error_terminate, mimick_console
-from .classes import Schema
+from .classes import Schema, BarcodeGenerator
 from .long_molecule import LongMoleculeRecipe
 
 def readfq(fp): # this is a fast generator function
@@ -108,26 +108,36 @@ def validate_barcodes(bc_list):
         # validate barcodes are only ATCGU nucleotides
         for bc in bc_list:
             if not bool(re.fullmatch(r'^[ATCGU]+$', bc, flags = re.IGNORECASE)):
-                error_terminate(f'Barcodes can only contain nucleotides A,T,C,G,U, but invalid barcode(s) provided: {bc}. This was first invalid barcode identified, but it may not be the only one.')
-                sys.exit(1)
+                error_terminate(f'Barcodes can only contain nucleotides [blue]A,T,C,G,U[/], but invalid barcode(s) provided: {bc}. This was first invalid barcode identified, but it may not be the only one.')
 
-def interpret_barcodes(infile, lr_type):
+def interpret_barcodes(infile, lr_type) -> BarcodeGenerator:
     """
     Takes an open file connection and reads it line by line. Performs barcode validations and returns:
     - either an iter() or generator of barcodes (to use with next())
     - the total barcode	length (int)
     - the total number of barcodes [or combinations] (int)
     """
-    bc = list(set(i.strip() for i in infile.read().splitlines()))
+    try:
+        with gzip.open(infile, 'rt') as filein:
+            bc = list(set(i.strip() for i in filein.read().splitlines()))
+    except gzip.BadGzipFile:
+        with open(infile, 'r') as filein:
+            bc = list(set(i.strip() for i in filein.read().splitlines()))
+    except:
+        error_terminate(f'Cannot open {BARCODE_PATH} for reading')
+
     validate_barcodes(bc)
     bc_len = len(bc[0]) 
     if lr_type == "haplotagging":
         # 2 barcodes per
-        return product(bc,bc,bc,bc), 2 * bc_len, len(bc)**4
+        return BarcodeGenerator(product(bc,bc,bc,bc), lr_type, 2*bc_len, len(bc)**4)
+        #return product(bc,bc,bc,bc), 2 * bc_len, len(bc)**4
     if lr_type == "stlfr":
-        return product(bc,bc,bc), 3 * bc_len, len(bc)**3
+        return BarcodeGenerator(product(bc,bc,bc,bc), lr_type, 3*bc_len, len(bc)**3)
+        #return product(bc,bc,bc), 3 * bc_len, len(bc)**3
     else:
-        return iter(bc), bc_len, len(bc)
+        return BarcodeGenerator(iter(bc), lr_type, bc_len, len(bc))
+        #return iter(bc), bc_len, len(bc)
 
 def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     '''Given a linked-read output type, will format the read accordingly and return it'''
