@@ -191,8 +191,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         "\t".join(["haplotype", "chromosome", "start_position", "end_position", "length", "reads", "nucleotide_barcode", "output_barcode"]) + "\n"
     )
 
-    # add variation to the console rules. necessary? no. fun? yes.
-    styles = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
     _index_fasta = PROGRESS.add_task(f"[bold magenta]Process inputs", total=len(fasta))
 
     fasta_indexes = []
