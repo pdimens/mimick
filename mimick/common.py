@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import sys
+from time import gmtime, strftime
 from itertools import product
 from random import sample
 from rich.console import Console
@@ -19,14 +20,19 @@ PROGRESS = Progress(
 )
 
 def mimick_keyboardterminate():
+    '''Print text saying mimick is terminating and kill it'''
     mimick_console.print("")
     mimick_console.rule("[bold]Terminating Mimick", style = "yellow")
+    PROGRESS.stop()
     sys.exit(1)
 
 def error_terminate(text: str, rule: bool = True, appender = None):
     if rule:
-        mimick_console.rule("[bold]Error", style = "red")
-    mimick_console.log(f"{text}", highlight=False, style = "red")
+        mimick_console.rule(f"Error", style = "red")
+    fmt_time = strftime("Date: %Y-%m-%d Time: %H:%M:%S", gmtime())
+    mimick_console.print(f"{text}", highlight=False, style = "red")
+    if rule:
+        mimick_console.rule(f"[dim]{fmt_time}[/]", style = "dim")
     PROGRESS.stop()
     if appender:
         appender.error()

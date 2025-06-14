@@ -5,7 +5,6 @@ import sys
 import gzip
 import threading
 import shutil
-from itertools import product
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from random import choices, getrandbits
 from time import sleep
@@ -29,7 +28,7 @@ click.rich_click.OPTION_GROUPS = {
     "mimick": [
         {
             "name": "General Options",
-            "options": ["--help", "--output-prefix", "--output-type", "--quiet", "--regions", "--seed", "--threads", "--version"],
+            "options": ["--help", "--circular", "--output-prefix", "--output-type", "--quiet", "--regions", "--seed", "--threads", "--version"],
             "panel_styles": {"border_style": "dim"}
         },
         {
@@ -47,6 +46,7 @@ click.rich_click.OPTION_GROUPS = {
 
 @click.version_option("0.0.0", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
+@click.option('-C','--circular', is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
 @click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
 @click.option('-O','--output-type', help='output format of FASTQ files', type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-q','--quiet', show_default = True, default = "0", type = click.Choice([0,1,2]), help = '`0` all output, `1` no progress bar, `2` no output')
@@ -71,7 +71,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-s','--singletons', help='proportion of barcodes will only have a single read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons):
+def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons):
     """
     Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
 
@@ -101,6 +101,13 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     """
     if molecules_per == 0:
         error_terminate("The value for [yellow]--molecule-number[/] cannot be 0.")
+    if regions and circular:
+        error_terminate(
+            "[yellow]--circular[/] cannot be used with [yellow]--regions[/] beacuse Mimick may incorrectly circularize"
+            " contig slices. If you are using [yellow]--regions[/] to simulate from a subset of contigs, but in their"
+            " entirety, then create new FASTA files containing only those contigs of interest and use [yellow]--circular[/]"
+            " without [yellow]--regions[/]."
+        )
 
     PROGRESS.disable = quiet > 0
     LR_CHEMISTRY = lr_type.lower()
@@ -113,27 +120,18 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         extindels,
         distance,
         stdev,
-        0,
-        0,
+        length,
+        length,
         seed if seed else getrandbits(16),
         output_prefix
     )
     tempdir = os.path.join(WGSIMPARAMS.outdir, "temp")
-    os.makedirs(tempdir, exist_ok= True)
     os.makedirs(os.path.join(tempdir, "molecules"), exist_ok = True)
 
     if isinstance(barcodes, str):
         BARCODE_PATH = barcodes
         if quiet < 2:
-            mimick_console.log(f'Validating barcodes in [blue]{os.path.basename(barcodes)}[/]')
-        try:
-            with gzip.open(BARCODE_PATH, 'rt') as filein:
-                BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-        except gzip.BadGzipFile:
-            with open(BARCODE_PATH, 'r') as filein:
-                BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-        except:
-            error_terminate(f'Cannot open {BARCODE_PATH} for reading')
+            mimick_console.log(f'Validating barcodes in [blue]{os.path.basename(BARCODE_PATH)}[/]')
     else:
         BARCODE_PATH = f"{output_prefix}.generated.barcodes"
         bp,count = barcodes
@@ -144,55 +142,18 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 bc_out.write("".join(bc) + "\n")
                 if i == count:
                     break
-        with open(BARCODE_PATH, 'r') as filein:
-            BARCODES, BARCODE_LENGTH_BP, BARCODES_TOTAL_COUNT = interpret_barcodes(filein, LR_CHEMISTRY)
-
-    BARCODES_REMAINING = BARCODES_TOTAL_COUNT
+    BARCODES = interpret_barcodes(BARCODE_PATH, LR_CHEMISTRY)
+    BARCODES.remaining = BARCODES.max
+    BARCODES.setup_output_bc(BARCODE_OUTPUT_FORMAT)
 
     # process the read lengths and modify them to account for the type of chemistry desired
-    if LR_CHEMISTRY in ["10x", "tellseq"]:
-        # barcode at beginning of read 1
-        WGSIMPARAMS.length_R1 = length - BARCODE_LENGTH_BP
-        if WGSIMPARAMS.length_R1 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {length}, Barcode length: {BARCODE_LENGTH_BP}')
-        WGSIMPARAMS.length_R2 = length
-    elif LR_CHEMISTRY == "stlfr":
-        # barcode at the end of read 2
-        WGSIMPARAMS.length_R1 = length
-        WGSIMPARAMS.length_R2 = length - BARCODE_LENGTH_BP
-        if WGSIMPARAMS.length_R2 <= 5:
-            error_terminate(f'Removing barcodes from the reads would leave sequences <= 5 bp long. Read length: {length}, Barcode length: {BARCODE_LENGTH_BP}')
-    else:
-        # would be 4-segment haplotagging where AC on read 1 and BD on read 2, but in index read, so read not shortened
-        WGSIMPARAMS.length_R1 = length
-        WGSIMPARAMS.length_R2 = length
-
-    # setup barcode generator #
-    if BARCODE_OUTPUT_FORMAT == "haplotagging":
-        if BARCODES_TOTAL_COUNT > 96**4:
-            error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
-        bc_range = [f"{i}".zfill(2) for i in range(1,97)]
-        BARCODE_OUTPUT_GENERATOR = product("A", bc_range, "C", bc_range, "B", bc_range, "D", bc_range)
-
-    if BARCODE_OUTPUT_FORMAT == "stlfr":
-        if BARCODES_TOTAL_COUNT > 1537**3:
-            error_terminate(f'The barcodes and barcode type supplied will generate a potential {BARCODES_TOTAL_COUNT} barcodes, but outputting in haplotagging format is limited to {96**4} barcodes')
-        bc_range = range(1, 1537)
-        BARCODE_OUTPUT_GENERATOR = product(bc_range, bc_range, bc_range)
+    WGSIMPARAMS.adjust_readlength(LR_CHEMISTRY, BARCODES.bc_length)
 
     if quiet == 0:
         PROGRESS.start()
     # create a countdown progressbar tracking remaining barcodes
-    _progress_bc = PROGRESS.add_task(f"[bold]Barcodes Remaining", total=BARCODES_REMAINING, completed= BARCODES_REMAINING)
+    _progress_bc = PROGRESS.add_task(f"[bold]Barcodes Remaining", total=BARCODES.remaining, completed= BARCODES.remaining)
 
-    # file to record all the molecules that were created
-    MOLECULE_INVENTORY = open(f'{output_prefix}.molecules', 'w')
-    MOLECULE_INVENTORY.write(
-        "\t".join(["haplotype", "chromosome", "start_position", "end_position", "length", "reads", "nucleotide_barcode", "output_barcode"]) + "\n"
-    )
-
-    # add variation to the console rules. necessary? no. fun? yes.
-    styles = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
     _index_fasta = PROGRESS.add_task(f"[bold magenta]Process inputs", total=len(fasta))
 
     fasta_indexes = []
@@ -208,11 +169,11 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     if regions:
         if quiet < 2:
             mimick_console.log(f'Processing haplotypes and intervals')
-        SIMULATION_SCHEMA = BEDtoInventory(regions, fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, molecule_length, singletons)
+        SIMULATION_SCHEMA = BEDtoInventory(regions, fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, molecule_length, singletons, circular)
     else:
         if quiet < 2:
             mimick_console.log(f'Processing haplotypes')
-        SIMULATION_SCHEMA = FASTAtoInventory(fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, singletons)
+        SIMULATION_SCHEMA = FASTAtoInventory(fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, singletons, circular)
 
     # indices are no longer needed, so remove them
     for fai in fasta_indexes:
@@ -238,9 +199,12 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     # setup the initialization arguments (final output file names, output type, verbosity, etc.)
     output_appender = FileProcessor(output_prefix, BARCODE_OUTPUT_FORMAT, quiet)
     output_appender.start()
-
     if quiet < 2:
         mimick_console.log(f'Simulating molecules and reads')
+
+    # file to record all the molecules that were created
+    MOLECULE_INVENTORY = MoleculeRecorder(output_prefix)
+
     with ThreadPoolExecutor(max_workers = threads - 1) as executor:
         # number of molecules is fixed if option was < 0
         n_molecules = abs(molecules_per)
@@ -250,9 +214,9 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
         # the while loop breaks when there are no more schema left (schema get removed when their targets are achieved)
         while True:
             try:
-                selected_bc = "".join(next(BARCODES))
-                BARCODES_REMAINING -= 1
-                PROGRESS.update(_progress_bc, completed= BARCODES_REMAINING)
+                selected_bc = BARCODES.get_next_bc()
+                BARCODES.remaining -= 1
+                PROGRESS.update(_progress_bc, completed= BARCODES.remaining)
             except StopIteration:
                 stop_event.set()
                 executor.shutdown(wait = False, cancel_futures=True)
@@ -260,13 +224,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 PROGRESS.stop()
                 error_terminate('No more barcodes left for simulation. The requested parameters require more barcodes.')
 
-            # setup output barcode formats
-            if BARCODE_OUTPUT_FORMAT == "haplotagging":
-                output_bc = "".join(next(BARCODE_OUTPUT_GENERATOR))
-            elif BARCODE_OUTPUT_FORMAT == "stlfr":
-                output_bc = "_".join(str(i) for i in next(BARCODE_OUTPUT_GENERATOR))
-            else:
-                output_bc = selected_bc
+            output_bc = BARCODES.get_next_out(selected_bc)
 
             # if necessary, draw n molecules from a normal distribution
             if molecules_per > 0:
@@ -288,9 +246,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                         f" Consider increasing [blue]--molecule-attempts[/] or providing intervals to [blue]--regions[/] that avoid very long stretches of ambiguous "
                         "bases, which is likely the cause of this error."), appender=output_appender)
                 
-                MOLECULE_INVENTORY.write(
-                    "\t".join([f"haplotype_{_haplotype}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
-                )
+                MOLECULE_INVENTORY.write(molecule_recipe)
                 # add number of reads to the tracker in the schema
                     
                 future = executor.submit(linked_simulation, WGSIMPARAMS, molecule_recipe)
@@ -338,7 +294,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                 continue
             if isinstance(_result, str):
                 executor.shutdown(wait = False, cancel_futures=True)
-                #output_appender.stop()
                 error_terminate(_result, appender=output_appender)
             output_appender.submit_files(_result)
             _hap = _result.haplotype
@@ -352,6 +307,10 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     PROGRESS.stop()
     if quiet < 2:
         mimick_console.log("Finished!")
+        #mimick_console.rule("[dim]Separate by haplotype[/]", style="dim")
+        #mimick_console.print("[dim]If you would like to separate the reads by haplotype, use:[/]")
+        #mimick_console.print(f"    [dim green]zgrep -A3 \"^@HAP:X_\" {os.path.relpath(output_prefix)}.R1.fq.gz[/]")
+        #mimick_console.print("[dim]Where [dim green]X[/] is the haplotype you are trying to isolate.[/]")
 
 if __name__ =='__main__':
     try:

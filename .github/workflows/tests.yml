@@ -51,12 +51,14 @@ jobs:
       - name: Test Barcode file
         shell: micromamba-shell {0}
         run: |
-          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 nucleotides.bc test.hap1.fa test.hap2.fa
+          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 nucleotides.bc test.hap1.fa test.hap2.fa &&\
+          zcat ${{ matrix.lr_from }}_${{ matrix.lr_to }}.R1.fq.gz | head -8
       
       - name: Test Generated Barcodes
         shell: micromamba-shell {0}
         run: |
-          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_to }}_standard -O standard --coverage 3 -q 1 18,1000000 test.hap1.fa test.hap2.fa
+          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_to }}_standard -O standard --coverage 3 -q 1 18,1000000 test.hap1.fa test.hap2.fa &&\
+          zcat ${{ matrix.lr_to }}_standard.R1.fq.gz | head -8
 
   Combinatorial:
     name: Test ${{ matrix.lr_from }} to ${{ matrix.lr_to }}
@@ -93,9 +95,11 @@ jobs:
       - name: Test Barcode file
         shell: micromamba-shell {0}
         run: |
-          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 combinatorial.bc test.hap1.fa test.hap2.fa
+          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 combinatorial.bc test.hap1.fa test.hap2.fa &&\
+          zcat ${{ matrix.lr_from }}_${{ matrix.lr_to }}.R1.fq.gz | head -8
       
       - name: Test Generated Barcodes
         shell: micromamba-shell {0}
         run: |
-          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_standard -O standard --coverage 3 -q 1 8,200 test.hap1.fa test.hap2.fa
+          mimick --lr-type ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_standard -O standard --coverage 3 -q 1 8,200 test.hap1.fa test.hap2.fa &&\
+          zcat ${{ matrix.lr_from }}_standard.R1.fq.gz | head -8
