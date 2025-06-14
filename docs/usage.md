@@ -6,8 +6,19 @@ mimick options... BARCODES FASTA1 FAST2...
 Use `--help` or `-h` or call `mimick` without arguments to call up the docstring.
 
 The minimum input files required by Mimick is a single FASTA file, uncompressed or **bgzip compressed**.
-A set of paired-end reads will be generated for each provided haplotype (FASTA file). Mimick scales with the number
-of threads provided.
+The result will be a single set of paired-end reads, a GFF file of mutations, and a manifest of all the molecules created.
+Mimick scales with the number of threads provided.
+
+If you want to separate out the haplotypes from the final output, you can
+leverage the fact that all the simulated reads start with `@HAP:X_` where `X` is the haplotype number, starting with `1`,
+corresponding to the order in which FASTA files were provided. The read names also
+include source contig names and other identifying features that can be extracted similarly.
+
+```bash
+for i in {1..2}; do
+    zgrep -A3 \"^@HAP:X_\" output_prefix.R$i.fq.gz | gzip > out.R$i.fq.gz
+done
+```
 
 <!-- tabs:start -->
 
@@ -35,12 +46,23 @@ mimick --lr-type 10x barcodes.txt hap1.fasta hap2.fasta
 ```
 
 ### FASTA file(s)
-You will need at least 1 fasta file as input, which goes at the very end of the command. It's assumed
-that each fasta file is a different haplotype **of the same genome**.
+You will need at least 1 fasta file as input, which goes at the very end of the command. If providing more than 1
+FASTA for a non-haploid species, it's assumed that each fasta file is a different haplotype **of the same genome**.
+There is no strict enforcement of the fasta files being from the same genome, it's just how you'll probably want to use
+the simulator (but I'm open to being surprised). 
+
 ```fasta inputs
 mimick --lr-type 10x 16,4000000 hap1.fasta hap2.fasta
 #                    ^barcodes  ^fasta 1   ^fasta 2
 ```
+#### Circular DNA
+The `--circular` toggle/flag tells Mimick to treat each contig
+within each FASTA as circular when creating molecules-- this is probably how you'll want to simulate prokaryotic/microbial
+genomes. When using `--circular`, you'll see in the `.molecules` file that some molecule end positions may occur before the start
+positions, which is an artifact of the circularization. Those positions reflect the start/end positions on the linear sequence in
+the FASTA file and should be interpreted as "started at `start` and reached the end of the contig, then wrapped around to the
+beginning of the contig and kept going until `end`." The corresponding length of the molecule will be accurate and the math
+should make sense as well: $end = start + molecule\_size - contig\_size$
 
 #### **Detailed Options**
 
