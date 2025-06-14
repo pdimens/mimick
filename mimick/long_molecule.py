@@ -7,7 +7,7 @@ from .classes import Schema
 from .common import error_terminate
 
 class LongMoleculeRecipe(object):
-    '''Molecule instance'''
+    '''Recipe for making a molecule from a fasta sequence'''
     def __init__(self, haplotype, fasta, chrom, start, end, barcode,outbarcode,mol_id, read_count):
         self.haplotype = haplotype
         self.fasta = fasta
