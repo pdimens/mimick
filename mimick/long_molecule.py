@@ -8,13 +8,14 @@ from .common import error_terminate
 
 class LongMoleculeRecipe(object):
     '''Recipe for making a molecule from a fasta sequence'''
-    def __init__(self, haplotype, fasta, chrom, start, end, barcode,outbarcode,mol_id, read_count):
+    def __init__(self, haplotype, fasta, chrom, start, end, length, barcode,outbarcode,mol_id, read_count):
         self.haplotype = haplotype
         self.fasta = fasta
         self.output_basename = f"hap{haplotype}.{mol_id}.{barcode}"
         self.chrom=chrom
         self.start=start
         self.end=end
+        self.length=length
         self.barcode=barcode
         self.output_barcode=outbarcode
         self.mol_id=mol_id
@@ -32,7 +33,7 @@ def create_long_molecule(schema: Schema, rng, barcode: str, outputbarcode: str, 
     Returns a LongMoleculeRecipe that contains all the necessary information to simulate reads from that molecule.
     '''
     molnumber = getrandbits(32)
-    len_interval = schema.end - schema.start
+    len_interval = schema.end+1 - schema.start
     # make sure to cap the molecule length to the length of the interval/chromosome
     molecule_length = 0
     # make sure the molecule is greater than 650
@@ -40,11 +41,16 @@ def create_long_molecule(schema: Schema, rng, barcode: str, outputbarcode: str, 
         molecule_length = rng.exponential(scale = schema.mol_length)
 
     molecule_length = int(molecule_length)
+    if schema.is_circular:
+        # don't subtract the molecule length from the end, allow it to overflow since the sequence is repeated
+        adjusted_end = len_interval
+    else:
+        # set the max start position to be (length - mol_length) to avoid overflow
+        adjusted_end = len_interval - molecule_length
     # this needs to iterate to a fixed number of times to try to create a molecule below a particular N
     # percentage else exit the program entirely
     for i in range(attempts + 1):
-        # set the max position to be length - mol_length to avoid additional computation
-        start = int(rng.uniform(low = 0, high = len_interval - molecule_length))
+        start = int(rng.uniform(low = 0, high = adjusted_end))
         end = start + molecule_length - 1
         fasta_seq = schema.sequence[start:end+1]
         N_count = fasta_seq.count('N')
@@ -55,6 +61,8 @@ def create_long_molecule(schema: Schema, rng, barcode: str, outputbarcode: str, 
         elif i == attempts:
             return None
 
+    if schema.is_circular:
+        end %= len_interval
     # if a singleton proportion is provided, conditionally drop the number of reads to 1
     if schema.singletons > 0 and rng.uniform(0,1) > schema.singletons:
         N = 1
@@ -75,4 +83,4 @@ def create_long_molecule(schema: Schema, rng, barcode: str, outputbarcode: str, 
         faout.write(
             "\n".join([fasta_header, fasta_seq])
         )
-    return LongMoleculeRecipe(schema.haplotype, fasta_file, schema.chrom, start, end, barcode, outputbarcode, molnumber, N)
+    return LongMoleculeRecipe(schema.haplotype, fasta_file, schema.chrom, start, end, molecule_length, barcode, outputbarcode, molnumber, N)

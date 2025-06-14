@@ -100,9 +100,10 @@ class Schema():
     '''
     The container for per-chromosome/contig parameters. This is what guides
     the creation of LongMolecules. Values like read_length/read_pairs_per_molecule,
-    mol_length etc. are averages.
+    mol_length etc. are averages. A contig/interval being circular will have its
+    sequence repeated once, but the start and end positions don't change
     '''
-    def __init__(self, haplotype, chrom, start, end, read_length, read_pairs_per_mol, reads_required, mol_length, mol_cov, singletons, seq):
+    def __init__(self, haplotype, chrom, start, end, read_length, read_pairs_per_mol, reads_required, mol_length, mol_cov, singletons, circular, seq):
         self.haplotype = haplotype
         self.chrom = chrom
         self.start = start
@@ -114,12 +115,17 @@ class Schema():
         self.mol_length = mol_length
         self.mol_coverage = mol_cov
         self.singletons = singletons
-        self.sequence = seq
+        self.is_circular = circular
+        if circular:
+            self.sequence = seq * 2
+        else:
+            self.sequence = seq
+
     def __str__(self):
         outstring = ""
         for i,j in self.__dict__.items():
             if i != "sequence":
                 outstring += f"{i}: {j}\n"
             else:
-                outstring += f"{i}: {j[:31]}... (length = {len(j)})"
+                outstring += f"{i}: {j[:31]}... (length = {self.end+1 - self.start})"
         return outstring

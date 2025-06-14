@@ -35,7 +35,7 @@ def index_fasta(fasta):
         error_terminate(f'Failed to index {_fa}. Error reported by samtools:\n{e}', False)
     return outs
 
-def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons) -> dict:
+def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singletons, circular) -> dict:
     '''
     Read the BED file, do validation against the FASTA files and derive the schema, and return a dict of Schema objects that's an
     inventory tracker in the form of d[idx] = [read_count, reads_requireduired, Schema]
@@ -64,11 +64,11 @@ def BEDtoInventory(bedfile, fasta, coverage, mol_cov, mol_len, read_len, singlet
                 _seq = _fasta.fetch(chrom, start-1, end+1)
                 normalized_length = (end-start) - _seq.count('N')
                 reads_required = int((coverage*normalized_length/read_len)/2)
-                inventory[idx] = Schema(haplotype, chrom,start, end, read_len, mean_reads_per, reads_required, mol_len, mol_cov, singletons, _seq)
+                inventory[idx] = Schema(haplotype, chrom,start, end, read_len, mean_reads_per, reads_required, mol_len, mol_cov, singletons, circular, _seq)
                 idx += 1
     return inventory
 
-def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) -> dict:
+def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons, circular) -> dict:
     '''
     Read the FASTA files and derive the contig name, start, and end positions and other simulation schema
     and return a dict of Schema objects that's an inventory tracker in the form of
@@ -90,7 +90,7 @@ def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) ->
                 if normalized_length < 650:
                     error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous ([yellow]N[/]) bases.")
                 reads_required = int((coverage*normalized_length/read_len)/2)
-                inventory[idx] = Schema(haplotype, chrom,start,end,read_len, mean_reads_per, reads_required, mol_len, mol_cov, singletons, contig.sequence)
+                inventory[idx] = Schema(haplotype, chrom,start,end,read_len, mean_reads_per, reads_required, mol_len, mol_cov, singletons, circular, contig.sequence)
                 idx += 1
     return inventory
 
@@ -153,6 +153,30 @@ def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
         fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
         sequence = [f'@{name}#{outbc} {fr}', seq, '+', qual]
     return "\n".join(sequence)
+
+class MoleculeRecorder:
+    def __init__(self, prefix):
+        self.inventory = open(f'{prefix}.molecules', 'w')
+        self.inventory.write(
+        "\t".join(["haplotype", "chromosome", "start_position", "end_position", "length", "reads", "nucleotide_barcode", "output_barcode"]) + "\n"
+        )
+
+    def close(self):
+        self.inventory.close()
+
+    def write(self, long_molecule: LongMoleculeRecipe):
+        self.inventory.write(
+            "\t".join([
+                f"haplotype_{long_molecule.haplotype}",
+                long_molecule.chrom,
+                str(long_molecule.start),
+                str(long_molecule.end),
+                str(long_molecule.length),
+                str(long_molecule.read_count),
+                long_molecule.barcode,
+                long_molecule.output_barcode
+                ]) + "\n"
+        )
 
 class FileProcessor:
     def __init__(self, outprefix, outformat, quiet):

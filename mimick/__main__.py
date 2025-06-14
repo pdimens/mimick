@@ -28,7 +28,7 @@ click.rich_click.OPTION_GROUPS = {
     "mimick": [
         {
             "name": "General Options",
-            "options": ["--help", "--output-prefix", "--output-type", "--quiet", "--regions", "--seed", "--threads", "--version"],
+            "options": ["--help", "--circular", "--output-prefix", "--output-type", "--quiet", "--regions", "--seed", "--threads", "--version"],
             "panel_styles": {"border_style": "dim"}
         },
         {
@@ -46,6 +46,7 @@ click.rich_click.OPTION_GROUPS = {
 
 @click.version_option("0.0.0", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
+@click.option('-C','--circular', is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
 @click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
 @click.option('-O','--output-type', help='output format of FASTQ files', type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-q','--quiet', show_default = True, default = "0", type = click.Choice([0,1,2]), help = '`0` all output, `1` no progress bar, `2` no output')
@@ -70,7 +71,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-s','--singletons', help='proportion of barcodes will only have a single read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons):
+def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons):
     """
     Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
 
@@ -146,12 +147,6 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     # create a countdown progressbar tracking remaining barcodes
     _progress_bc = PROGRESS.add_task(f"[bold]Barcodes Remaining", total=BARCODES.remaining, completed= BARCODES.remaining)
 
-    # file to record all the molecules that were created
-    MOLECULE_INVENTORY = open(f'{output_prefix}.molecules', 'w')
-    MOLECULE_INVENTORY.write(
-        "\t".join(["haplotype", "chromosome", "start_position", "end_position", "length", "reads", "nucleotide_barcode", "output_barcode"]) + "\n"
-    )
-
     _index_fasta = PROGRESS.add_task(f"[bold magenta]Process inputs", total=len(fasta))
 
     fasta_indexes = []
@@ -167,11 +162,11 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     if regions:
         if quiet < 2:
             mimick_console.log(f'Processing haplotypes and intervals')
-        SIMULATION_SCHEMA = BEDtoInventory(regions, fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, molecule_length, singletons)
+        SIMULATION_SCHEMA = BEDtoInventory(regions, fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, molecule_length, singletons, circular)
     else:
         if quiet < 2:
             mimick_console.log(f'Processing haplotypes')
-        SIMULATION_SCHEMA = FASTAtoInventory(fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, singletons)
+        SIMULATION_SCHEMA = FASTAtoInventory(fasta, coverage/len(fasta), molecule_coverage, molecule_length, avg_adjusted_read_length, singletons, circular)
 
     # indices are no longer needed, so remove them
     for fai in fasta_indexes:
@@ -199,6 +194,10 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
     output_appender.start()
     if quiet < 2:
         mimick_console.log(f'Simulating molecules and reads')
+
+    # file to record all the molecules that were created
+    MOLECULE_INVENTORY = MoleculeRecorder(output_prefix)
+
     with ThreadPoolExecutor(max_workers = threads - 1) as executor:
         # number of molecules is fixed if option was < 0
         n_molecules = abs(molecules_per)
@@ -240,9 +239,7 @@ def mimick(barcodes, fasta, output_prefix, output_type, quiet, seed, regions, th
                         f" Consider increasing [blue]--molecule-attempts[/] or providing intervals to [blue]--regions[/] that avoid very long stretches of ambiguous "
                         "bases, which is likely the cause of this error."), appender=output_appender)
                 
-                MOLECULE_INVENTORY.write(
-                    "\t".join([f"haplotype_{_haplotype}", molecule_recipe.chrom, str(molecule_recipe.start), str(molecule_recipe.end), str(molecule_recipe.end-molecule_recipe.start), str(molecule_recipe.read_count),  selected_bc, output_bc]) + "\n"
-                )
+                MOLECULE_INVENTORY.write(molecule_recipe)
                 # add number of reads to the tracker in the schema
                     
                 future = executor.submit(linked_simulation, WGSIMPARAMS, molecule_recipe)
