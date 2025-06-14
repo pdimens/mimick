@@ -101,6 +101,13 @@ def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, r
     """
     if molecules_per == 0:
         error_terminate("The value for [yellow]--molecule-number[/] cannot be 0.")
+    if regions and circular:
+        error_terminate(
+            "[yellow]--circular[/] cannot be used with [yellow]--regions[/] beacuse Mimick may incorrectly circularize"
+            " contig slices. If you are using [yellow]--regions[/] to simulate from a subset of contigs, but in their"
+            " entirety, then create new FASTA files containing only those contigs of interest and use [yellow]--circular[/]"
+            " without [yellow]--regions[/]."
+        )
 
     PROGRESS.disable = quiet > 0
     LR_CHEMISTRY = lr_type.lower()

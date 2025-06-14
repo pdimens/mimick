@@ -16,11 +16,11 @@ These are the options available to `--lr-type`. Each has a different approach to
 supplied/generated barcode list and the length of the resulting reads to compensate for where
 the barcode(s) would have been attached to.
 
-| --lr-type | Format |
-|:------------------|:-------|
-|`10x`/`tellseq`   | single barcode on R1 |
-|`haplotagging`  | R1 and R2 each have different combinatorial 2-barcodes |
-|`stlfr`         | combinatorial 3-barcode on R2 |
+| --lr-type       | Format                                                 |
+|:----------------|:-------------------------------------------------------|
+| `10x`/`tellseq` | single barcode on R1                                   |
+| `haplotagging`  | R1 and R2 each have different combinatorial 2-barcodes |
+| `stlfr`         | combinatorial 3-barcode on R2                          |
 
 In practice, this means that if you input 400,000  16bp barcodes for `10x` or `tellseq` simulation, the
 resulting R1 reads will be 16bp shorter, because that's where that barcodes would have been. 
@@ -35,13 +35,13 @@ format over another? Well, it could be personal preference or the software you w
 specific format (which is a **problem** for the linked-read ecosystem). Regardless of the _kind_ of linked-read
 experiment you chose with `--lr-type`, you can specify any of the linked-read types as the output format with `--output-type`.
 
-| --output-type | Barcode Location | Example |
-|:-----------------|:-------|:---------------------|
-|`10x`           | start of R1 sequence | `ATAGACCATAGA`GGACA... |
-|`haplotagging`  | sequence header as `BX:Z:ACBD` |  `@SEQID BX:Z:A0C331B34D87` |
-|`standard`      | sequence header as `BX:Z:BARCODE`, no specific format | `@SEQID BX:Z:ATACGAGACA` |
-|`stlfr`         | appended to sequence ID via `#1_2_3` | `@SEQID#1_354_39` |
-|`tellseq`       | appended to sequence ID via `:ATCG` | `@SEQID:TATTAGCAC` |
+| --output-type  | Barcode Location                                      | Example                    |
+|:---------------|:------------------------------------------------------|:---------------------------|
+| `10x`          | start of R1 sequence                                  | `ATAGACCATAGA`GGACA...     |
+| `haplotagging` | sequence header as `BX:Z:ACBD`                        | `@SEQID BX:Z:A0C331B34D87` |
+| `standard`     | sequence header as `BX:Z:BARCODE`, no specific format | `@SEQID BX:Z:ATACGAGACA`   |
+| `stlfr`        | appended to sequence ID via `#1_2_3`                  | `@SEQID#1_354_39`          |
+| `tellseq`      | appended to sequence ID via `:ATCG`                   | `@SEQID:TATTAGCAC`         |
 
 ## Proper read pairing
 A consideration for downstream application using the simulated linked reads is that you might need to
