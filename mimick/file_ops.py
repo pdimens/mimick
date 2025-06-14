@@ -13,7 +13,7 @@ from .common import error_terminate, mimick_console
 from .classes import Schema, BarcodeGenerator
 from .long_molecule import LongMoleculeRecipe
 
-def readfq(fp): # this is a fast generator function
+def readfq(fp):
     '''Yield FASTQ record'''
     read=[]
     for line in fp:
@@ -88,7 +88,7 @@ def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons) ->
                 end = len(contig.sequence)
                 normalized_length = end - contig.sequence.count('N')
                 if normalized_length < 650:
-                    error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous (N) bases.")
+                    error_terminate(f"Error in {os.path.basename(fasta)} [yellow]contig {chrom}[/]: contigs must have at least 650 non-ambiguous ([yellow]N[/]) bases.")
                 reads_required = int((coverage*normalized_length/read_len)/2)
                 inventory[idx] = Schema(haplotype, chrom,start,end,read_len, mean_reads_per, reads_required, mol_len, mol_cov, singletons, contig.sequence)
                 idx += 1
@@ -108,7 +108,7 @@ def validate_barcodes(bc_list):
         # validate barcodes are only ATCGU nucleotides
         for bc in bc_list:
             if not bool(re.fullmatch(r'^[ATCGU]+$', bc, flags = re.IGNORECASE)):
-                error_terminate(f'Barcodes can only contain nucleotides [blue]A,T,C,G,U[/], but invalid barcode(s) provided: {bc}. This was first invalid barcode identified, but it may not be the only one.')
+                error_terminate(f'Barcodes can only contain nucleotides [blue]A,T,C,G,U[/], but invalid barcode(s) provided: [yellow]{bc}[/]. This was first invalid barcode identified, but it may not be the only one.')
 
 def interpret_barcodes(infile, lr_type) -> BarcodeGenerator:
     """
@@ -124,20 +124,16 @@ def interpret_barcodes(infile, lr_type) -> BarcodeGenerator:
         with open(infile, 'r') as filein:
             bc = list(set(i.strip() for i in filein.read().splitlines()))
     except:
-        error_terminate(f'Cannot open {BARCODE_PATH} for reading')
+        error_terminate(f'Cannot open [yellow]{os.path.relpath(infile)}[/] for reading because it\'s not recognized as either a plaintext or gzipped file.')
 
     validate_barcodes(bc)
     bc_len = len(bc[0]) 
     if lr_type == "haplotagging":
-        # 2 barcodes per
         return BarcodeGenerator(product(bc,bc,bc,bc), lr_type, 2*bc_len, len(bc)**4)
-        #return product(bc,bc,bc,bc), 2 * bc_len, len(bc)**4
     if lr_type == "stlfr":
         return BarcodeGenerator(product(bc,bc,bc,bc), lr_type, 3*bc_len, len(bc)**3)
-        #return product(bc,bc,bc), 3 * bc_len, len(bc)**3
     else:
         return BarcodeGenerator(iter(bc), lr_type, bc_len, len(bc))
-        #return iter(bc), bc_len, len(bc)
 
 def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     '''Given a linked-read output type, will format the read accordingly and return it'''
@@ -155,7 +151,7 @@ def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
         sequence = [f'@{name}{fr}\tVX:i:1\tBX:Z:{bc}', seq, '+', qual]
     elif outformat == "stlfr":
         fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
-        sequence = [f'@{name}#{stlfr_bc} {fr}', seq, '+', qual]
+        sequence = [f'@{name}#{outbc} {fr}', seq, '+', qual]
     return "\n".join(sequence)
 
 class FileProcessor:
@@ -164,13 +160,16 @@ class FileProcessor:
         self.output_dir = os.path.dirname(outprefix)
         os.makedirs(self.output_dir, exist_ok=True)
         self.prefix = os.path.basename(outprefix)
-        self.R1 = f"{outprefix}.R1.fq"
-        self.R2 = f"{outprefix}.R2.fq"
-        self.GFF = f"{outprefix}.gff"
+        self.R1 = open(f"{outprefix}.R1.fq", 'w')
+        self.R2 = open(f"{outprefix}.R2.fq", 'w')
+        self.GFF = open(f"{outprefix}.gff", 'w')
         self.quiet = quiet == 2
         self.task_queue = multiprocessing.Queue()
         self.process = None
         self.running = False
+        for ext in ["R1.fq", "R2.fq", "gff"]:
+            if os.path.exists(f"{outprefix}.{ext}.gz"):
+                os.remove(f"{outprefix}.{ext}.gz")
 
     def _worker(self):
         """Worker function that runs in the separate process"""
@@ -180,30 +179,25 @@ class FileProcessor:
                 task = self.task_queue.get()
                 if task is None:  # Shutdown signal
                     if not self.quiet:
-                        mimick_console.log(f"Compressing [blue]{os.path.basename(self.R1)}[/]")
-                    pysam.tabix_compress(self.R1, f'{self.R1}.gz', force=True)
-                    os.remove(self.R1)
+                        mimick_console.log(f"Compressing [blue]{os.path.basename(self.R1.name)}[/]")
+                    pysam.tabix_compress(self.R1.name, f'{self.R1.name}.gz', force=True)
+                    os.remove(self.R1.name)
                     if not self.quiet:
-                        mimick_console.log(f"Compressing [blue]{os.path.basename(self.R2)}[/]")
-                    pysam.tabix_compress(self.R1, f'{self.R2}.gz', force=True)
-                    os.remove(self.R2)
+                        mimick_console.log(f"Compressing [blue]{os.path.basename(self.R2.name)}[/]")
+                    pysam.tabix_compress(self.R1.name, f'{self.R2.name}.gz', force=True)
+                    os.remove(self.R2.name)
                     if not self.quiet:
-                        mimick_console.log(f"Compressing [blue]{os.path.basename(self.GFF)}[/]")
-                    with open(self.GFF, 'rb') as f_in:
-                        with gzip.open(f"{self.GFF}.gz", 'wb') as f_out:
+                        mimick_console.log(f"Compressing [blue]{os.path.basename(self.GFF.name)}[/]")
+                    with open(self.GFF.name, 'rb') as f_in, gzip.open(f"{self.GFF.name}.gz", 'wb') as f_out:
                             shutil.copyfileobj(f_in, f_out)
-                    os.remove(self.GFF)
+                    os.remove(self.GFF.name)
                     break
-                #if task is False:
-                #    # Exit on error, don't compress
-                #    self.task_queue.task_done()
-                #    break
 
                 _basename, barcode, output_barcode = task
 
                 _basename = os.path.join(self.output_dir, "temp", _basename)
                 try:
-                    with open(self.R1, 'a') as out, open(f"{_basename}.R1", 'r') as src:
+                    with open(f"{_basename}.R1", 'r') as src:
                         for name,seq,qual in readfq(src):
                             sequence = format_linkedread(
                                 name = name,
@@ -214,11 +208,11 @@ class FileProcessor:
                                 qual = qual,
                                 forward = True
                             )
-                            out.write(sequence + '\n')
+                            self.R1.write(sequence + '\n')
 
                     os.remove(f"{_basename}.R1")
 
-                    with open(self.R2, 'a') as out, open(f"{_basename}.R2", 'r') as src:
+                    with open(f"{_basename}.R2", 'r') as src:
                         for name,seq,qual in readfq(src):
                             if self.output_format == "10x":
                                 sequence = '\n'.join([f'@{name}',seq,'+',qual])
@@ -232,12 +226,12 @@ class FileProcessor:
                                     qual = qual,
                                     forward = False
                                 )
-                            out.write(sequence + '\n')
+                            self.R2.write(sequence + '\n')
 
                     os.remove(f"{_basename}.R2")
 
-                    with open(self.GFF, 'a') as dest, open(f"{_basename}.gff", 'r') as src:
-                        shutil.copyfileobj(src, dest)
+                    with open(f"{_basename}.gff", 'r') as src:
+                        shutil.copyfileobj(src, self.GFF)
                     
                     os.remove(f"{_basename}.gff")
                     
@@ -264,19 +258,30 @@ class FileProcessor:
             raise RuntimeError("FileProcessor not started. Call start() first.")
         self.task_queue.put((long_molecule.output_basename, long_molecule.barcode, long_molecule.output_barcode))
 
+    def close_files(self):
+        self.R1.close()
+        self.R2.close()
+        self.Gff.close()
+
     def error(self):
         """Stop the file processing cold"""
+        try:
+            self.close_files()
+        except:
+            pass
         if self.running:
             # Send shutdown signal
             self.task_queue.put(False)
-            # Wait for jobs to finish
-            #self.process.join()
             if self.process.is_alive():
                 self.process.terminate()
             self.running = False
 
     def stop(self):
         """Stop the file processing process"""
+        try:
+            self.close_files()
+        except:
+            pass
         if self.running:
             # Send shutdown signal
             self.task_queue.put(None)
