@@ -201,15 +201,19 @@ class FileProcessor:
             try:
                 # Get task from queue (blocks until available)
                 task = self.task_queue.get()
-                if task is None:  # Shutdown signal
+                # Shutdown signal
+                if task is None:
+                    # R1 read
                     if not self.quiet:
                         mimick_console.log(f"Compressing [blue]{os.path.basename(self.R1.name)}[/]")
                     pysam.tabix_compress(self.R1.name, f'{self.R1.name}.gz', force=True)
                     os.remove(self.R1.name)
+                    # R2 read
                     if not self.quiet:
                         mimick_console.log(f"Compressing [blue]{os.path.basename(self.R2.name)}[/]")
-                    pysam.tabix_compress(self.R1.name, f'{self.R2.name}.gz', force=True)
+                    pysam.tabix_compress(self.R2.name, f'{self.R2.name}.gz', force=True)
                     os.remove(self.R2.name)
+                    # GFF file
                     if not self.quiet:
                         mimick_console.log(f"Compressing [blue]{os.path.basename(self.GFF.name)}[/]")
                     with open(self.GFF.name, 'rb') as f_in, gzip.open(f"{self.GFF.name}.gz", 'wb') as f_out:
@@ -221,42 +225,26 @@ class FileProcessor:
 
                 _basename = os.path.join(self.output_dir, "temp", _basename)
                 try:
-                    with open(f"{_basename}.R1", 'r') as src:
-                        for name,seq,qual in readfq(src):
-                            sequence = format_linkedread(
-                                name = name,
-                                bc = barcode,
-                                outbc = output_barcode,
-                                outformat = self.output_format,
-                                seq = seq,
-                                qual = qual,
-                                forward = True
-                            )
-                            self.R1.write(sequence + '\n')
-
-                    os.remove(f"{_basename}.R1")
-
-                    with open(f"{_basename}.R2", 'r') as src:
-                        for name,seq,qual in readfq(src):
-                            if self.output_format == "10x":
-                                sequence = '\n'.join([f'@{name}',seq,'+',qual])
-                            else:
-                                sequence = format_linkedread(
-                                    name = name,
-                                    bc = barcode,
-                                    outbc = output_barcode,
-                                    outformat = self.output_format,
-                                    seq = seq,
-                                    qual = qual,
-                                    forward = False
-                                )
-                            self.R2.write(sequence + '\n')
-
-                    os.remove(f"{_basename}.R2")
+                    for i,f in enumerate([self.R1, self.R2],1):
+                        with open(f"{_basename}.R{i}", 'r') as src:
+                            for name,seq,qual in readfq(src):
+                                if i== 2 and self.output_format == "10x":
+                                    sequence = '\n'.join([f'@{name}',seq,'+',qual])
+                                else:
+                                    sequence = format_linkedread(
+                                        name = name,
+                                        bc = barcode,
+                                        outbc = output_barcode,
+                                        outformat = self.output_format,
+                                        seq = seq,
+                                        qual = qual,
+                                        forward = i == 1
+                                    )
+                                    f.write(sequence + '\n')
+                    os.remove(f"{_basename}.R{i}")
 
                     with open(f"{_basename}.gff", 'r') as src:
                         shutil.copyfileobj(src, self.GFF)
-                    
                     os.remove(f"{_basename}.gff")
                     
                 except Exception as e:

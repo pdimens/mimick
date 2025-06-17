@@ -272,7 +272,6 @@ def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, r
                         continue
                     if isinstance(_result, str):
                         executor.shutdown(wait = False, cancel_futures=True)
-                        #output_appender.stop()
                         error_terminate(_result, appender=output_appender)
                     _hap = _result.haplotype
                     _N = _result.read_count
