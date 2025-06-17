@@ -64,7 +64,7 @@ def create_long_molecule(schema: Schema, rng, barcode: str, outputbarcode: str, 
     if schema.is_circular:
         end %= len_interval
     # if a singleton proportion is provided, conditionally drop the number of reads to 1
-    if schema.singletons > 0 and rng.uniform(0,1) > schema.singletons:
+    if schema.singletons > 0 and rng.uniform(0,1) <= schema.singletons:
         N = 1
     elif schema.mol_coverage < 1:
         # set a minimum number of reads to 2 to avoid singletons
