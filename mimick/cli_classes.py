@@ -12,7 +12,7 @@ class Barcodes(_click.ParamType):
         try:
             bp,count = value.split(",")
         except ValueError:
-            self.fail(f"{value} is not a file, not in int,int format", param, ctx)
+            self.fail(f"{value} is not a file, nor in int,int format", param, ctx)
         try:
             bp = int(bp)
         except ValueError:
