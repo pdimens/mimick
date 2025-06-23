@@ -33,12 +33,12 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Read Simulation Parameters",
-            "options": ["--coverage","--distance","--error","--extindels","--indels","--length","--mutation","--stdev"],
+            "options": ["--coverage","--distance","--error","--extindels","--indels","--lengths","--mutation","--stdev"],
             "panel_styles": {"border_style": "dim blue"}
         },
         {
             "name": "Linked Read Parameters",
-            "options": ["--lr-type", "--molecule-attempts", "--molecule-coverage", "--molecule-length", "--molecules-per", "--singletons"],
+            "options": ["--molecule-attempts", "--molecule-coverage", "--molecule-length", "--molecules-per", "--segments", "--singletons"],
             "panel_styles": {"border_style": "dim magenta"}
         },
     ]
@@ -48,7 +48,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
 @click.option('-C','--circular', is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
 @click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
-@click.option('-O','--output-type', help='FASTQ output format', type = click.Choice(["10x", "stlfr", "standard", "haplotagging", "tellseq"], case_sensitive=False))
+@click.option('-O','--output-type', help='FASTQ output format', type = click.Choice(["10x", "stlfr", "standard", "standard:haplotagging", "standard:stlfr", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-q','--quiet', show_default = True, default = "0", type = click.Choice([0,1,2]), help = '`0` all output, `1` no progress bar, `2` no output')
 @click.option('-r','--regions', help='one or more regions to simulate, in BED format', type = click.Path(dir_okay=False, readable=True, resolve_path=True))
 @click.option('-t','--threads', help='number of threads to use for simulation', type=click.IntRange(min=1), default=2, show_default=True)
@@ -59,19 +59,19 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('--error', help='base error rate', default=0.02, show_default=True, type=click.FloatRange(min=0, max=1))
 @click.option('--extindels', help='indels extension rate', default=0.25, show_default=True, type=click.FloatRange(min=0, max=1))
 @click.option('--indels', help='indels rate', default=0.15, show_default=True, type=click.FloatRange(min=0, max=1))
-@click.option('--length', help='length of reads in bp', default=150, show_default=True, type=click.IntRange(min=30))
+@click.option('--lengths', help='length of R1,R2 reads in bp', default="150,150", show_default=True, type=ReadLengths())
 @click.option('--mutation', help='mutation rate', default=0.001, show_default=True, type=click.FloatRange(min=0))
 @click.option('--stdev', help='standard deviation for `--distance`', default=50, show_default=True, type=click.IntRange(min=0))
 #Linked-read simulation
-@click.option('-l', '--lr-type', help='type of linked-read experiment', default = "haplotagging", show_default=True, show_choices=True, type= click.Choice(["10x", "stlfr", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-a','--molecule-attempts', help='how many tries to create a molecule with <70% ambiguous bases', show_default=True, default=300, type=click.IntRange(min=5))
 @click.option('-c','--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
 @click.option('-m','--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=650))
 @click.option('-n','--molecules-per', help='mean number of unrelated molecules per barcode per chromosome, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution', default=2, show_default=True, type=int)
+@click.option('-x', '--segments', help='treat barcodes as combinatorial with this many segments', default = 4, show_default=True, type= click.IntRange(min=1))
 @click.option('-s','--singletons', help='proportion of barcodes that will only have one read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.argument('barcodes', type = Barcodes())
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,length,mutation,stdev,lr_type, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons):
+def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, regions, threads,coverage,distance,error,extindels,indels,lengths,mutation,stdev,segments, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons):
     """
     Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:
 
@@ -80,24 +80,25 @@ def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, r
         - e.g. `16,400000` would generate 400,000 unique 16bp barcodes 
     2. you can provide a file of specific nucleotide barcodes, 1 per line
 
-    You can specify the linked-read barcode chemistry to simulate via `--lr-type` as well as
-    the output format of FASTQ files (default is the same as barcode type). For example, you
-    can generate 96 barcodes (common haplotagging style), select `--lr-type stlfr`
-    (combinatorial 3-barcode on R2 read), and have `--output-type tellseq` (`@seqid:barcode` header format).
+    In addition to selecting an `--output-type`, barcodes can be parsed absolutely or you can specify the
+    linked-read barcode type using `-x/--segments`. For example, to simulate the common 4-segment haplotagging style,
+    use `-x 4` and have `--output-type haplotagging` (or use a different output style, if preferred). The `standard` output
+    types can be suffixed with `:haplotagging` or `:stlfr` to use those barcode styles with the standard format
+    (e.g. `standard:haplotagging`) The table below serves as a guide for the configurations for the common linked-read varieties: 
 
-    | --lr-type       | Format                                                 |
-    |:----------------|:-------------------------------------------------------|
-    | `10x`/`tellseq` | single barcode on R1                                   |
-    | `haplotagging`  | R1 and R2 each have different combinatorial 2-barcodes |
-    | `stlfr`         | combinatorial 3-barcode on R2                          |
+    | chemistry    | `--segments` | `--lengths` | Format                                       |
+    |:-------------|:------------:|:-----------:|:---------------------------------------------|
+    | 10x/tellseq  |     `1`      |  `134,150`  | single barcode on R1                         |
+    | haplotagging |     `4`      |  `150,150`  | I1 and I2 each with combinatorial 2-barcodes |
+    | stlfr        |     `3`      |  `150,108`  | combinatorial 3-barcode on R2                |
 
-    | --output-type  | Barcode Location                                      | Example                    |
-    |:---------------|:------------------------------------------------------|:---------------------------|
-    | `10x`          | start of R1 sequence                                  | `ATAGACCATAGA`GGACA...     |
-    | `haplotagging` | sequence header as `BX:Z:ACBD`                        | `@SEQID BX:Z:A0C331B34D87` |
-    | `standard`     | sequence header as `BX:Z:BARCODE`, no specific format | `@SEQID BX:Z:ATACGAGACA`   |
-    | `stlfr`        | appended to sequence ID via `#1_2_3`                  | `@SEQID#1_354_39`          |
-    | `tellseq`      | appended to sequence ID via `:ATCG`                   | `@SEQID:TATTAGCAC`         |
+    | --output-type    | Barcode Location              | default for | Example                    |
+    |:-----------------|:------------------------------|:-----------:|:---------------------------|
+    | `10x`            | start of R1 sequence          |             | `ATAGACCATAGA`GGACA...     |
+    | `haplotagging`   | header comment as `BX:Z:ACBD` |             | `@SEQID BX:Z:A0C331B34D87` |
+    | `standard[:...]` | `BX:Z:BARCODE VX:i:N`         | all others  | `@SEQID BX:Z:ATACGAGACA`   |
+    | `stlfr`          | sequence ID + `#1_2_3`        |   `-x 3`    | `@SEQID#1_354_39`          |
+    | `tellseq`        | sequence ID + `:ATCG`         |   `-x 1`    | `@SEQID:TATTAGCAC`         |
     """
     if molecules_per == 0:
         error_terminate("The value for [yellow]--molecule-number[/] cannot be 0.")
@@ -108,10 +109,9 @@ def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, r
             " entirety, then create new FASTA files containing only those contigs of interest and use [yellow]--circular[/]"
             " without [yellow]--regions[/]."
         )
-
     PROGRESS.disable = quiet > 0
-    LR_CHEMISTRY = lr_type.lower()
-    BARCODE_OUTPUT_FORMAT = output_type.lower() if output_type else LR_CHEMISTRY
+    BARCODE_OUTPUT_FORMAT = output_type.lower() if output_type else OUTTYPE.get(segments, "standard")
+
     RNG = np.random.default_rng(seed = seed)
     WGSIMPARAMS = wgsimParams(
         error,
@@ -120,8 +120,8 @@ def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, r
         extindels,
         distance,
         stdev,
-        length,
-        length,
+        lengths[0],
+        lengths[1],
         seed if seed else getrandbits(16),
         output_prefix
     )
@@ -142,12 +142,8 @@ def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, r
                 bc_out.write("".join(bc) + "\n")
                 if i == count:
                     break
-    BARCODES = interpret_barcodes(BARCODE_PATH, LR_CHEMISTRY)
+    BARCODES = interpret_barcodes(BARCODE_PATH, segments, BARCODE_OUTPUT_FORMAT)
     BARCODES.remaining = BARCODES.max
-    BARCODES.setup_output_bc(BARCODE_OUTPUT_FORMAT)
-
-    # process the read lengths and modify them to account for the type of chemistry desired
-    WGSIMPARAMS.adjust_readlength(LR_CHEMISTRY, BARCODES.bc_length)
 
     if quiet == 0:
         PROGRESS.start()

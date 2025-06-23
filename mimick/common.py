@@ -9,6 +9,11 @@ from rich.progress import Progress, TextColumn, TimeElapsedColumn, TaskProgressC
 
 mimick_console = Console(stderr=True, log_path=False)
 STYLES = ["purple", "yellow", "green", "orange", "blue", "magenta"] * 4
+OUTTYPE = {
+    1: "tellseq",
+    3: "stlfr",
+    4: "standard:haplotagging"
+}
 
 PROGRESS = Progress(
     TextColumn("[progress.description]{task.description}"),

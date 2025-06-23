@@ -28,21 +28,22 @@ Running Mimick will always require a barcode specification and at least one inpu
 ### Barcodes
 #### Randomly generate
 Mimick lets you put in length and count parameters, which it will use to randomly generate barcodes.
-The format is `length,count` (no spaces), where `length` is the base-pair length the barcodes should be and
-`count` is how many barcodes it should generate of length `length`. For example, if you specify `16,4000000`,
+The format is `bp,count` (no spaces), where `bp` is the base-pair length the barcodes should be and
+`count` is how many barcodes it should generate of length `bp`. For example, if you specify `16,4000000`,
 Mimick will generate 4 million unique 16bp barcodes, effectively mimicking 10X barcodes (see what I did there?).
-Mimick will write a file containing the barcodes it generated. In practice, this would look something like:
+Specify that you want to use the barcodes as-is with `-x/--segments 1`. Mimick will write a file containing
+the barcodes it generated. In practice, this would look something like:
 ```randomly generated barcodes
-mimick --lr-type 10x 16,4000000 hap1.fasta hap2.fasta
-#                 16bp^ ^4 million barcodes
+mimick --segments 1 16,4000000 hap1.fasta hap2.fasta
+#                16bp^ ^4 million barcodes
 ```
 
 #### Specific barcodes
 Alternatively, if you have a set of barcodes you absolutely want to use, just put the filename as the first positional argument.
 In practice, this would look something like:
 ```barcodes as a file
-mimick --lr-type 10x barcodes.txt hap1.fasta hap2.fasta
-#                    ^file of barcodes
+mimick --segments 1 barcodes.txt hap1.fasta hap2.fasta
+#                        ^file of barcodes
 ```
 
 ### FASTA file(s)
@@ -52,8 +53,8 @@ There is no strict enforcement of the fasta files being from the same genome, it
 the simulator (but I'm open to being surprised). 
 
 ```fasta inputs
-mimick --lr-type 10x 16,4000000 hap1.fasta hap2.fasta
-#                    ^barcodes  ^fasta 1   ^fasta 2
+mimick --segments 1 16,4000000 hap1.fasta hap2.fasta
+#                   ^barcodes  ^fasta 1   ^fasta 2
 ```
 #### Circular DNA
 The `--circular` toggle/flag tells Mimick to treat each contig
@@ -69,15 +70,15 @@ should make sense as well: $end = start + molecule\_size - contig\_size$
 ### General options
 These options control inputs/outputs and resources
 
-| short name | long name         | default         | description                                                          |
-|:----------:|:------------------|:----------------|:---------------------------------------------------------------------|
-|    `-C`    | `--circular`      | `False`         | toggle to let Mimick know the input contigs are circular/prokaryotic |
-|    `-o`    | `--output-prefix` | `simulated/SIM` | output file prefix                                                   |
-|    `-O`    | `--output-type`   | same as input   | output format of FASTQ files                                         |
-|    `-q`    | `--quiet`         | `0`             | `0` all output, `1` no progress bar, `2` no output                   |
-|    `-r`    | `--regions`       |                 | one or more regions to simulate, in BED format                       |
-|    `-S`    | `--seed`          |                 | random seed for simulation                                           |
-|    `-t`    | `--threads`       | `2`             | number of threads to use for simulation                              |
+| short name | long name         | default                                                  | description                                                          |
+|:----------:|:------------------|:--------------------------------------------------------:|:---------------------------------------------------------------------|
+|    `-C`    | `--circular`      | `False`                                                  | toggle to let Mimick know the input contigs are circular/prokaryotic |
+|    `-o`    | `--output-prefix` | `simulated/SIM`                                          | output file prefix                                                   |
+|    `-O`    | `--output-type`   | [varies](./data_formats.md#linked-read-simulation-types) | output format of FASTQ files                                         |
+|    `-q`    | `--quiet`         | `0`                                                      | `0` all output, `1` no progress bar, `2` no output                   |
+|    `-r`    | `--regions`       |                                                          | one or more regions to simulate, in BED format                       |
+|    `-S`    | `--seed`          |                                                          | random seed for simulation                                           |
+|    `-t`    | `--threads`       | `2`                                                      | number of threads to use for simulation                              |
 
 #### Output type
 Mimick lets you specify different output fastq types regardless of the intended linked-read
@@ -87,54 +88,54 @@ simulation type. See [Data Formats](data_formats.md) for more information.
 These options govern how `wgsim` will simulate FASTQ files from genomic regions. These are no short names for
 these options.
 
-|     name      | default | description                               | notes                                             |
-|:-------------:|:--------|:------------------------------------------|:--------------------------------------------------|
-| `--coverage`  | `30`    | mean coverage target for simulated data   |                                                   |
-| `--distance`  | `500`   | outer distance between the two ends in bp | must be >`--length`                               |
-|   `--error`   | `0.02`  | base error rate                           | must be between 0-1, will be fixed for this value |
-| `--extindels` | `0.25`  | indels extension rate                     | must be between 0-1                               |
-|  `--indels`   | `0.15`  | indels creation rate                      | must be between 0-1                               |
-|  `--length`   | `150`   | length of reads in bp                     | must be >30                                       |
-| `--mutation`  | `0.001` | mutation rate                             | must be between 0-1                               |
-|   `--stdev`   | `50`    | standard deviation of --distance          |                                                   |
+| name          | default   | description                               | notes                                                |
+|:--------------|:---------:|:------------------------------------------|:-----------------------------------------------------|
+| `--coverage`  | `30`      | mean coverage target for simulated data   |                                                      |
+| `--distance`  | `500`     | outer distance between the two ends in bp | must be >`--length`                                  |
+| `--error`     | `0.02`    | base error rate                           | must be between 0-1, will be fixed for this value    |
+| `--extindels` | `0.25`    | indels extension rate                     | must be between 0-1                                  |
+| `--indels`    | `0.15`    | indels creation rate                      | must be between 0-1                                  |
+| `--lengths`   | `150,150` | lengths of R1,R2 reads in bp              | each must be >10 and separated by a comma, no spaces |
+| `--mutation`  | `0.001`   | mutation rate                             | must be between 0-1                                  |
+| `--stdev`     | `50`      | standard deviation of --distance          |                                                      |
 
 ### Linked-read simulation
-| short name | long name             | default        | description                                                                                                                                                                                |
-|:----------:|:----------------------|:---------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|    `-l`    | `--lr-type`           | `haplotagging` | type of linked-read experiment                                                                                                                                                             |
-|    `-a`    | `--molecule-attempts` | `300`          | number of attempts to create a molecule with <70% ambiguous bases before exiting with an error                                                                                             |
-|    `-c`    | `--molecule-coverage` | `0.2`          | mean percent coverage per molecule if <1, else mean number of reads per molecule'                                                                                                          |
-|    `-m`    | `--molecule-length`   | `80000`        | mean length of molecules in bp'                                                                                                                                                            |
-|    `-n`    | `--molecules-per`     | `3`            | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution |
-|    `-s`    | `--singletons`        | `0`            | proportion of barcodes will only have a single read pair                                                                                                                                   |
+| short name | long name             | default | description                                                                                                                                                                                |
+|:----------:|:----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|    `-a`    | `--molecule-attempts` |  `300`  | number of attempts to create a molecule with <70% ambiguous bases before exiting with an error                                                                                             |
+|    `-c`    | `--molecule-coverage` |  `0.2`  | mean percent coverage per molecule if <1, else mean number of reads per molecule'                                                                                                          |
+|    `-m`    | `--molecule-length`   | `80000` | mean length of molecules in bp'                                                                                                                                                            |
+|    `-n`    | `--molecules-per`     |   `3`   | mean number of unrelated molecules per barcode, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution |
+|    `-x`    | `--segments`          |   `4`   | treat barcodes as combinatorial with this many segments                                                                                                                                    |
+|    `-s`    | `--singletons`        |   `0`   | proportion of barcodes will only have a single read pair                                                                                                                                   |
 
 #### **All Options**
 For completeness, the table below is all the command line arguments and options
 
-| short name | long name             | default         | description                                                                                                                                    | notes                                                                                                   |
-|:----------:|:----------------------|:----------------|:-----------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------|
-|            | `BARCODES`            |                 | input barcode file or length,count                                                                                                             | REQUIRED                                                                                                |
-|            | `FASTA`               |                 | input fasta file(s)                                                                                                                            | REQUIRED                                                                                                |
-|    `-C`    | `--circular`          | `False`         | toggle to let Mimick know the input contigs are circular/prokaryotic                                                                           | cannot be used with `-r/--regions`                                                                      |
-|    `-o`    | `--output-prefix`     | `simulated/SIM` | output file prefix                                                                                                                             |                                                                                                         |
-|    `-O`    | `--output-type`       | `standard`      | output format of FASTQ files                                                                                                                   |                                                                                                         |
-|    `-q`    | `--quiet`             | `0`             | `0` all output, `1` no progress bar, `2` no output                                                                                             |                                                                                                         |
-|    `-r`    | `--regions`           |                 | one or more regions to simulate, in BED format                                                                                                 |                                                                                                         |
-|    `-S`    | `--seed`              |                 | random seed for simulation                                                                                                                     | optional and useful for reproducibility                                                                 |
-|    `-t`    | `--threads`           | `2`             | number of threads to use for simulation                                                                                                        |                                                                                                         |
-|            | `--coverage`          | `30`            | mean coverage target for simulated data                                                                                                        |                                                                                                         |
-|            | `--distance`          | `500`           | outer distance between the two ends in bp                                                                                                      | must be >`--length`                                                                                     |
-|            | `--error`             | `0.02`          | base error rate                                                                                                                                | must be between 0-1, will be fixed for this value                                                       |
-|            | `--extindels`         | `0.25`          | indels extension rate                                                                                                                          | must be between 0-1                                                                                     |
-|            | `--indels`            | `0.15`          | indels creation rate                                                                                                                           | must be between 0-1                                                                                     |
-|            | `--length`            | `150`           | length of reads in bp                                                                                                                          | must be >30                                                                                             |
-|            | `--mutation`          | `0.001`         | mutation rate                                                                                                                                  | must be between 0-1                                                                                     |
-|            | `--stdev`             | `50`            | standard deviation of --distance                                                                                                               |                                                                                                         |
-|    `-l`    | `--lr-type`           | `haplotagging`  | type of linked-read experiment                                                                                                                 | determines if barcodes are combinatorial, how, and where read lengths get shortened to accommodate them |
-|    `-a`    | `--molecule-attempts` | `300`           | number of attempts to create a molecule with <70% ambiguous bases before exiting with an error                                                 |                                                                                                         |
-|    `-c`    | `--molecule-coverage` | `0.2`           | mean percent coverage per molecule if <1, else mean number of reads per molecule                                                               |                                                                                                         |
-|    `-m`    | `--molecule-length`   | `80000`         | mean length of molecules in bp, drawn from exponential distribution                                                                            |                                                                                                         |
-|    `-n`    | `--molecules-per`     | `3`             | mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. `-2`) will be fixed for that number |                                                                                                         |
-|    `-s`    | `--singletons`        | `0`             | proportion of barcodes will only have a single read pair                                                                                       |
+| short name | long name             |                         default                          | description                                                                                                                                    | notes                                                                               |
+|:----------:|:----------------------|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
+|            | `BARCODES`            |                                                          | input barcode file or length,count                                                                                                             | REQUIRED                                                                            |
+|            | `FASTA`               |                                                          | input fasta file(s)                                                                                                                            | REQUIRED                                                                            |
+|    `-C`    | `--circular`          |                         `False`                          | toggle to let Mimick know the input contigs are circular/prokaryotic                                                                           | cannot be used with `-r/--regions`                                                  |
+|    `-o`    | `--output-prefix`     |                     `simulated/SIM`                      | output file prefix                                                                                                                             |                                                                                     |
+|    `-O`    | `--output-type`       | [varies](./data_formats.md#linked-read-simulation-types) | output format of FASTQ files                                                                                                                   |                                                                                     |
+|    `-q`    | `--quiet`             |                           `0`                            | `0` all output, `1` no progress bar, `2` no output                                                                                             |                                                                                     |
+|    `-r`    | `--regions`           |                                                          | one or more regions to simulate, in BED format                                                                                                 |                                                                                     |
+|    `-S`    | `--seed`              |                                                          | random seed for simulation                                                                                                                     | optional and useful for reproducibility                                             |
+|    `-t`    | `--threads`           |                           `2`                            | number of threads to use for simulation                                                                                                        |                                                                                     |
+|            | `--coverage`          |                           `30`                           | mean coverage target for simulated data                                                                                                        |                                                                                     |
+|            | `--distance`          |                          `500`                           | outer distance between the two ends in bp                                                                                                      | must be >`--length`                                                                 |
+|            | `--error`             |                          `0.02`                          | base error rate                                                                                                                                | must be between 0-1, will be fixed for this value                                   |
+|            | `--extindels`         |                          `0.25`                          | indels extension rate                                                                                                                          | must be between 0-1                                                                 |
+|            | `--indels`            |                          `0.15`                          | indels creation rate                                                                                                                           | must be between 0-1                                                                 |
+|            | `--lengths`           |                        `150,150`                         | length of R1,R2 reads in bp                                                                                                                    | each must be >10 and separated by a comma, no spaces                                |
+|            | `--mutation`          |                         `0.001`                          | mutation rate                                                                                                                                  | must be between 0-1                                                                 |
+|            | `--stdev`             |                           `50`                           | standard deviation of --distance                                                                                                               |                                                                                     |
+|    `-a`    | `--molecule-attempts` |                          `300`                           | number of attempts to create a molecule with <70% ambiguous bases before exiting with an error                                                 |                                                                                     |
+|    `-c`    | `--molecule-coverage` |                          `0.2`                           | mean percent coverage per molecule if <1, else mean number of reads per molecule                                                               |                                                                                     |
+|    `-m`    | `--molecule-length`   |                         `80000`                          | mean length of molecules in bp, drawn from exponential distribution                                                                            |                                                                                     |
+|    `-n`    | `--molecules-per`     |                           `3`                            | mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. `-2`) will be fixed for that number |                                                                                     |
+|    `-x`    | `--segments`          |                           `4`                            | treat barcodes as combinatorial with this many segments                                                                                        | see [data formats](./data_formats.md#linked-read-data-formats) for more information |
+|    `-s`    | `--singletons`        |                           `0`                            | proportion of barcodes will only have a single read pair                                                                                       |
 
 <!-- tabs:end -->
