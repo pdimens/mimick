@@ -12,7 +12,7 @@ To install Mimick using conda (or miniconda, mamba, etc.) into an existing envir
 $ conda install -c conda-forge bioconda::mimick
 ```
 ```you're not in the environment
-conda install -n env_name bioconda::mimic
+conda install -n env_name -c conda-forge bioconda::mimic
 ```
 where `env_name` is the name of the existing conda environment
 you want to install Mimick into. Alternatively, you can create
