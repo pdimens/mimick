@@ -20,7 +20,6 @@ jobs:
     name: "Test Nucleotides: ${{ matrix.lr_from }} to ${{ matrix.lr_to }}"
     strategy:
       matrix:
-        lr_from: [1]
         lr_to: [10x, haplotagging, standard, stlfr, tellseq]
     runs-on: ubuntu-latest
     steps:
@@ -51,13 +50,13 @@ jobs:
       - name: Test Barcode file
         shell: micromamba-shell {0}
         run: |
-          mimick --segments ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 nucleotides.bc test.hap1.fa test.hap2.fa &&\
-          zcat ${{ matrix.lr_from }}_${{ matrix.lr_to }}.R1.fq.gz | head -8
+          mimick --segments 1 -o nucleotides_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 nucleotides.bc test.hap1.fa test.hap2.fa &&\
+          zcat nucleotides_${{ matrix.lr_to }}.R1.fq.gz | head -8
       
       - name: Test Generated Barcodes
         shell: micromamba-shell {0}
         run: |
-          mimick --segments ${{ matrix.lr_from }} -o ${{ matrix.lr_to }}_standard -O standard --coverage 3 -q 1 18,1000000 test.hap1.fa test.hap2.fa &&\
+          mimick --segments 1 -o ${{ matrix.lr_to }}_standard -O standard --coverage 3 -q 1 18,1000000 test.hap1.fa test.hap2.fa &&\
           zcat ${{ matrix.lr_to }}_standard.R1.fq.gz | head -8
 
   Combinatorial:
