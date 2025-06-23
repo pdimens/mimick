@@ -94,7 +94,7 @@ def FASTAtoInventory(fasta, coverage, mol_cov, mol_len, read_len, singletons, ci
                 idx += 1
     return inventory
 
-def validate_barcodes(bc_list):
+def validate_barcodes(bc_list) -> int:
     '''Takes a file with barcodes and validates them to be ATGCU nucleotides and barcodes same length'''
     # check first row for multiple columns, if there are multiple, it's haplotagging
     if len(bc_list[0].strip().split()) != 1:
@@ -110,7 +110,7 @@ def validate_barcodes(bc_list):
             if not bool(re.fullmatch(r'^[ATCGU]+$', bc, flags = re.IGNORECASE)):
                 error_terminate(f'Barcodes can only contain nucleotides [blue]A,T,C,G,U[/], but invalid barcode(s) provided: [yellow]{bc}[/]. This was first invalid barcode identified, but it may not be the only one.')
 
-def interpret_barcodes(infile, lr_type) -> BarcodeGenerator:
+def interpret_barcodes(infile: str, segments: int, output_type: str) -> BarcodeGenerator:
     """
     Takes an open file connection and reads it line by line. Performs barcode validations and returns:
     - either an iter() or generator of barcodes (to use with next())
@@ -127,13 +127,10 @@ def interpret_barcodes(infile, lr_type) -> BarcodeGenerator:
         error_terminate(f'Cannot open [yellow]{os.path.relpath(infile)}[/] for reading because it\'s not recognized as either a plaintext or gzipped file.')
 
     validate_barcodes(bc)
-    bc_len = len(bc[0]) 
-    if lr_type == "haplotagging":
-        return BarcodeGenerator(product(bc,bc,bc,bc), lr_type, 2*bc_len, len(bc)**4)
-    if lr_type == "stlfr":
-        return BarcodeGenerator(product(bc,bc,bc,bc), lr_type, 3*bc_len, len(bc)**3)
+    if segments == 1:
+        return BarcodeGenerator(iter(bc), output_type, len(bc))
     else:
-        return BarcodeGenerator(iter(bc), lr_type, bc_len, len(bc))
+        return BarcodeGenerator(product(bc,bc,bc,bc), output_type, len(bc)**segments)
 
 def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     '''Given a linked-read output type, will format the read accordingly and return it'''
@@ -146,9 +143,9 @@ def format_linkedread(name, bc, outbc, outformat, seq, qual, forward: bool):
     elif outformat == "haplotagging":
         fr = "/1" if forward else "/2"
         sequence = [f'@{name}{fr}\tOX:Z:{bc}\tBX:Z:{outbc}', seq, '+', qual]
-    elif outformat == "standard":
+    elif "standard" in outformat:
         fr = "/1" if forward else "/2"
-        sequence = [f'@{name}{fr}\tVX:i:1\tBX:Z:{bc}', seq, '+', qual]
+        sequence = [f'@{name}{fr}\tVX:i:1\tBX:Z:{outbc}', seq, '+', qual]
     elif outformat == "stlfr":
         fr = "1:N:0:ATAGCT" if forward else "2:N:0:ATAGCT"
         sequence = [f'@{name}#{outbc} {fr}', seq, '+', qual]

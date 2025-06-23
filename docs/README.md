@@ -33,11 +33,13 @@ $| mimick
  (common haplotagging style), select --lr-type stlfr (combinatorial 3-barcode on R2 read), and have     
  --output-type tellseq (@seqid:barcode header format).                                                  
 
+
    --lr-type      Format                                                                                
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                               
    10x/tellseq    single barcode on R1                                                                  
    haplotagging   R1 and R2 each have different combinatorial 2-barcodes                                
    stlfr          combinatorial 3-barcode on R2                                                         
+
 
    --output-type   Barcode Location                                      Example                        
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━      
@@ -46,6 +48,7 @@ $| mimick
    standard        sequence header as BX:Z:BARCODE, no specific format   @SEQID BX:Z:ATACGAGACA         
    stlfr           appended to sequence ID via #1_2_3                    @SEQID#1_354_39                
    tellseq         appended to sequence ID via :ATCG                     @SEQID:TATTAGCAC               
+
 
 ╭─ General Options ────────────────────────────────────────────────────────────────────────────────────╮
 │ --help               Show this message and exit.                                                     │
@@ -72,15 +75,15 @@ $| mimick
 │                [default: 0.25; 0<=x<=1]                                                              │
 │ --indels       indels rate                                                                           │
 │                [default: 0.15; 0<=x<=1]                                                              │
-│ --length       length of reads in bp                                                                 │
-│                [default: 150; x>=30]                                                                 │
+│ --lengths      length of R1,R2 reads in bp                                                           │
+│                [default: 150,150]                                                                    │
 │ --mutation     mutation rate                                                                         │
 │                [default: 0.001; x>=0]                                                                │
 │ --stdev        standard deviation of --distance                                                      │
 │                [default: 50; x>=0]                                                                   │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Linked Read Parameters ─────────────────────────────────────────────────────────────────────────────╮
-│ --lr-type            -l  type of linked-read experiment                                              │
+│ --combinatorial      -b  treat barcodes as combinatorial with this many segments                     │
 │                          [default: haplotagging]                                                     │
 │ --molecule-attempts  -a  how many tries to create a molecule with <70% ambiguous bases               │
 │                          [default: 300; x>=5]                                                        │
@@ -96,6 +99,7 @@ $| mimick
 │ --singletons         -s  proportion of barcodes will only have a single read pair                    │
 │                          [default: 0; 0<=x<=1]                                                       │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
 
  Documentation: https://pdimens.github.io/mimick/
 ```

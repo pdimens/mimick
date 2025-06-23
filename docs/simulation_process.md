@@ -15,6 +15,7 @@ graph LR
     step2 --> step3(determine molecule source)
     step3 --> step4(create molecules)
     step4 --> step5(simulate reads)
+    step5 --> stepx(convert reads format)
     step5 --> step6(update inventory)
     step6 -->| break if all targets are reached | step1
 ```
@@ -94,7 +95,8 @@ read_count: 1
 
 ### Step 3: Submitting the molecule recipes for simulation
 This is the part that's multithreaded. Once we have a molecule recipe and its associated fasta file, Mimick hands the information over to `wgsim` via `pywgsim`,
-where the fasta file will then be the input "genome" from which the software will randomly generate the target number of reads for that molecule.
+where the fasta file will then be the input "genome" from which the software will randomly generate the target number of reads for that molecule. The reads
+that are simulated never actually have the bacode on them-- it's only if `--output-type 10x` that the barcode is added inline to R1 during Step X.
 
 ### Step 4: Monitor schema targets
 The number of reads that were generated for every molecule are added to that molecule's source schema to track the number of reads already produced for
@@ -103,3 +105,7 @@ to determine molecules in [Step 2](#step-2-making-the-molecule-recipes). This en
 
 ### Step 5: Repeat until all schema read targets are met
 Once there are no more schema left to sample, simulation is done!
+
+### Step X: Convert and append reads
+A separate concurrent process converts the reads simulated from a molecule into the format specified by `--output-type` and writes the reads to final R1 and R2
+FASTQ files.
