@@ -17,7 +17,7 @@ env:
 
 jobs:
   Nucleotides:
-    name: "Test Nucleotides: ${{ matrix.lr_from }} to ${{ matrix.lr_to }}"
+    name: "Test Nucleotides: to ${{ matrix.lr_to }}"
     strategy:
       matrix:
         lr_to: [10x, haplotagging, standard, stlfr, tellseq]
