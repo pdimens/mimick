@@ -84,7 +84,7 @@ def mimick(barcodes, fasta, circular, output_prefix, output_type, quiet, seed, r
     linked-read barcode type using `-x/--segments`. For example, to simulate the common 4-segment haplotagging style,
     use `-x 4` and have `--output-type haplotagging` (or use a different output style, if preferred). The `standard` output
     types can be suffixed with `:haplotagging` or `:stlfr` to use those barcode styles with the standard format
-    (e.g. `standard:haplotagging`) The table below serves as a guide for the configurations for the common linked-read varieties: 
+    (e.g. `standard:haplotagging`). The table below serves as a guide for the configurations for the common linked-read varieties: 
 
     | chemistry    | `--segments` | `--lengths` | Format                                       |
     |:-------------|:------------:|:-----------:|:---------------------------------------------|
