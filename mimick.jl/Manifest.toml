@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "9565019dd64adf2f345b19bd1d585e83b5270de5"
+project_hash = "cb83ea646dcd21e4c1ea197fe54d897351940bc8"
 
 [[deps.Automa]]
 deps = ["PrecompileTools", "SIMD", "TranscodingStreams"]
@@ -16,6 +16,18 @@ git-tree-sha1 = "017562e86afcd2a6a2a9220606a40b54604887c9"
 uuid = "47718e42-2ac5-11e9-14af-e5595289c2ea"
 version = "0.1.5"
 
+[[deps.BioSequences]]
+deps = ["BioSymbols", "PrecompileTools", "Random", "Twiddle"]
+git-tree-sha1 = "b602272be9915fbf41923d9fa67f16309bdf25d6"
+uuid = "7e6ae17a-c86d-528c-b3b9-7f778a29fe59"
+version = "3.4.1"
+
+[[deps.BioSymbols]]
+deps = ["PrecompileTools"]
+git-tree-sha1 = "41e42d326ff01d12167f3f8a218b318bf7429d0f"
+uuid = "3c28c6f8-a34d-59c4-9654-267d177fcfa9"
+version = "5.2.0"
+
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -26,12 +38,10 @@ deps = ["Automa", "BioGenerics", "PrecompileTools", "StringViews", "TranscodingS
 git-tree-sha1 = "cfbc767762419cc2b6b61a2c70aa81e54b27000f"
 uuid = "c2308a5c-f048-11e8-3e8a-31650f418d12"
 version = "2.1.7"
+weakdeps = ["BioSequences"]
 
     [deps.FASTX.extensions]
     BioSequencesExt = "BioSequences"
-
-    [deps.FASTX.weakdeps]
-    BioSequences = "7e6ae17a-c86d-528c-b3b9-7f778a29fe59"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -49,6 +59,15 @@ version = "1.4.3"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 version = "1.11.0"
+
+[[deps.Random]]
+deps = ["SHA"]
+uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+version = "1.11.0"
+
+[[deps.SHA]]
+uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
 
 [[deps.SIMD]]
 deps = ["PrecompileTools"]
@@ -70,6 +89,11 @@ version = "1.0.3"
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
+
+[[deps.Twiddle]]
+git-tree-sha1 = "29509c4862bfb5da9e76eb6937125ab93986270a"
+uuid = "7200193e-83a8-5a55-b20d-5d36d44a0795"
+version = "1.1.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
