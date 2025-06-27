@@ -33,7 +33,7 @@ function index_fasta(fasta::String)::String
     end
     #TODO DEAL WITH GZIP SITUATION
     try
-        faidx(fasta)
+        faidx(safe_read(fasta))
     catch y
         println("Failed to index $fasta, is it a properly formatted FASTA file?")
     finally
