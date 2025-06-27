@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "cb83ea646dcd21e4c1ea197fe54d897351940bc8"
+project_hash = "47eb4233c5e98b39d976ea55795b04c23af024d4"
 
 [[deps.Automa]]
 deps = ["PrecompileTools", "SIMD", "TranscodingStreams"]
@@ -28,6 +28,12 @@ git-tree-sha1 = "41e42d326ff01d12167f3f8a218b318bf7429d0f"
 uuid = "3c28c6f8-a34d-59c4-9654-267d177fcfa9"
 version = "5.2.0"
 
+[[deps.CodecZlib]]
+deps = ["TranscodingStreams", "Zlib_jll"]
+git-tree-sha1 = "962834c22b66e32aa10f7611c08c8ca4e20749a9"
+uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
+version = "0.7.8"
+
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -42,6 +48,10 @@ weakdeps = ["BioSequences"]
 
     [deps.FASTX.extensions]
     BioSequencesExt = "BioSequences"
+
+[[deps.Libdl]]
+uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+version = "1.11.0"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -98,3 +108,8 @@ version = "1.1.2"
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 version = "1.11.0"
+
+[[deps.Zlib_jll]]
+deps = ["Libdl"]
+uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.13+1"
