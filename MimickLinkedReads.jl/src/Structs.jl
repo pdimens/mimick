@@ -1,5 +1,7 @@
 
 struct SimParams
+    output_dir::String
+    prefix::String
     error::Float32
     #mutation::Float32
     #indels::Float32
@@ -8,13 +10,16 @@ struct SimParams
     distance_stdev::Float32
     length_R1::Int16
     length_R2::Int16
+    molecule_length::Int
+    molecule_coverage::Float64
+    singletons::Float64
+    circular::Bool
+    #TODO rng
     randomseed::Int64
-    output_dir::String
-    prefix::String
-    function SimParams(error, read_distance, distance_stdev, length_R1, length_R2, randomseed, prefix)
+    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons, circular; randomseed::Int)
         _prefix = Base.Filesystem.basename(prefix)
         _outdir = Base.Filesystem.dirname(prefix)
-        return new(error, read_distance, distance_stdev, length_R1, length_R2, randomseed, _outdir, _prefix)
+        return new(_outdir, _prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons, circular, randomseed)
     end
 end
 
