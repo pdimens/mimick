@@ -13,22 +13,12 @@ end
 A struct storing all the necessary information to simulate reads from a contig or contig interval
 """
 struct Schema
-    haplotype::Int8
+    haplotype::Int
     chrom::String
-    start_position::Int64
-    end_position::Int64
-    read_length::Int
-    read_pairs_per_mol::Int
     tracker::SchemaTracker
-    #mol_length::Int
-    #mol_coverage::Float64
-    #singletons::Float64
-    #is_circular::Bool
     sequence::LongSequence{DNAAlphabet{4}}
-    #function Schema(haplotype::Int, chrom::String, start_position::Int, end_position::Int, read_length::Int, read_pairs_per_mol::Int, reads_req::Int, mol_length::Int, mol_coverage::Float64, singletons::Float64, is_circular::Bool, sequence::LongSequence{DNAAlphabet{4}})
-    #    new(Int8(haplotype), chrom, start_position, end_position, read_length, read_pairs_per_mol, SchemaTracker(0,reads_req), mol_length, mol_coverage, singletons, is_circular, sequence)
-    function Schema(haplotype::Int, chrom::String, start_position::Int, end_position::Int, read_length::Int, read_pairs_per_mol::Int, reads_req::Int, sequence::LongSequence{DNAAlphabet{4}})
-        new(Int8(haplotype), chrom, start_position, end_position, read_length, read_pairs_per_mol, SchemaTracker(0,reads_req), sequence)
+    function Schema(haplotype::Int, chrom::String, reads_req::Int, sequence::LongSequence{DNAAlphabet{4}})
+        new(haplotype, chrom, SchemaTracker(0,reads_req), sequence)
     end
 end
 
@@ -70,10 +60,9 @@ end
 """
 Read an input fasta and return a Schema object.
 """
-function process_fasta(fasta::String, haplotype::Int64, coverage::Float64, mol_cov::Float64, mol_len::Int64, read_len::Vector{Int}, singletons::Float64, circular::Bool)::Vector{Schema}
+function process_fasta(fasta::String, haplotype::Int64, coverage::Float64, read_len::Vector{Int})::Vector{Schema}
     fai = index_fasta(fasta)
     mean_readlen = sum(read_len) ÷ 2
-    mean_reads_per = max(1, mol_cov < 1 ? (mol_cov*mol_len)÷(sum(read_len)) : mol_cov)
     FASTAReader(safe_read(fasta), index = fai, copy = false) do _fasta
         map(_fasta) do contig
             chrom = String(identifier(contig))
@@ -85,7 +74,7 @@ function process_fasta(fasta::String, haplotype::Int64, coverage::Float64, mol_c
                 #return
             end
             reads_required = trunc(Int,(coverage*normalized_length/mean_readlen)/2)
-            Schema(haplotype, chrom, 1, end_position, mean_readlen, trunc(Int,mean_reads_per), reads_required, mol_len, mol_cov, singletons, circular, seq)
+            Schema(haplotype, chrom, reads_required, seq)
         end
     end
 end
@@ -93,10 +82,10 @@ end
 """
 Iterate through input `fasta_files` to return a `Dict` of `Schema`
 """
-function setup_schema(fasta_files::Vector{String}, coverage::Float64, mol_cov::Float64, mol_len::Int64, read_len::Vector{Int}, singletons::Float64, circular::Bool)::Dict{String, Schema}
+function setup_schema(fasta_files::Vector{String}, coverage::Float64, read_len::Vector{Int})::Dict{String, Schema}
     d = Dict{String, Schema}()
-    for (i,j) in enumerate(fasta_files)
-        schemas = process_fasta(j, i, coverage, mol_cov, mol_len, read_len, singletons, circular)
+    @inbounds for (i,j) in enumerate(fasta_files)
+        schemas = process_fasta(j, i, coverage, read_len)
         for _schema  in schemas
             d[join([_schema.chrom,_schema.haplotype], "_")] = _schema
         end

@@ -1,3 +1,27 @@
+Random.seed!(123)
+
+struct SimParams
+    output_dir::String
+    prefix::String
+    error::Float32
+    insert_size::Distribution
+    length_R1::Int
+    length_R2::Int
+    molecule_length::Distribution
+    molecule_coverage::Float64
+    singletons::Float64
+    attempts::Int
+    circular::Bool
+    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
+        _prefix = Base.Filesystem.basename(prefix)
+        _outdir = Base.Filesystem.dirname(prefix)
+        _exp = truncated(Exponential(molecule_length), lower = 600)
+        _ins = truncated(Normal(read_distance, distance_stdev), lower = 200)
+        return new(_outdir, _prefix, error, _ins, length_R1, length_R2, _exp, molecule_coverage, singletons, attempts, circular)
+    end
+end
+
+#=
 struct Molecule
     haplotype::Int8
     chrom::String
@@ -8,188 +32,149 @@ struct Molecule
     output_barcode::String
     read_count::Int
 end
+=#
 
-function find_breakpoints(schema::Schema, params::SimParams )
-    molecule_length = 0.0
-    seq_len = length(schema.sequence)
-    # make sure the molecule is greater than 650
-    while !(650 < molecule_length <= seq_len)
-        molecule_length = rng.exponential(scale = schema.mol_length)
-    end
-    molecule_length = trunc(Int, molecule_length)
-    adjusted_end = seq_len
-    if !(schema.circular)
-        # set the max start position to be (length - mol_length) to avoid overflow
-        adjusted_end -= molecule_length
-    end
+struct ProcessedMolecule
+    haplotype::Int
+    barcode::String
+    output_barcode::String
+    chrom::String
+    position::UnitRange{Int}
+    read_breakpoints::Vector{UnitRange{Int}}
+    read_sequences::Vector{Pair{LongDNA{4}, LongDNA{4}}}
+end
 
+function Base.show(io::IO, data::Union{Molecule,SimParams})
+    println("Object of type $(typeof(data))")
+    for i in fieldnames(typeof(data))
+        val = getfield(data, i)
+        println(io, " $i::", typeof(val), " ", val)
+    end
+end
+
+"""
+Given the length of a contig/interval and simulation parameters, randomly draws
+a molecule length from an exponential distribution and returns it.
+"""
+function get_molecule_size(params::SimParams, seq_len::Int)::Int
+    molecule_length = seq_len + 1
+    # make sure the molecule is greater than 600 and less than the sequence
+    while molecule_length > seq_len
+        molecule_length = rand(params.molecule_length)
+    end
+    return trunc(Int, molecule_length)
+end
+
+"""
+Given simulation parameters and molecule size, calculates how many how many fragments
+and their lengths should be simulated from the molecule. Returns a Vector{Int} of 
+fragment lengths.
+"""
+function get_fragments(params::SimParams, molsize::Int)::Vector{Int}
     # if a singleton proportion is provided, conditionally drop the number of reads to 1
-    if params.singletons > 0.0 && params.rng.uniform(0,1) <= params.singletons
+    if params.singletons > 0.0 && rand() <= params.singletons
         N = 1.0
     else
         if params.molecule_coverage < 1
             # set a minimum number of reads to 2 to avoid singletons
-            _n = max(2.0, ((seq_len * params.molecule_coverage)) / (params.length_R1 + params.length_R2))
+            _n = max(2.0, ((molsize * params.molecule_coverage)) / (params.length_R1 + params.length_R2))
         else
             _n = params.molecule_coverage
         end
         # draw N from an exponential distribution with a minimum set to 2 reads to avoid singletons
-        N = max(2.0, rng.exponential(_n))
         # set ceiling to avoid N being greater than can be sampled
-        N = min(N, seq_len/(params.length_R1 + params.length_R2))
+        _exp = truncated(Exponential(_n), lower = 2.0, upper = molsize/(params.length_R1 + params.length_R2))
+        N = max(2,rand(_exp))
     end
-    #TODO CREATE N inserts by sampling a normal dist or something like that
-    
-    #TODO STILL PYTHON CODE
-    # this needs to iterate to a fixed number of times to try to create a molecule below a particular N
-    # percentage else exit the program entirely
-    for i in 1:attempts
-        start_pos = params.rng.uniform(low = 0, high = adjusted_end)
-        end_pos = start + molecule_length
-        # 10 attempts to create N reads with <95% ambiguous bases
-        for i in 1:10
-       
-        end
-    end
+    n_reads = trunc(Int, N)
+    return trunc.(Int,rand(params.insert_size, n_reads))
 end
 
-function extract_sequence(sequence:::LongDNA{4}, breakpoints::Vector{UnitRange{Int}}, r1_len::Int, r2_len::Int)
-    for breakpoint in breakpoints
-        R1 = sequence[breakpoint.start:breakpoint.start+r1_len]
-        R2 = sequence[breakpoint.stop:-1:breakpoint.stop-r2_len]
-        if count(==(DNA_N), R1)/r1_len > 0.05 || count(==(DNA_N), R2)/r2_len > 0.05
-            error("Too many Ns")
-        end
-    end
+"""
+Given a schema and parameters along with molecule length and number of reads, randomly generates
+breakpoints for the molecule and the reads therein. 
+"""
+function find_breakpoints(schema::Schema, params::SimParams, molecule_length::Int, fragments::Vector{Int})
+    seq_len = length(schema.sequence)
+    i = 0
+    seqs = Vector{Pair{LongDNA{4}, LongDNA{4}}}(undef, length(fragments))
+    # set the max start position to be (length - mol_length) to avoid overflow if not circular
+    adjusted_end = params.circular ? seq_len : seq_len - molecule_length
 
+    while i <= params.attempts && !isassigned(seqs,1)
+        i += 1
+        start_pos = rand(1:adjusted_end)
+        end_pos = start_pos + molecule_length
+        # 50 attempts to create N reads with <95% ambiguous bases
+        breakpoints = find_nonoverlapping_ranges(start_pos:end_pos, fragments, 50)
+        seqs = extract_sequences(schema.sequence, breakpoints, params.length_R1, params.length_R2)
+    end
+    if !isassigned(seqs,1)
+        error("After $attempts attempts, unable to create reads for $(schema.chrom) from molecule spanning $start_pos-$end_pos. This could be due to either a failure to create $N non-overlapping reads or too many N's (ambiguous bases) in the resulting reads.")
+    end
+    return seqs
 end
 
-# Even more efficient version that maintains sorted intervals for faster overlap checking
-function sample_nonoverlapping_ranges_fast(number_range, lengths)
-    range_start = first(number_range)
-    range_end = last(number_range)
+function find_nonoverlapping_ranges(number_range::UnitRange{Int}, lengths::Vector{Int}, max_attempts::Int)::Vector{UnitRange{Int}}
+    range_start = number_range.start
+    range_end = number_range.stop
     range_size = range_end - range_start + 1
-    
     if sum(lengths) > range_size
         error("Cannot fit ranges of total length $(sum(lengths)) in range of size $range_size")
     end
-    
-    # Keep intervals sorted for efficient overlap checking
-    occupied_intervals = Tuple{Int, Int}[]
-    result_ranges = Vector{UnitRange{Int}}(undef, length(lengths))
-    
-    for (i, len) in enumerate(lengths)
+    occupied_intervals = Vector{UnitRange{Int}}(undef, length(lengths))
+    @inbounds for (i, len) in enumerate(lengths)
         placed = false
         attempts = 0
-        #TODO add attempts max
-        max_attempts = min(1000, range_size)
-        
+        last_possible = range_end - len
+
         while !placed && attempts < max_attempts
             attempts += 1
-            start_pos = rand(range_start:(range_end - len + 1))
-            end_pos = start_pos + len - 1
-            
-            # Binary search for insertion point and overlap check
-            insert_idx = searchsortedfirst(occupied_intervals, (start_pos, end_pos))
-            
-            # Check overlap with previous interval
-            prev_overlaps = insert_idx > 1 && occupied_intervals[insert_idx-1][2] >= start_pos
-            
-            # Check overlap with next interval  
-            next_overlaps = insert_idx <= length(occupied_intervals) && occupied_intervals[insert_idx][1] <= end_pos
-            
-            if !prev_overlaps && !next_overlaps
-                # Insert the new interval in sorted order
-                insert!(occupied_intervals, insert_idx, (start_pos, end_pos))
-                result_ranges[i] = start_pos:end_pos
-                placed = true
+            start_pos = rand(range_start:last_possible)
+            interval_attempt = start_pos:start_pos+len
+            for _interval in occupied_intervals
+                !isempty(intersect(interval_attempt,_interval)) && continue
             end
+            occupied_intervals[i] = interval_attempt
+            placed = true
         end
-        
         if !placed
+            println("Couldnt place $i")
+            return Vector{UnitRange{Int}}(undef, 1)
             error("Could not place range of length $len after $max_attempts attempts")
         end
     end
-    
-    return result_ranges
+    return occupied_intervals
 end
 
-# Example usage comparing both methods:
-number_range = 1:100
-lengths = [10, 15, 8]
-
-
-
-println("\n=== Fast Method (with sorted intervals) ===")
-@time sampled_ranges2 = sample_nonoverlapping_ranges_fast(number_range, lengths)
-println("Sampled ranges:")
-for (i, r) in enumerate(sampled_ranges2)
-    println("  Range $i: $r (length: $(length(r)))")
-end
-
-# Verification function
-function check_overlaps(ranges)
-    for i in 1:length(ranges)
-        for j in (i+1):length(ranges)
-            if !isempty(intersect(ranges[i], ranges[j]))
-                return false
-            end
+"""
+Given a `sequence`, a vector of `breakpoints` (as ranges), and read 1/2 lengths, returns a vector of pairs
+with the read sequences, accounting for circular. Returns a vector of sequence pairs.
+"""
+function extract_sequences(sequence::LongDNA{4}, breakpoints::Vector{UnitRange{Int}}, r1_len::Int, r2_len::Int)::Vector{Pair{LongDNA{4}, LongDNA{4}}}
+    reads = Vector{Pair{LongDNA{4}, LongDNA{4}}}(undef, length(breakpoints))
+    r1_len -= 1
+    r2_len -= 1
+    @inbounds for (i,breakpoint) in enumerate(breakpoints)
+        R1 = circular_index(sequence, breakpoint.start:breakpoint.start+r1_len)
+        R2 = reverse(circular_index(sequence, (breakpoint.stop-r2_len):breakpoint.stop))
+        if count(==(DNA_N), R1)/r1_len > 0.05 || count(==(DNA_N), R2)/r2_len > 0.05
+            return Vector{Pair{LongDNA{4}, LongDNA{4}}}(undef, 1)
+            error("Too many Ns")
         end
+        reads[i] = Pair(R1,R2)
     end
-    return true
+    return reads
 end
 
-println("\nVerification:")
-println("Sequential method - No overlaps: $(check_overlaps(sampled_ranges1))")
-println("Fast method - No overlaps: $(check_overlaps(sampled_ranges2))")
-
-#=
-def create_long_molecule(schema: Schema, rng, barcode: str, outputbarcode: str, wgsimparams, attempts: int) -> LongMoleculeRecipe|None:
-    '''
-    Randomly generates a long molecule and writes it to a FASTA file.
-    Length of molecules is randomly distributed using an exponential distribution, with a minimum of 650bp.
-    Returns a LongMoleculeRecipe that contains all the necessary information to simulate reads from that molecule.
-    '''
-    molnumber = getrandbits(32)
-    len_interval = schema.end+1 - schema.start
-    # make sure to cap the molecule length to the length of the interval/chromosome
-    molecule_length = 0
-    # make sure the molecule is greater than 650
-    while molecule_length < 650 or molecule_length > len_interval:
-        molecule_length = rng.exponential(scale = schema.mol_length)
-
-    molecule_length = int(molecule_length)
-    if schema.is_circular:
-        # don't subtract the molecule length from the end, allow it to overflow since the sequence is repeated
-        adjusted_end = len_interval
-    else:
-        # set the max start position to be (length - mol_length) to avoid overflow
-        adjusted_end = len_interval - molecule_length
-    # this needs to iterate to a fixed number of times to try to create a molecule below a particular N
-    # percentage else exit the program entirely
-    for i in range(attempts + 1):
-        start = int(rng.uniform(low = 0, high = adjusted_end))
-        end = start + molecule_length - 1
-        fasta_seq = schema.sequence[start:end+1]
-        N_count = fasta_seq.count('N')
-        N_ratio = N_count/molecule_length
-        if N_ratio < 0.7:
-            normalized_length = molecule_length - N_count
-            break
-        elif i == attempts:
-            return None
-
-    if schema.is_circular:
-        end %= len_interval
-    # if a singleton proportion is provided, conditionally drop the number of reads to 1
-    if schema.singletons > 0 and rng.uniform(0,1) <= schema.singletons:
-        N = 1
-    elif schema.mol_coverage < 1:
-        # set a minimum number of reads to 2 to avoid singletons
-        N = max(2, normalized_length * schema.mol_coverage)/(schema.read_length*2)
-    else:
-        # draw N from an exponential distribution with a minimum set to 2 reads to avoid singletons
-        N = max(2, rng.exponential(schema.mol_coverage))
-        # set ceiling to avoid N being greater than can be sampled
-        N = min(N, normalized_length/(schema.read_length*2))
-=#
+"""
+Circular indexing to account for end position overflow. Returns a LongDNA string
+"""
+@inline function circular_index(seq::LongDNA{4}, range::UnitRange{Int})::LongDNA{4}
+    n = length(seq)
+    if range.stop > length(seq)
+        return seq[range.start:end] * seq[begin:(range.stop % n)]
+    else
+        return seq[range]
+    end
+end
