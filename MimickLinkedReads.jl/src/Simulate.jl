@@ -1,48 +1,5 @@
 Random.seed!(123)
 
-struct SimParams
-    output_dir::String
-    prefix::String
-    error::Float32
-    insert_size::Distribution
-    length_R1::Int
-    length_R2::Int
-    molecule_length::Distribution
-    molecule_coverage::Float64
-    singletons::Float64
-    attempts::Int
-    circular::Bool
-    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
-        _prefix = Base.Filesystem.basename(prefix)
-        _outdir = Base.Filesystem.dirname(prefix)
-        _exp = truncated(Exponential(molecule_length), lower = 600)
-        _ins = truncated(Normal(read_distance, distance_stdev), lower = 200)
-        return new(_outdir, _prefix, error, _ins, length_R1, length_R2, _exp, molecule_coverage, singletons, attempts, circular)
-    end
-end
-
-mutable struct ProcessedMolecule
-    haplotype::Int
-    barcode::String
-    chrom::String
-    position::UnitRange{Int}
-    read_breakpoints::Vector{UnitRange{Int}}
-    read_sequences::Pair{Vector{LongDNA{4}}, Vector{LongDNA{4}}}
-end
-
-function ProcessedMolecule(schema::Schema, barcode::String, n_reads::Int)
-    ProcessedMolecule(schema.haplotype, barcode, schema.chrom, 0:0, Vector{UnitRange{Int}}(undef, n_reads), Pair{Vector{LongDNA{4}}, Vector{LongDNA{4}}}(Vector{LongDNA{4}}(undef, n_reads), Vector{LongDNA{4}}(undef, n_reads)))
-end
-
-
-function Base.show(io::IO, data::Union{ProcessedMolecule,SimParams})
-    println("Object of type $(typeof(data))")
-    for i in fieldnames(typeof(data))
-        val = getfield(data, i)
-        println(io, " $i::", typeof(val), " ", val)
-    end
-end
-
 function find_nonoverlapping_ranges!(molecule::ProcessedMolecule, number_range::UnitRange{Int}, lengths::Vector{Int}, max_attempts::Int)
     range_start = number_range.start
     range_end = number_range.stop

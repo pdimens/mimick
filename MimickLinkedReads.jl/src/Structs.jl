@@ -1,36 +1,90 @@
+struct BarcodeManifest
+    barcodes
+    output_type::String
+    max::Int64
+    function BarcodeManifest(barcodes, output_type::String, max::Int)
+        new(Base.Iterators.Stateful(barcodes), setup_barcode_output(output_type), output_type, max)
+    end
+end
 
 struct SimParams
     output_dir::String
     prefix::String
     error::Float32
-    #mutation::Float32
-    #indels::Float32
-    #extindels::Float32
-    read_distance::Int
-    distance_stdev::Float32
+    insert_size::Distribution
     length_R1::Int
     length_R2::Int
-    molecule_length::Int
+    molecule_length::Distribution
     molecule_coverage::Float64
     singletons::Float64
     attempts::Int
     circular::Bool
-    randomseed::Int64
-    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons; circular::Bool, randomseed::Int, attempts::Int = 50)
+    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
         _prefix = Base.Filesystem.basename(prefix)
         _outdir = Base.Filesystem.dirname(prefix)
-        return new(_outdir, _prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons, attempts, circular, randomseed)
+        _exp = truncated(Exponential(molecule_length), lower = 600)
+        _ins = truncated(Normal(read_distance, distance_stdev), lower = 200)
+        return new(_outdir, _prefix, error, _ins, length_R1, length_R2, _exp, molecule_coverage, singletons, attempts, circular)
     end
 end
 
-function Base.show(io::IO, data::SimParams)
-    println("Object of type SimParams")
-    for i in fieldnames(SimParams)
+mutable struct SchemaTracker
+    reads_current::Atomic{Int64}
+    reads_required::Int
+end
+
+function Base.show(io::IO, data::SchemaTracker)
+    println(io, "Object of type SchemaTracker")
+    println(io, " Reads Required: ", data.reads_required)
+    println(io, " Reads Current: ", data.reads_current)
+end
+
+"""
+A struct storing all the necessary information to simulate reads from a contig or contig interval
+"""
+struct Schema
+    haplotype::Int
+    chrom::String
+    tracker::SchemaTracker
+    sequence::LongSequence{DNAAlphabet{4}}
+    function Schema(haplotype::Int, chrom::String, reads_req::Int, sequence::LongSequence{DNAAlphabet{4}})
+        new(haplotype, chrom, SchemaTracker(Atomic{Int64}(0),reads_req), sequence)
+    end
+end
+
+function Base.show(io::IO, data::Schema)
+    println("Object of type Schema")
+    for i in fieldnames(Schema)
+        val = getfield(data, i)
+        if i == :tracker
+            println(io, " tracker::SchemaTracker")
+            println(io, "  reads_required::Int64 ", data.tracker.reads_required)
+            println(io, "  reads_current::Int64 ", data.tracker.reads_current)
+        elseif i == :sequence
+            println(io, " $i::", typeof(val), " length $(length(val))")
+        else
+            println(io, " $i::", typeof(val), " ", val)
+        end
+    end
+end
+
+mutable struct ProcessedMolecule
+    haplotype::Int
+    barcode::String
+    chrom::String
+    position::UnitRange{Int}
+    read_breakpoints::Vector{UnitRange{Int}}
+    read_sequences::Pair{Vector{LongDNA{4}}, Vector{LongDNA{4}}}
+end
+
+function ProcessedMolecule(schema::Schema, barcode::String, n_reads::Int)
+    ProcessedMolecule(schema.haplotype, barcode, schema.chrom, 0:0, Vector{UnitRange{Int}}(undef, n_reads), Pair{Vector{LongDNA{4}}, Vector{LongDNA{4}}}(Vector{LongDNA{4}}(undef, n_reads), Vector{LongDNA{4}}(undef, n_reads)))
+end
+
+function Base.show(io::IO, data::Union{ProcessedMolecule,SimParams})
+    println("Object of type $(typeof(data))")
+    for i in fieldnames(typeof(data))
         val = getfield(data, i)
         println(io, " $i::", typeof(val), " ", val)
     end
 end
-
-
-
-

@@ -1,16 +1,19 @@
 module MimickLinkedReads
 
+using Base.Threads
 using BioSequences
 using CodecZlib
 using Distributions
 using FASTX
 using Random
 
+include("Structs.jl")
 include("Barcodes.jl")
 include("Common.jl")
-include("ProcessFASTA.jl")
+include("FormatFASTQ.jl")
 include("Simulate.jl")
-#include("Structs.jl")
+include("ProcessFASTA.jl")
+include("ProcessFASTQ.jl")
 # Write your package code here.
 
 end

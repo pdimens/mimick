@@ -1,12 +1,3 @@
-struct BarcodeManifest
-    barcodes
-    output_type::String
-    max::Int64
-    function BarcodeManifest(barcodes, output_type::String, max::Int)
-        new(Base.Iterators.Stateful(barcodes), setup_barcode_output(output_type), output_type, max)
-    end
-end
-
 """
 Takes a file with barcodes and validates them to be ATGC nucleotides and barcodes same length.
 Returns nothing.

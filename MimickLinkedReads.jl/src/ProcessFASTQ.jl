@@ -1,23 +1,87 @@
+mutable struct FastqWriter
+    queue::Channel{Any}
+    prefix::String
+    writer_task::Task
+    running::Bool
+    
+    function FastqWriter(prefix::String, format::Symbol, buffer_size::Int = 1000)
+        queue = Channel{Any}(buffer_size)
+        writer = new(queue, prefix, Task(() -> nothing), false)
+        writer.writer_task = start_writer_thread(writer, format)
+        writer.running = true
+        return writer
+    end
+end
+
+function start_writer_thread(writer::FastqWriter, format::Symbol)
+    return @spawn begin
+        FASTQ.Writer(GzipCompressorStream(open(writer.prefix * ".R1.fq.gz", "w"))) do R1; FASTQ.Writer(GzipCompressorStream(open(writer.prefix * ".R2.fq.gz", "w"))) do R2 
+            while writer.running || isready(writer.queue)
+                try
+                    # Wait for items with timeout to allow checking running status
+                    if isready(writer.queue)
+                        molecule = take!(writer.queue)
+                        if molecule === :shutdown
+                            break
+                        end
+                        # convert to fastq records and write R1
+                        for record in format_R1(format, molecule)
+                            write(R1, record)
+                        end
+                        flush(R1)
+
+                        # convert to fastq records and write R2
+                        for record in format_R2(format, molecule)
+                            write(R2, record)
+                        end
+                        flush(R2)
+                    else
+                        # Small sleep to prevent busy waiting
+                        sleep(0.001)
+                    end
+                catch e
+                    if isa(e, InvalidStateException) && !writer.running
+                        # Queue was closed, exit gracefully
+                        break
+                    else
+                        println(stderr, "Error in writer thread: ", e)
+                    end
+                end
+            end
+        end; end
+        println("Writer thread stopped")
+    end
+end
+
 
 """
-Given a `ProcessedMolecule`, will convert the sequences therein into formatted FASTQ records and write them to
-appropriate R1 and R2 files. 
+Submit a ProcessedMolecule to the writing thread to be converted to FASTQ records and written
 """
-function convert2fastq(molecule::ProcessedMolecule, qual::String)
-    header = "$(molecule.chrom):$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    # R1 reads
-    #TODO LOGIC FOR FORWARD/REVERSE NOTATION
-    #TODO LOGIC FOR BARCODE FORMAT
-    FASTQ.Writer(open("some_file.R1.fq", "w")) do R1
-        @inbounds _qual = qual^length(molecule.read_sequences.first[begin])
-        @inbounds for (breakpoint,seq) in zip(molecule.read_breakpoints, molecule.read_sequences.first)
-            write(R1, FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)/1", seq, _qual))
-        end
+function submit!(writer::FastqWriter, molecule::ProcessedMolecule)
+    if writer.running
+        put!(writer.queue, molecule)
+    else
+        throw(ArgumentError("Writer is not running"))
     end
-    FASTQ.Writer(open("some_file.R2.fq", "w")) do R2
-        @inbounds _qual = qual^length(molecule.read_sequences.second[begin])
-        @inbounds for (breakpoint,seq) in zip(molecule.read_breakpoints, molecule.read_sequences.second)
-            write(R2, FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)/2", seq, _qual))
-        end
+end
+
+"""
+Gracefully stop the writer thread
+"""
+function stop!(writer::FastqWriter)
+    if writer.running
+        writer.running = false
+        # Signal to stop
+        put!(writer.queue, :shutdown)
+        # Wait for thread to finish
+        wait(writer.writer_task)
+        close(writer.queue)
     end
+end
+
+"""
+Check if writer is still running
+"""
+function is_running(writer::FastqWriter)
+    return writer.running && !istaskdone(writer.writer_task)
 end
