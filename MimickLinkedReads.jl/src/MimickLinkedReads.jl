@@ -11,7 +11,7 @@ include("Structs.jl")
 include("Barcodes.jl")
 include("Common.jl")
 include("FormatFASTQ.jl")
-include("Simulate.jl")
+include("Breakpoints.jl")
 include("ProcessFASTA.jl")
 include("ProcessFASTQ.jl")
 # Write your package code here.

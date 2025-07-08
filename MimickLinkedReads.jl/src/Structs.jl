@@ -12,6 +12,7 @@ struct SimParams
     prefix::String
     error::Float32
     insert_size::Distribution
+    insert_size_buffer::Int
     length_R1::Int
     length_R2::Int
     molecule_length::Distribution
@@ -22,9 +23,14 @@ struct SimParams
     function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
         _prefix = Base.Filesystem.basename(prefix)
         _outdir = Base.Filesystem.dirname(prefix)
-        _exp = truncated(Exponential(molecule_length), lower = 600)
+        if molecule_coverage < 1
+            lowerbound = max(3000, trunc(Int, molecule_length * molecule_coverage * 0.25))
+        else
+            lowerbound = molecule_coverage * (read_distance + (0.75 * distance_stdev))
+        end
+        _exp = truncated(Exponential(molecule_length), lower = lowerbound)
         _ins = truncated(Normal(read_distance, distance_stdev), lower = 200)
-        return new(_outdir, _prefix, error, _ins, length_R1, length_R2, _exp, molecule_coverage, singletons, attempts, circular)
+        return new(_outdir, _prefix, error, _ins, read_distance, length_R1, length_R2, _exp, molecule_coverage, singletons, attempts, circular)
     end
 end
 
