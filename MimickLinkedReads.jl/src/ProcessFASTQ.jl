@@ -4,7 +4,7 @@ mutable struct FastqWriter
     writer_task::Task
     running::Bool
     
-    function FastqWriter(prefix::String, format::Symbol, buffer_size::Int = 1000)
+    function FastqWriter(prefix::String, format::Symbol, buffer_size::Int = 3000)
         queue = Channel{Any}(buffer_size)
         writer = new(queue, prefix, Task(() -> nothing), false)
         writer.writer_task = start_writer_thread(writer, format)
@@ -37,7 +37,7 @@ function start_writer_thread(writer::FastqWriter, format::Symbol)
                         flush(R2)
                     else
                         # Small sleep to prevent busy waiting
-                        sleep(0.001)
+                        sleep(0.00001)
                     end
                 catch e
                     if isa(e, InvalidStateException) && !writer.running

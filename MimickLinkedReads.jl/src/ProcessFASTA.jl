@@ -1,4 +1,6 @@
 """
+`index_fasta(fasta::String)`
+
 Delete an existing faidx (if present) and re-index the input fasta file.
 Returns the name of the fasta index file.
 """
@@ -18,9 +20,11 @@ function index_fasta(fasta::String)::String
 end
 
 """
-Read an input fasta and return a Schema object.
+`process_fasta(fasta::String, haplotype::Int, coverage::Float64, read_len::Vector{Int})`
+
+Read an input fasta and return a Vector of `Schema` objects, one for each contig in the file.
 """
-function process_fasta(fasta::String, haplotype::Int64, coverage::Float64, read_len::Vector{Int})::Vector{Schema}
+function process_fasta(fasta::String, haplotype::Int, coverage::Float64, read_len::Vector{Int})::Vector{Schema}
     fai = index_fasta(fasta)
     mean_readlen = sum(read_len) ÷ 2
     FASTAReader(safe_read(fasta), index = fai, copy = false) do _fasta
@@ -40,13 +44,16 @@ function process_fasta(fasta::String, haplotype::Int64, coverage::Float64, read_
 end
 
 """
+`setup_schema(fasta_files::Vector{String}, coverage::Union{Int,Float64}, read_len::Vector{Int})`
+
 Iterate through input `fasta_files` to return a `Dict` of `Schema`
 """
+setup_schema(fasta_files::Vector{String}, coverage::Int, read_len::Vector{Int})::Dict{String, Schema} = setup_schema(fasta_files, Float64(coverage), read_len)
 function setup_schema(fasta_files::Vector{String}, coverage::Float64, read_len::Vector{Int})::Dict{String, Schema}
     d = Dict{String, Schema}()
     @inbounds for (i,j) in enumerate(fasta_files)
         schemas = process_fasta(j, i, coverage, read_len)
-        for _schema  in schemas
+        for _schema in schemas
             d[join([_schema.chrom,_schema.haplotype], "_")] = _schema
         end
     end

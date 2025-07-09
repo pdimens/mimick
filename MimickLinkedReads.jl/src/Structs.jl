@@ -15,12 +15,13 @@ struct SimParams
     insert_size_buffer::Int
     length_R1::Int
     length_R2::Int
+    n_molecules::Union{UnitRange{Int},Distribution}
     molecule_length::Distribution
     molecule_coverage::Float64
     singletons::Float64
     attempts::Int
     circular::Bool
-    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
+    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, n_molecules, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
         _prefix = Base.Filesystem.basename(prefix)
         _outdir = Base.Filesystem.dirname(prefix)
         if molecule_coverage < 1
@@ -29,8 +30,13 @@ struct SimParams
             lowerbound = molecule_coverage * (read_distance + (0.75 * distance_stdev))
         end
         _exp = truncated(Exponential(molecule_length), lower = lowerbound)
+        if n_molecules > 0
+            _nmol = truncated(Exponential(n_molecules), lower = 1, upper = 2.5*n_molecules)
+        else
+            _nmol = abs(n_molecules):abs(n_molecules)
+        end
         _ins = truncated(Normal(read_distance, distance_stdev), lower = 200)
-        return new(_outdir, _prefix, error, _ins, read_distance, length_R1, length_R2, _exp, molecule_coverage, singletons, attempts, circular)
+        return new(_outdir, _prefix, error, _ins, read_distance, length_R1, length_R2, _nmol, _exp, molecule_coverage, singletons, attempts, circular)
     end
 end
 
@@ -40,9 +46,9 @@ mutable struct SchemaTracker
 end
 
 function Base.show(io::IO, data::SchemaTracker)
-    println(io, "Object of type SchemaTracker")
-    println(io, " Reads Required: ", data.reads_required)
-    println(io, " Reads Current: ", data.reads_current)
+    println(io, "SchemaTracker Object")
+    println(io, "  Reads Required: ", data.reads_required)
+    println(io, "  Reads Current: ", data.reads_current)
 end
 
 """
@@ -59,17 +65,17 @@ struct Schema
 end
 
 function Base.show(io::IO, data::Schema)
-    println("Object of type Schema")
+    println(io, "Simulation Schema")
     for i in fieldnames(Schema)
         val = getfield(data, i)
         if i == :tracker
-            println(io, " tracker::SchemaTracker")
-            println(io, "  reads_required::Int64 ", data.tracker.reads_required)
-            println(io, "  reads_current::Int64 ", data.tracker.reads_current)
+            println(io, "  tracker::SchemaTracker")
+            println(io, "    reads_required::Int64 ", data.tracker.reads_required)
+            println(io, "    reads_current::Int64 ", data.tracker.reads_current.value)
         elseif i == :sequence
-            println(io, " $i::", typeof(val), " length $(length(val))")
+            println(io, "  $i::", typeof(val), " length $(length(val))")
         else
-            println(io, " $i::", typeof(val), " ", val)
+            println(io, "  $i::", typeof(val), " ", val)
         end
     end
 end
@@ -88,9 +94,13 @@ function ProcessedMolecule(schema::Schema, barcode::String, n_reads::Int)
 end
 
 function Base.show(io::IO, data::Union{ProcessedMolecule,SimParams})
-    println("Object of type $(typeof(data))")
+    println(io, "$(typeof(data)) Object")
     for i in fieldnames(typeof(data))
         val = getfield(data, i)
-        println(io, " $i::", typeof(val), " ", val)
+        if typeof(val) <: Distribution
+            println(io, " $i::$(supertype(typeof(val)))")
+        else
+            println(io, " $i::", typeof(val), " ", val)
+        end
     end
 end

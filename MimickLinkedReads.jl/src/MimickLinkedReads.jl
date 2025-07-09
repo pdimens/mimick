@@ -14,6 +14,7 @@ include("FormatFASTQ.jl")
 include("Breakpoints.jl")
 include("ProcessFASTA.jl")
 include("ProcessFASTQ.jl")
+include("Main.jl")
 # Write your package code here.
 
 end
