@@ -14,3 +14,6 @@
     attempts = 25,
     seed = 0
 )
+
+
+julia --project=MimickLinkedReads.jl ./MimickLinkedReads.jl/src/Main.jl test.hap1.fa test.hap2.fa

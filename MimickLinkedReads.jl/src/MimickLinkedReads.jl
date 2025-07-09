@@ -1,5 +1,6 @@
 module MimickLinkedReads
 
+using ArgParse
 using Base.Threads
 using BioSequences
 using CodecZlib
