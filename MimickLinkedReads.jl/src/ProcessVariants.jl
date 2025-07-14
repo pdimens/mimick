@@ -46,3 +46,24 @@ function get_sample_variants(vcf::String, sample_number::Int)::Dict{String, Vect
     close(reader)
     return out_dict
 end
+
+
+#TODO there needs to be a way to dispatch on the mutation type, along with a universal way of encoding them
+
+"""
+mutate!()
+
+Does an in-place mutation of `dna` given a mutation given as a `position::Int => nucleotide::Char`
+"""
+mutate!(dna::LongDNA{4}, mutation::Pair{Int,Char}) = @inbounds dna[mutation.first] = mutation.second
+
+"""
+mutate!(dna::LongDNA{4}, mutation::Pair{Int,String})
+
+Does an in-place mutation of `dna` by deleting the nucleotides at `position::Int` to `position + length(nucleotides)`
+"""
+function mutate!(dna::LongDNA{4}, mutation::Pair{Int,String})
+    deletionrange = mutation.first:mutation.first+length(mutation.second)
+    deleteat!(dna, deletionrange)
+    return dna
+end
