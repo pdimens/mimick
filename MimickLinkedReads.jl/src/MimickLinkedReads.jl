@@ -7,6 +7,7 @@ using CodecZlib
 using Distributions
 using FASTX
 using Random
+using VariantCallFormat
 
 include("Structs.jl")
 include("Barcodes.jl")
