@@ -27,6 +27,12 @@ function setup_barcodes(::Val{:tellseq})
     )
 end
 
+function setup_barcodes(::Val{:tenx})
+    return Base.Iterators.Stateful(
+        Base.Iterators.product(("ATGC" for i in 1:16)...)
+    )
+end
+
 setup_barcodes(::Val{:tenx}) = setup_barcodes(:tellseq)
 
 
@@ -72,3 +78,5 @@ Format a TELLseq/10X style barcode for output. The input `bc` is expected to be 
 generator from `setup_barcodes()`. Returns a `String`.
 """
 format_barcode(bc::Tuple{NTuple{18, Char}, Nothing})::String = join(bc[1], "")
+format_barcode(bc::Tuple{NTuple{16, Char}, Nothing})::String = join(bc[1], "")
+format_barcode(bc::Nothing) = error("There are no more barcodes available for the selected barcode type.")
