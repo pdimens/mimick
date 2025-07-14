@@ -1,4 +1,3 @@
-
 """
 `get_ploidy(vcf::String)`
 
@@ -17,30 +16,43 @@ function get_ploidy_and_contigs(vcf::String)::Tuple{Vector{String}, Int}
     end
 end
 
+function vartype(ref::String, alt::Vector{String})::Symbol
+    l_ref = length(ref)
+    l_alts = length.(alt)
+    if l_ref == 1 && any(>(1), l_alts)
+        return :ins
+    elseif l_ref == 1 && all(==(1), l_alts)
+        return :snp
+    else
+        return :del
+    end
+end
+
 """
 get_sample_variants(vcf::String, sample_number::Int)
 
 For a given `sample_number`, returns a Dict of the variants as a Vector of Pairs,
 given as `position::Int => variant::String` e.g. `"chr1_1" => [192=>"T", 2427=>"A", 2582=>"C"]`
 """
-function get_sample_variants(vcf::String, sample_number::Int)::Dict{String, Vector{Pair{Int64, String}}}
+function get_sample_variants(vcf::String, sample_number::Int)::Dict{String, Vector{Mutation}}
     contigs,ploidy = get_ploidy_and_contigs(vcf)
-    out_dict = Dict{String, Vector{Pair{Int, String}}}()
+    out_dict = Dict{String, Vector{Mutation}}()
     for contig in contigs
         for haplotype in 1:ploidy
-            out_dict["$(contig)_$haplotype"] = Pair{Int, String}[]
+            out_dict["$(contig)_$haplotype"] = Mutation[]
         end
     end
-
     reader = VCF.Reader(open(vcf, "r"))
     @inbounds for record in reader
-        @inbounds alt = VCF.alt(record)[1]
+        alt = VCF.alt(record)
+        ref = VCF.ref(record)
+        _vartype = vartype(ref, alt)
         chrom = VCF.chrom(record)
         pos = VCF.pos(record)
         gt = VCF.genotype(record, sample_number, "GT")
         alleles = parse.(UInt8, split(gt, ['/', '|']))
         for i in findall(!iszero, alleles)
-            push!(out_dict["$(chrom)_$i"], (pos => alt))
+            @inbounds push!(out_dict["$(chrom)_$i"], Mutation(pos, _vartype, alt[alleles[i]]))
         end
     end
     close(reader)
@@ -48,22 +60,53 @@ function get_sample_variants(vcf::String, sample_number::Int)::Dict{String, Vect
 end
 
 
-#TODO there needs to be a way to dispatch on the mutation type, along with a universal way of encoding them
-
 """
-mutate!()
+mutate!(seq, mutation::Mutation)
+mutate!(seq::LongDNA{4}, ::Val{:snp|:ins|:del}, position::Int, replacement::String)
 
-Does an in-place mutation of `dna` given a mutation given as a `position::Int => nucleotide::Char`
+Does an in-place mutation of `seq` given a `Mutation`, which contains the position, type, and variant nucleotides.
+Dispatches on different mutation types: `:snp`, `:ins`, `:del`
 """
-mutate!(dna::LongDNA{4}, mutation::Pair{Int,Char}) = @inbounds dna[mutation.first] = mutation.second
+function mutate!(seq::LongDNA{4}, mutation::Mutation)
+    @inbounds mutate!(seq, Val(mutation.type), mutation.position, mutation.nucleotides)
+end
 
-"""
-mutate!(dna::LongDNA{4}, mutation::Pair{Int,String})
+function mutate!(seq::LongDNA{4}, ::Val{:snp}, position::Int, replacement::String)
+    @inbounds seq[position] = replacement[1]
+    return seq
+end
 
-Does an in-place mutation of `dna` by deleting the nucleotides at `position::Int` to `position + length(nucleotides)`
-"""
-function mutate!(dna::LongDNA{4}, mutation::Pair{Int,String})
-    deletionrange = mutation.first:mutation.first+length(mutation.second)
-    deleteat!(dna, deletionrange)
-    return dna
+function mutate!(seq::LongDNA{4}, ::Val{:ins}, position::Int, replacement::String)
+    for (pos,i) in enumerate(replacement)
+        insert!(seq, position + pos-1, i)
+    end
+    return seq
+end
+
+function mutate!(seq::LongDNA{4}, ::Val{:del}, position::Int, replacement::String)
+    for (pos,i) in enumerate(replacement)
+        insert!(seq, position + pos-1, i)
+    end
+    return seq
+end
+
+
+function build_sample_schema(schema::Dict{String, Schema}, variants::{Dict{String, Vector{Mutation}}})
+    haplotypes = collect(keys(variants))
+    contigs = collect(keys(schema))
+    contigs_haplos = map(haplotypes) do i
+        _x = findfirst(j -> occursin(j, i[begin:end-2]), contigs)
+        return (contigs[_x] => i)
+    end
+    for contig in contig_haplos
+        _schema = schema[contig.first]
+        _variants = variants[contig.second]
+        _seq = copy(_schema.sequence)
+        for variant in filter(i -> i.type == :snp, _variants)
+            mutate!(_seq, variant)
+        end
+        #for variant in filter(i -> i.type != :snp, _variants)
+        #    mutate!(_seq, variant)
+        #end
+    end
 end

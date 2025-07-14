@@ -1,3 +1,23 @@
+"""
+Mutation(position::Int, type::Symbol, nucleotides::String)
+
+A convenience struct containing mutation information. This is used
+for dispatch when modifying DNA sequences with a sample's variants.
+The `type` can be one of `:snp`, `:ins`, `:del`.
+"""
+struct Mutation
+    position::Int
+    type::Symbol
+    nucleotides::String
+end
+
+function Base.show(io::IO, data::Mutation)
+    println(io, "Mutation")
+    println(io, "  position: $(data.position)")
+    println(io, "  type: $(data.type)")
+    print(io, "  nucleotodies: $(data.nucleotides)")
+end
+
 struct BarcodeManifest
     barcodes
     output_type::String
