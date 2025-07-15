@@ -22,7 +22,7 @@ end
 Returns `true` if the current number of reads is equal to or greater than the
 number of reads required.
 """
-is_complete(schema::Schema)::Bool = schema.tracker.reads_current.value >= schema.tracker.reads_required
+is_complete(schema::Schema)::Bool = schema.tracker.reads_current >= schema.tracker.reads_required
 
 """
 `update!(schemas::Dict{String, Schema})`

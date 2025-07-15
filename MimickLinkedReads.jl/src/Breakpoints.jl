@@ -9,7 +9,9 @@ non-overlapping breakpoints as a `Vector{UnitRange{Int}}`
 """
 function cumsum_to_ranges(values::Vector{Int})::Vector{UnitRange{Int}}
     cs = cumsum(values)
-    return [cs[i]+1:cs[i+1] for i in eachindex(cs)[begin:end-1]]
+    @inbounds begin
+        return [cs[i]+1:cs[i+1] for i in eachindex(cs)[begin:end-1]]
+    end
 end
 
 """
@@ -64,7 +66,7 @@ mutates `ProcessedMolecule.read_sequences` in place with updated read sequences.
 function extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r1_len::Int, r2_len::Int)
     r1_len -= 1
     r2_len -= 1
-    @inbounds for (i,breakpoint) in enumerate(molecule.read_breakpoints)
+     @fastmath @inbounds for (i,breakpoint) in enumerate(molecule.read_breakpoints)
         R1 = circular_index(sequence, breakpoint.start:breakpoint.start+r1_len)
         R2 = reverse(circular_index(sequence, (breakpoint.stop-r2_len):breakpoint.stop))
         if count(==(DNA_N), R1)/r1_len > 0.05 || count(==(DNA_N), R2)/r2_len > 0.05
@@ -120,7 +122,7 @@ function calculate_fragments(params::SimParams, molsize::Int)::Vector{Int}
     else
         if params.molecule_coverage < 1
             # set a minimum number of 2 reads to avoid singletons
-            exact_inserts = (molsize * params.molecule_coverage) / params.insert_size_buffer
+            @fastmath exact_inserts = (molsize * params.molecule_coverage) / params.insert_size_buffer
             _n = max(2.0, exact_inserts)
         else
             # molecule coverage given as an integer, convert to float
@@ -129,7 +131,7 @@ function calculate_fragments(params::SimParams, molsize::Int)::Vector{Int}
         # the number of fragments should be imperfect, so we draw N from an
         # exponential distribution with a minimum set to 2 reads to avoid singletons
         # set ceiling to avoid N being greater than can be sampled
-        max_possible = molsize/params.insert_size_buffer
+        @fastmath max_possible = molsize/params.insert_size_buffer
         _exp = truncated(Exponential(_n), lower = 2.0, upper = max_possible)
         N = rand(_exp)
     end

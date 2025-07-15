@@ -1,3 +1,17 @@
+mutable struct FastqWriter
+    queue::Channel{Any}
+    prefix::String
+    writer_task::Task
+    running::Bool
+    
+    function FastqWriter(prefix::String, format::Symbol, buffer_size::Int = 3000)
+        queue = Channel{Any}(buffer_size)
+        writer = new(queue, prefix, Task(() -> nothing), false)
+        writer.writer_task = start_writer_thread(writer, format)
+        writer.running = true
+        return writer
+    end
+end
 
 function start_writer_thread(writer::FastqWriter, format::Symbol)
     return @spawn begin

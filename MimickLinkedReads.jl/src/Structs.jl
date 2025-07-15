@@ -8,14 +8,16 @@ The `type` can be one of `:snp`, `:ins`, `:del`.
 struct Mutation
     position::Int
     type::Symbol
-    nucleotides::String
+    ref::String
+    alt::String
 end
 
 function Base.show(io::IO, data::Mutation)
     println(io, "Mutation")
     println(io, "  position: $(data.position)")
     println(io, "  type: $(data.type)")
-    print(io, "  nucleotodies: $(data.nucleotides)")
+    println(io, "  ref: $(data.ref)")
+    print(io, "  alt: $(data.alt)")
 end
 
 struct BarcodeManifest
@@ -60,8 +62,15 @@ struct SimParams
     end
 end
 
+#=
 mutable struct SchemaTracker
     reads_current::Atomic{Int64}
+    reads_required::Int
+end
+=#
+
+mutable struct SchemaTracker
+    reads_current::Int
     reads_required::Int
 end
 
@@ -80,7 +89,7 @@ struct Schema
     tracker::SchemaTracker
     sequence::LongSequence{DNAAlphabet{4}}
     function Schema(haplotype::Int, chrom::String, reads_req::Int, sequence::LongSequence{DNAAlphabet{4}})
-        new(haplotype, chrom, SchemaTracker(Atomic{Int64}(0),reads_req), sequence)
+        new(haplotype, chrom, SchemaTracker(0,reads_req), sequence)
     end
 end
 
@@ -91,7 +100,7 @@ function Base.show(io::IO, data::Schema)
         if i == :tracker
             println(io, "  tracker::SchemaTracker")
             println(io, "    reads_required::Int64 ", data.tracker.reads_required)
-            println(io, "    reads_current::Int64 ", data.tracker.reads_current.value)
+            println(io, "    reads_current::Int64 ", data.tracker.reads_current)
         elseif i == :sequence
             println(io, "  $i::", typeof(val), " length $(length(val))")
         else

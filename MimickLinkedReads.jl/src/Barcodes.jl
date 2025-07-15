@@ -53,6 +53,8 @@ Format a haplotagging style barcode for output. The input `bc` is expected to be
 generator from `setup_barcodes()`. Returns a `String`.
 """
 function format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, Char, Int64}, Nothing})::String
+    @inbounds bc[1][1] * lpad(bc[1][2],2, '0') * bc[1][3] * lpad(bc[1][4],2, '0') * bc[1][5] * lpad(bc[1][6],2, '0') * bc[1][7] * lpad(bc[1][8],2, '0')
+    #=
     mapreduce(*, bc[1]) do x
         if x isa Int
             lpad(x, 2, "0")
@@ -60,6 +62,7 @@ function format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, C
             x
         end
     end
+    =#
 end
 
 """
