@@ -1,10 +1,10 @@
 """
-`cumsum_to_ranges(values::Vector{Int64})`
+    cumsum_to_ranges(values::Vector{Int64}) -> Vector{UnitRange{Int}}
 
 Shortcut method of finding fragment breakpoints. The first value of the `values` Vector
 is expected to be the molecule start point. The subsequent values (indicies 2+) are expected
 to be the lengths of the fragments that need breakpoints. This method will return sequential
-non-overlapping breakpoints as a `Vector{UnitRange{Int}}`
+non-overlapping breakpoints.
 
 """
 function cumsum_to_ranges(values::Vector{Int})::Vector{UnitRange{Int}}
@@ -15,7 +15,7 @@ function cumsum_to_ranges(values::Vector{Int})::Vector{UnitRange{Int}}
 end
 
 """
-find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vector{Int}, max_attempts::Int)
+    find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vector{Int}, max_attempts::Int)
 
 Given the molecule breakpoints in the `ProcessedMolecule` and the `lengths` of the inserts, will
 attempt (up to `max_attempts`) to randomly identify non-overlapping breakpoints. Mutates `molecule.breakpoints`
@@ -80,7 +80,7 @@ function extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r
 end
 
 """
-    circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int})
+    circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int}) -> String
 
 Circular indexing to account for end position overflow. Returns a DNA sequences as a String.
 """
@@ -97,7 +97,7 @@ Circular indexing to account for end position overflow. Returns a DNA sequences 
 end
 
 """
-    circular_index_R2(seq::LongDNA{4}, range::UnitRange{Int})
+    circular_index_R2(seq::LongDNA{4}, range::UnitRange{Int}) -> String
 
 Circular indexing to account for end position overflow. Returns a reverse-complimented DNA
 sequence as a String.
@@ -115,7 +115,7 @@ sequence as a String.
 end
 
 """
-    get_molecule_size(params::SimParams, seq_len::Int)
+    get_molecule_size(params::SimParams, seq_len::Int) -> Int
 
 Given the length of a contig/interval and simulation parameters, randomly draws
 a molecule length from an exponential distribution and returns it as an `Int`.
@@ -130,13 +130,12 @@ function get_molecule_size(params::SimParams, seq_len::Int)::Int
 end
 
 """
-    calculate_fragments(params::SimParams, molsize::Int)
+    calculate_n_frags(params::SimParams, molsize::Int) -> Int
 
-Given simulation parameters and molecule size, calculates how many how many fragments
-and their lengths should be simulated from the molecule. Returns a `Vector{Int}` of 
-fragment lengths.
+Calculate the number of fragments to create for a molecule based on the
+molecule size.
 """
-function calculate_fragments(params::SimParams, molsize::Int)::Vector{Int}
+function calculate_n_frags(params::SimParams, molsize::Int)::Int
     # if a singleton proportion is provided, conditionally drop the number of reads to 1
     if params.singletons > 0.0 && rand() <= params.singletons
         N = 1.0
@@ -156,7 +155,18 @@ function calculate_fragments(params::SimParams, molsize::Int)::Vector{Int}
         _exp = truncated(Exponential(_n), lower = 2.0, upper = max_possible)
         N = rand(_exp)
     end
-    n_reads = trunc(Int, N)
+    return trunc(Int, N)
+end
+
+"""
+    calculate_insert_sizes(params::SimParams, molsize::Int) -> Vector{Int}
+
+Given simulation parameters and molecule size, calculates how many how many inserts
+should be simulated (and their lengths) from the molecule. Returns a `Vector{Int}` of 
+fragment lengths.
+"""
+function calculate_insert_sizes(params::SimParams, molsize::Int)::Vector{Int}
+    n_reads = calculate_n_frags(params, molsize)
     read_sizes = rand(params.insert_size, n_reads)
     attempts = 0
     while sum(read_sizes) > molsize && attempts < params.attempts

@@ -23,7 +23,7 @@ function mimick(fasta_files::Vector{String}; format::String, prefix::String = "s
                 molecule_targets = rand(candidates, n_mol)
                 for target in molecule_targets
                     molsize = get_molecule_size(params, length(schema[target].sequence))
-                    frags = calculate_fragments(params, molsize)
+                    frags = calculate_insert_sizes(params, molsize)
                     molecule = get_sequences(schema[target], params, get_next!(barcodes), molsize, frags)
                     write(R1, format_R1(fq_fmt, molecule))
                     write(R2, format_R2(fq_fmt, molecule))
@@ -69,20 +69,13 @@ function mimick(fasta_file::String, vcf_file::String; format::String, prefix::St
                         molecule_targets = rand(candidates, n_mol)
                         for target in molecule_targets
                             molsize = get_molecule_size(params, length(schema[target].sequence))
-                            frags = calculate_fragments(params, molsize)
+                            frags = calculate_insert_sizes(params, molsize)
                             molecule = get_sequences(schema[target], params, get_next!(barcodes), molsize, frags)
-                            #for record in format_R1(format, molecule)
                             write(R1, format_R1(fq_fmt, molecule))
-                            #end
-                            # convert to fastq records and write R2
-                            #for record in format_R2(format, molecule)
                             write(R2, format_R2(fq_fmt, molecule))
-                            #end
-                            #return molecule
                             schema[target].tracker.reads_current += length(frags)
                         end
                         filter!(is_incomplete, schema)
-                        #update!(schema)
                     end
                 end;end
                 Progress.update!(job)

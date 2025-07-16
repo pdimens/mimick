@@ -1,5 +1,5 @@
 """
-    setup_barcodes(format::Symbol)
+    setup_barcodes(format::Symbol) -> Iterators.Stateful{Iterators.product}
 
 Set up a Stateful iterator for the given barcode `format`. Accepts
 - `haplotagging`
@@ -35,7 +35,7 @@ end
 
 
 """
-    get_next!(bc::T) where T<:Base.Iterators.Stateful
+    get_next!(bc::T) where T<:Base.Iterators.Stateful -> String
 
 Iterates to the next value of the barcode generator `bc` and formats
 it into a proper string.
@@ -45,7 +45,7 @@ function get_next!(bc::T)::String where T<:Base.Iterators.Stateful
 end
 
 """
-    format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, Char, Int64}, Nothing})
+    format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, Char, Int64}, Nothing}) -> String
 
 Format a haplotagging style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.
@@ -55,7 +55,7 @@ function format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, C
 end
 
 """
-    format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})
+    format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing}) -> String
 
 Format an stLFR style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.
@@ -64,7 +64,7 @@ format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})::String = join(bc
 
 
 """
-    format_barcode(bc::Tuple{NTuple{18, Char}, Nothing})
+    format_barcode(bc::Tuple{NTuple{18, Char}, Nothing}) -> String
 
 Format a TELLseq/10X style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.
