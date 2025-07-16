@@ -17,20 +17,59 @@ function safe_read(filename::String)
 end
 
 """
-`is_complete(schema::Schema)`
+    interperet_format(fmt::String) -> Tuple{Symbol,Symbol}
+
+Given a `fmt` (format) string, interprets the barcode type and returns
+a Tuple of the barcode format and output format style (e.g. `(:tellseq, :tellseq)`).
+Accepts
+- "haplotagging" -> `(:haplotagging, :haplotagging)`
+- "stlfr" -> `(:stlfr, :stlfr)`
+- "tellseq" -> `(:tellseq, :tellseq)`
+- "tenx" -> `(:tenx, :tenx)`
+- "standard" -> `(:tellseq, :standard)`
+- "standard:haplotagging" -> `(:haplotagging, :standard)`
+- "standard:stlfr" -> `(:stlfr, :standard)`
+"""
+function interperet_format(fmt::String)::Tuple{Symbol,Symbol}
+    format = lowercase(fmt)
+    if occursin("standard", fmt)
+        out_format = :standard
+        if occursin("stlfr", fmt)
+            barcode_format = :stlfr
+        elseif occursin("haplotagging", fmt)
+            barcode_format = :haplotagging
+        else
+            barcode_format = :tellseq
+        end
+
+    elseif fmt ∈ ["stlfr", "haplotagging","tellseq","tenx"]
+        out_format = Symbol(fmt)
+        barcode_format = Symbol(fmt)
+    else
+        error("Barcode format $fmt is not recognized as one of: haplotagging, stlfr, tellseq, tenx")
+    end
+    return (barcode_format, out_format)
+end
+
+
+"""
+    is_complete(schema::Schema)
 
 Returns `true` if the current number of reads is equal to or greater than the
 number of reads required.
 """
 is_complete(schema::Schema)::Bool = schema.tracker.reads_current >= schema.tracker.reads_required
+is_incomplete(schema::Pair{String,Schema})::Bool = schema.second.tracker.reads_current < schema.second.tracker.reads_required
 
+#=
 """
-`update!(schemas::Dict{String, Schema})`
+    update!(schemas::Dict{String, Schema})
 
 Parses through the Dict of Schema and deletes entries where
 the number of generated reads is greater than or equal to the
 reads required for that contig/interval.
 """
+
 function update!(schemas::Dict{String, Schema})
     for i in keys(schemas)
         if is_complete(schemas[i])
@@ -39,8 +78,12 @@ function update!(schemas::Dict{String, Schema})
     end
 end
 
+function update!(schemas::Dict{String, Schema})
+    filter!(is_incomplete, schemas)
+end
+=#
 """
-`get_n_molecules(::SimParams)`
+    get_n_molecules(::SimParams)
 
 Randomly sample a `Distribution` (or `UnitRange`) and return a rounded `Int`.
 """

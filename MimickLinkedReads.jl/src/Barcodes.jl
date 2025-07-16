@@ -1,5 +1,5 @@
 """
-`setup_barcodes(format::Symbol)`
+    setup_barcodes(format::Symbol)
 
 Set up a Stateful iterator for the given barcode `format`. Accepts
 - `haplotagging`
@@ -33,11 +33,9 @@ function setup_barcodes(::Val{:tenx})
     )
 end
 
-setup_barcodes(::Val{:tenx}) = setup_barcodes(:tellseq)
-
 
 """
-`get_next!(bc::T) where T<:Base.Iterators.Stateful`
+    get_next!(bc::T) where T<:Base.Iterators.Stateful
 
 Iterates to the next value of the barcode generator `bc` and formats
 it into a proper string.
@@ -47,26 +45,17 @@ function get_next!(bc::T)::String where T<:Base.Iterators.Stateful
 end
 
 """
-`format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, Char, Int64}, Nothing})`
+    format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, Char, Int64}, Nothing})
 
 Format a haplotagging style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.
 """
 function format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, Char, Int64}, Nothing})::String
     @inbounds bc[1][1] * lpad(bc[1][2],2, '0') * bc[1][3] * lpad(bc[1][4],2, '0') * bc[1][5] * lpad(bc[1][6],2, '0') * bc[1][7] * lpad(bc[1][8],2, '0')
-    #=
-    mapreduce(*, bc[1]) do x
-        if x isa Int
-            lpad(x, 2, "0")
-        else
-            x
-        end
-    end
-    =#
 end
 
 """
-`format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})`
+    format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})
 
 Format an stLFR style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.
@@ -75,7 +64,7 @@ format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})::String = join(bc
 
 
 """
-`format_barcode(bc::Tuple{NTuple{18, Char}, Nothing})`
+    format_barcode(bc::Tuple{NTuple{18, Char}, Nothing})
 
 Format a TELLseq/10X style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.

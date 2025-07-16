@@ -58,7 +58,7 @@ function find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vecto
 end
 
 """
-extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r1_len::Int, r2_len::Int)
+    extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r1_len::Int, r2_len::Int)
 
 Given a `sequence`, a `ProcessedMolecule` containing breakpoints and read 1/read 2 lengths,
 mutates `ProcessedMolecule.read_sequences` in place with updated read sequences.
@@ -67,10 +67,10 @@ function extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r
     r1_len -= 1
     r2_len -= 1
      @fastmath @inbounds for (i,breakpoint) in enumerate(molecule.read_breakpoints)
-        R1 = circular_index(sequence, breakpoint.start:breakpoint.start+r1_len)
-        R2 = reverse(circular_index(sequence, (breakpoint.stop-r2_len):breakpoint.stop))
-        if count(==(DNA_N), R1)/r1_len > 0.05 || count(==(DNA_N), R2)/r2_len > 0.05
-            return Vector{Pair{LongDNA{4}, LongDNA{4}}}(undef, 1)
+        R1 = circular_index_R2(sequence, breakpoint.start:breakpoint.start+r1_len)
+        R2 = circular_index_R1(sequence, (breakpoint.stop-r2_len):breakpoint.stop)
+        if count(==("N"), R1)/r1_len > 0.05 || count(==("N"), R2)/r2_len > 0.05
+            return Vector{Pair{String, String}}(undef, 1)
             error("Too many Ns")
         end
         @inbounds molecule.read_sequences.first[i] = R1
@@ -80,21 +80,42 @@ function extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r
 end
 
 """
-`circular_index(seq::LongDNA{4}, range::UnitRange{Int})`
+    circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int})
 
-Circular indexing to account for end position overflow. Returns a `LongDNA{4}` string
+Circular indexing to account for end position overflow. Returns a DNA sequences as a String.
 """
-@inline function circular_index(seq::LongDNA{4}, range::UnitRange{Int})::LongDNA{4}
+@inline function circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int})::String
     n = length(seq)
-    if range.stop > n
-        @inbounds return seq[range.start:end] * seq[begin:(range.stop % n)]
-    else
-        @inbounds return seq[range]
+    @inbounds begin
+        if range.stop > n
+            subseq = seq[range.start:end] * seq[begin:(range.stop % n)]
+        else
+            subseq = seq[range]
+        end
     end
+    return string(subseq)
 end
 
 """
-`get_molecule_size(params::SimParams, seq_len::Int)`
+    circular_index_R2(seq::LongDNA{4}, range::UnitRange{Int})
+
+Circular indexing to account for end position overflow. Returns a reverse-complimented DNA
+sequence as a String.
+"""
+@inline function circular_index_R2(seq::LongDNA{4}, range::UnitRange{Int})::String
+    n = length(seq)
+    @inbounds begin
+        if range.stop > n
+            subseq = seq[range.start:end] * seq[begin:(range.stop % n)]
+        else
+            subseq = seq[range]
+        end
+    end
+    return string(reverse_complement!(subseq))
+end
+
+"""
+    get_molecule_size(params::SimParams, seq_len::Int)
 
 Given the length of a contig/interval and simulation parameters, randomly draws
 a molecule length from an exponential distribution and returns it as an `Int`.
@@ -109,7 +130,7 @@ function get_molecule_size(params::SimParams, seq_len::Int)::Int
 end
 
 """
-`calculate_fragments(params::SimParams, molsize::Int)`
+    calculate_fragments(params::SimParams, molsize::Int)
 
 Given simulation parameters and molecule size, calculates how many how many fragments
 and their lengths should be simulated from the molecule. Returns a `Vector{Int}` of 
@@ -149,7 +170,7 @@ function calculate_fragments(params::SimParams, molsize::Int)::Vector{Int}
 end
 
 """
-`get_sequences(schema::Schema, params::SimParams, barcode::String, molecule_length::Int, fragments::Vector{Int})`
+    get_sequences(schema::Schema, params::SimParams, barcode::String, molecule_length::Int, fragments::Vector{Int})
 
 Given a schema and parameters along with molecule length and number of reads, randomly generates
 breakpoints for the molecule and the reads therein. Returns a `ProcessedMolecule`, which contains

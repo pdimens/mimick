@@ -18,9 +18,9 @@ mimick(
 mimick(
     "resources/fasta.fa",
     "resources/test.vcf",
-    format = "stlfr",
+    format = "standard:haplotagging",
     prefix = "simulated/",
-    coverage = 30,
+    coverage = 10,
     n_molecules = 2,
     mol_cov = 0.2,
     mol_len = 80000,
@@ -33,7 +33,3 @@ mimick(
     seed = 0
 )
 
-
-#=
-julia --project=MimickLinkedReads.jl ./MimickLinkedReads.jl/src/Main.jl test.hap1.fa test.hap2.fa
-=#

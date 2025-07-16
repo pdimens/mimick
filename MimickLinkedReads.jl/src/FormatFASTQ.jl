@@ -2,98 +2,136 @@
 """
 `format_R1(format::Symbol, molecule::ProcessedMolecule)`
 
-Converts a ProcessedMolecule into a Vector of FASTQRecords, formatted in the style of `format`
+Converts a ProcessedMolecule into a String of FASTQ records, formatted in the style of `format`
 (i.e. `haplotagging`, `stlfr`, `tellseq`, `tenx`, `standard`).
 """
-format_R1(format::Symbol, molecule::ProcessedMolecule) = format_R1(Val(format), molecule)
-format_R1(format::String, molecule::ProcessedMolecule) = format_R1(Val(Symbol(format)), molecule)
+format_R1(format::Symbol, molecule::ProcessedMolecule)::String = format_R1(Val(format), molecule)
 
-function format_R1(::Val{:stlfr}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.first[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.first)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)#" * molecule.barcode * " 1:N:0:ATGACA", seq, _qual)
+function format_R1(::Val{:stlfr}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.first[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i])#" * molecule.barcode * " 1:N:0:ATGACA\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R1(::Val{:haplotagging}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.first[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.first)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)/1\tBX:Z:" * molecule.barcode, seq, _qual)
+function format_R1(::Val{:haplotagging}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.first[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i])/1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R1(::Val{:tellseq}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.first[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.first)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop):" * molecule.barcode * " 1:N:0:ATGACA", seq, _qual)
+function format_R1(::Val{:tellseq}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.first[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i]):" * molecule.barcode * " 1:N:0:ATGACA\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R1(::Val{:tenx}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^(length(molecule.read_sequences.first[1]) + length(molecule.barcode))
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.first)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop) 1:N:0:ATGACA", molecule.barcode * seq, _qual)
+function format_R1(::Val{:tenx}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^(length(molecule.read_sequences.first[1]) + length(molecule.barcode))
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i]) 1:N:0:ATGACA\n" * molecule.barcode * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R1(::Val{:standard}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.first[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.first)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)/1\tVX:i:1\tBX:Z:" * molecule.barcode, seq, _qual)
+function format_R1(::Val{:standard}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.first[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i])/1\tVX:i:1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
 ## R2 ##
 """
 `format_R2(format::Symbol, molecule::ProcessedMolecule)`
 
-Converts a ProcessedMolecule into a Vector of FASTQRecords, formatted in the style of `format`
+Converts a ProcessedMolecule into a String of FASTQ records, formatted in the style of `format`
 (i.e. `haplotagging`, `stlfr`, `tellseq`, `tenx`, `standard`).
 """
-format_R2(format::Symbol, molecule::ProcessedMolecule) = format_R2(Val(format), molecule)
-format_R2(format::String, molecule::ProcessedMolecule) = format_R2(Val(Symbol(format)), molecule)
+format_R2(format::Symbol, molecule::ProcessedMolecule)::String = format_R2(Val(format), molecule)
 
-function format_R2(::Val{:stlfr}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.second[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.second)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)#:" * molecule.barcode * " 2:N:0:ATGACA", seq, _qual)
+function format_R2(::Val{:stlfr}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.second[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i])#" * molecule.barcode * " 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R2(::Val{:haplotagging}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.second[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.second)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)/2\tBX:Z:" * molecule.barcode, seq, _qual)
+function format_R2(::Val{:haplotagging}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.second[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i])/2\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R2(::Val{:tellseq}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = "$(molecule.chrom):$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.second[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.second)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop):" * molecule.barcode * " 2:N:0:ATGACA", seq, _qual)
+function format_R2(::Val{:tellseq}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.second[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i]):" * molecule.barcode * " 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R2(::Val{:tenx}, molecule::ProcessedMolecule)::Vector{FASTQRecord}
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.second[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.second)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop) 2:N:0:ATGACA", seq, _qual)
+function format_R2(::Val{:tenx}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.second[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i]) 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end
 
-function format_R2(::Val{:standard}, molecule::ProcessedMolecule)
-    header = molecule.chrom * ":$(molecule.haplotype)|$(molecule.position.start):$(molecule.position.stop)|"
-    @inbounds _qual = "I"^length(molecule.read_sequences.second[1])
-    map(zip(molecule.read_breakpoints, molecule.read_sequences.second)) do (breakpoint,seq)
-        FASTQRecord(header * "$(breakpoint.start):$(breakpoint.stop)/2\tVX:i:1\tBX:Z:" * molecule.barcode, seq, _qual)
+function format_R2(::Val{:standard}, molecule::ProcessedMolecule)::String
+    @inbounds begin
+        header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
+        fq = ""
+        _qual = "I"^length(molecule.read_sequences.second[1])
+        for i in eachindex(molecule.read_breakpoints)
+            fq *= header * "$(molecule.read_breakpoints[i])/2\tVX:i:1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        end
     end
+    return fq
 end

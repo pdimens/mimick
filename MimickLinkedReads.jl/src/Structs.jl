@@ -1,9 +1,9 @@
 """
-Mutation(position::Int, type::Symbol, nucleotides::String)
+    Mutation(position::Int, type::Symbol, nucleotides::String)
 
 A convenience struct containing mutation information. This is used
 for dispatch when modifying DNA sequences with a sample's variants.
-The `type` can be one of `:snp`, `:ins`, `:del`.
+The `type` can be either `:snp` or `:indel`.
 """
 struct Mutation
     position::Int
@@ -20,19 +20,13 @@ function Base.show(io::IO, data::Mutation)
     print(io, "  alt: $(data.alt)")
 end
 
-struct BarcodeManifest
-    barcodes
-    output_type::String
-    max::Int64
-    function BarcodeManifest(barcodes, output_type::String, max::Int)
-        new(Base.Iterators.Stateful(barcodes), setup_barcode_output(output_type), output_type, max)
-    end
-end
+"""
+    SimParams(output_dir, prefix...)
+A Struct that holds all of the static parameters necessary for linked-read simulation, along with three
+distributions that are sampled during simulation. The fields are:
 
-struct SimParams
     output_dir::String
     prefix::String
-    error::Float32
     insert_size::Distribution
     insert_size_buffer::Int
     length_R1::Int
@@ -43,7 +37,21 @@ struct SimParams
     singletons::Float64
     attempts::Int
     circular::Bool
-    function SimParams(prefix, error, read_distance, distance_stdev, length_R1, length_R2, n_molecules, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
+"""
+struct SimParams
+    output_dir::String
+    prefix::String
+    insert_size::Distribution
+    insert_size_buffer::Int
+    length_R1::Int
+    length_R2::Int
+    n_molecules::Union{UnitRange{Int},Distribution}
+    molecule_length::Distribution
+    molecule_coverage::Float64
+    singletons::Float64
+    attempts::Int
+    circular::Bool
+    function SimParams(prefix, read_distance, distance_stdev, length_R1, length_R2, n_molecules, molecule_length, molecule_coverage, singletons; circular::Bool = false, attempts::Int = 50)
         _prefix = Base.Filesystem.basename(prefix)
         _outdir = Base.Filesystem.dirname(prefix)
         if molecule_coverage < 1
@@ -58,17 +66,15 @@ struct SimParams
             _nmol = abs(n_molecules):abs(n_molecules)
         end
         _ins = truncated(Normal(read_distance, distance_stdev), lower = 200)
-        return new(_outdir, _prefix, error, _ins, read_distance, length_R1, length_R2, _nmol, _exp, molecule_coverage, singletons, attempts, circular)
+        return new(_outdir, _prefix, _ins, read_distance, length_R1, length_R2, _nmol, _exp, molecule_coverage, singletons, attempts, circular)
     end
 end
 
-#=
-mutable struct SchemaTracker
-    reads_current::Atomic{Int64}
-    reads_required::Int
-end
-=#
-
+"""
+    SchemaTracker(reads_current::Int, reads_required::Int)
+A mutable Struct used to keep track of the number of reads simulated for a given Schema. Exclusively used
+as a field in a Schema object.
+"""
 mutable struct SchemaTracker
     reads_current::Int
     reads_required::Int
@@ -81,6 +87,7 @@ function Base.show(io::IO, data::SchemaTracker)
 end
 
 """
+    Schema(haplotype::Int, chrom::String, tracker::SchemaTracker, sequence::LongSequence{DNAAlphabet{4}})
 A struct storing all the necessary information to simulate reads from a contig or contig interval
 """
 struct Schema
@@ -109,13 +116,18 @@ function Base.show(io::IO, data::Schema)
     end
 end
 
+"""
+    ProcessedMolecule(haplotype, barcode, chrom, position, read_breakpoints, read_sequences)
+A mutable Struct that contains all the information of read simulation from a single molecule. Used
+to generate formatted FASTQ records.
+"""
 mutable struct ProcessedMolecule
     haplotype::Int
     barcode::String
     chrom::String
     position::UnitRange{Int}
     read_breakpoints::Vector{UnitRange{Int}}
-    read_sequences::Pair{Vector{LongDNA{4}}, Vector{LongDNA{4}}}
+    read_sequences::Pair{Vector{String}, Vector{String}}
 end
 
 function ProcessedMolecule(schema::Schema, barcode::String, n_reads::Int)
