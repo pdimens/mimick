@@ -18,6 +18,7 @@ include("ProcessFASTA.jl")
 #include("ProcessFASTQ.jl")
 include("ProcessVariants.jl")
 include("Main.jl")
+export mimick
 # Write your package code here.
 
 end
