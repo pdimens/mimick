@@ -1,6 +1,6 @@
 mimick(
     ["test.hap1.fa", "test.hap2.fa"],
-    format = "stlfr",
+    "stlfr",
     prefix = "simulated/SIM",
     coverage = 50,
     n_molecules = 2,
@@ -18,7 +18,7 @@ mimick(
 mimick(
     "resources/fasta.fa",
     "resources/test.vcf",
-    format = "standard:haplotagging",
+    "standard:haplotagging",
     prefix = "simulated/",
     coverage = 10,
     n_molecules = 2,

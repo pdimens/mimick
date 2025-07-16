@@ -1,8 +1,17 @@
+name = "MimickLinkedReads"
+uuid = "83862e06-e039-4a9e-a627-fc3a1d1c4f8e"
+authors = ["pdimens <pdimens@gmail.com> and contributors"]
+version = "1.0.0-DEV"
+
 [deps]
-ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 BioSequences = "7e6ae17a-c86d-528c-b3b9-7f778a29fe59"
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 FASTX = "c2308a5c-f048-11e8-3e8a-31650f418d12"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Term = "22787eb5-b846-44ae-b979-8e399b8463ab"
 VariantCallFormat = "28eba6e3-a997-4ad9-87c6-d933b8bca6c1"
+
+[compat]
+Random = "1.11.0"
+julia = "1.6.7"
