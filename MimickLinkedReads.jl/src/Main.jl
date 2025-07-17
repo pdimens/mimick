@@ -88,7 +88,12 @@ function mimick(fasta::String, vcf::String, format::String; prefix::String = "si
     params = SimParams(prefix, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_len, mol_cov, singletons; circular = circular, attempts = attempts)
     bc_fmt, fq_fmt = interperet_format(format)
     mkpath(dirname(prefix))
-    samplenames = get_samples(vcf)
+    if endswith(lowercase(vcf), "bcf")
+        fmt = :BCF
+    else
+        fmt = :VCF
+    end
+    samplenames = get_samples(vcf, fmt)
     pbar = ProgressBar(; transient = true)
     job = addjob!(pbar; N=length(samplenames), description="Simulating Samples")
     with(pbar) do
@@ -96,7 +101,7 @@ function mimick(fasta::String, vcf::String, format::String; prefix::String = "si
             Base.Threads.@spawn begin
                 outprefix = prefix * samplenames[idx]
                 barcodes = setup_barcodes(bc_fmt)
-                variants = get_sample_variants(vcf, idx)
+                variants = get_sample_variants(vcf, fmt, idx)
                 schema = build_sample_schema(master_schema, variants)
                 # variants are no longer needed, free it up
                 variants = nothing

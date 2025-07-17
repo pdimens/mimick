@@ -1,11 +1,14 @@
 """
-    get_ploidy(vcf::String)
+    get_ploidy(vcf::String, :VCF) ->Tuple(contigs, ploidy)
+    get_ploidy(bcf::String, :BCF) ->Tuple(contigs, ploidy)
 
-Parse a VCf file and determine the ploidy from the genotype of the first sample at the first variant.
-Returns the list of contig names and the ploidy.
+Parse a BCF/VCf file and determine the ploidy from the genotype of the first sample at the first variant.
+Returns a 2-Tuple of a Vector of contig names and the ploidy.
 """
-function get_ploidy_and_contigs(vcf::String)::Tuple{Vector{String}, Int}
-    reader = VCF.Reader(open(vcf, "r")) do reader
+get_ploidy_and_contigs(vcf::String, fmt::Symbol) = get_ploidy_and_contigs(vcf, Val(fmt))
+
+function get_ploidy_and_contigs(vcf::String, ::Val{:VCF})::Tuple{Vector{String}, Int}
+    reader = VCF.Reader(safe_read(vcf)) do reader
         _header = header(reader)
         X = findall(i -> metainfotag(_header.metainfo[i]) == "contig", 1:length(_header))
         contigs = [_header.metainfo[i]["ID"] for i in X]     
@@ -16,19 +19,40 @@ function get_ploidy_and_contigs(vcf::String)::Tuple{Vector{String}, Int}
     end
 end
 
-"""
-    get_samples(vcf::String)
+function get_ploidy_and_contigs(bcf::String, ::Val{:BCF})::Tuple{Vector{String}, Int}
+    reader = BCF.Reader(open(bcf, "r")) do reader
+        _header = header(reader)
+        X = findall(i -> metainfotag(_header.metainfo[i]) == "contig", 1:length(_header))
+        contigs = [_header.metainfo[i]["ID"] for i in X]     
+        for record in reader
+            gt = BCF.genotype(record, 1, "GT")
+            return (contigs, length(split(gt, ['/', '|'])))
+        end
+    end
+end
 
-Parse a VCf file and determine the samples in it from the header
 """
-function get_samples(vcf::String)::Vector{String}
-    reader = VCF.Reader(open(vcf, "r")) do reader
+    get_samples(vcf::String, :VCF) -> Vector{String}
+    get_samples(bcf::String, :BCF) -> Vector{String}
+
+Parse a BCF/VCf file and determine the samples in it from the header
+"""
+get_samples(vcf::String, fmt::Symbol) = get_samples(vcf::String, Val(fmt))
+
+function get_samples(vcf::String, ::Val{:VCF})::Vector{String}
+    reader = VCF.Reader(safe_read(vcf)) do reader
+        return header(reader).sampleID
+    end
+end
+
+function get_samples(bcf::String, ::Val{:BCF})::Vector{String}
+    reader = BCF.Reader(open(bcf, "r")) do reader
         return header(reader).sampleID
     end
 end
 
 """
-    vartype(ref::String, alt::Vector{String})
+    vartype(ref::String, alt::Vector{String}) -> Symbol
 
 Assess what type of variant (`:snp` or `:indel`) a locus
 is based on what the `ref` and `alt` alleles are. Returns
@@ -45,20 +69,26 @@ function vartype(ref::String, alt::Vector{String})::Symbol
 end
 
 """
-    get_sample_variants(vcf::String, sample_number::Int)
+    get_sample_variants(vcf::String, :VCF, sample_number::Int)
+    get_sample_variants(bcf::String, :BCF, sample_number::Int)
 
 For a given `sample_number`, returns a Dict of the variants as a Vector of Pairs,
 given as `position::Int => variant::String` e.g. `"chr1_1" => [192=>"T", 2427=>"A", 2582=>"C"]`
 """
-function get_sample_variants(vcf::String, sample_number::Int)::Dict{String, Vector{Mutation}}
-    contigs,ploidy = get_ploidy_and_contigs(vcf)
+get_sample_variants(vcf::String, fmt::Symbol, sample_number::Int) = get_sample_variants(vcf, Val(fmt), sample_number)
+
+function get_sample_variants(vcf::String, ::Val{:VCF}, sample_number::Int)::Dict{String, Vector{Mutation}}
+    if !isfile(vcf)
+        error("$vcf does not exist.")
+    end
+    contigs,ploidy = get_ploidy_and_contigs(vcf, :VCF)
     out_dict = Dict{String, Vector{Mutation}}()
     for contig in contigs
         @simd for haplotype in 1:ploidy
             out_dict["$(contig)_$haplotype"] = Mutation[]
         end
     end
-    reader = VCF.Reader(open(vcf, "r"))
+    reader = VCF.Reader(safe_read(vcf))
     @inbounds for record in reader
         alt = VCF.alt(record)
         ref = VCF.ref(record)
@@ -66,6 +96,34 @@ function get_sample_variants(vcf::String, sample_number::Int)::Dict{String, Vect
         chrom = VCF.chrom(record)
         pos = VCF.pos(record)
         gt = VCF.genotype(record, sample_number, "GT")
+        alleles = parse.(UInt8, split(gt, ['/', '|']))
+        @inbounds @simd for i in findall(!iszero, alleles)
+            @inbounds push!(out_dict["$(chrom)_$i"], Mutation(pos, _vartype, ref, alt[alleles[i]]))
+        end
+    end
+    close(reader)
+    return out_dict
+end
+
+function get_sample_variants(bcf::String, ::Val{:BCF}, sample_number::Int)::Dict{String, Vector{Mutation}}
+    if !isfile(bcf)
+        error("$bcf does not exist.")
+    end
+    contigs,ploidy = get_ploidy_and_contigs(bcf, :BCF)
+    out_dict = Dict{String, Vector{Mutation}}()
+    for contig in contigs
+        @simd for haplotype in 1:ploidy
+            out_dict["$(contig)_$haplotype"] = Mutation[]
+        end
+    end
+    reader = BCF.Reader(open(bcf, "r"))
+    @inbounds for record in reader
+        alt = BCF.alt(record)
+        ref = BCF.ref(record)
+        _vartype = vartype(ref, alt)
+        chrom = BCF.chrom(record)
+        pos = BCF.pos(record)
+        gt = BCF.genotype(record, sample_number, "GT")
         alleles = parse.(UInt8, split(gt, ['/', '|']))
         @inbounds @simd for i in findall(!iszero, alleles)
             @inbounds push!(out_dict["$(chrom)_$i"], Mutation(pos, _vartype, ref, alt[alleles[i]]))
@@ -137,7 +195,6 @@ function build_sample_schema(schema::Dict{String, Schema}, variants::Dict{String
         _x = findfirst(j -> occursin(j, i[begin:end-2]), contigs)
         (contigs[_x] => i)
     end
-    #return contigs_haplos
     d = Dict{String, Schema}()
     for contig in contigs_haplos
         _schema = schema[contig.first]

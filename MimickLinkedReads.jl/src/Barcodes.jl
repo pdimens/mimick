@@ -51,7 +51,8 @@ Format a haplotagging style barcode for output. The input `bc` is expected to be
 generator from `setup_barcodes()`. Returns a `String`.
 """
 function format_barcode(bc::Tuple{Tuple{Char, Int64, Char, Int64, Char, Int64, Char, Int64}, Nothing})::String
-    @inbounds bc[1][1] * lpad(bc[1][2],2, '0') * bc[1][3] * lpad(bc[1][4],2, '0') * bc[1][5] * lpad(bc[1][6],2, '0') * bc[1][7] * lpad(bc[1][8],2, '0')
+    _bc = bc[begin]
+    @inbounds _bc[1] * lpad(_bc[2],2, '0') * _bc[3] * lpad(_bc[4],2, '0') * _bc[5] * lpad(_bc[6],2, '0') * _bc[7] * lpad(_bc[8],2, '0')
 end
 
 """
@@ -60,7 +61,7 @@ end
 Format an stLFR style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.
 """
-format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})::String = join(bc[1], "_")
+format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})::String = join(bc[begin], "_")
 
 
 """
@@ -69,6 +70,6 @@ format_barcode(bc::Tuple{Tuple{Int64, Int64, Int64}, Nothing})::String = join(bc
 Format a TELLseq/10X style barcode for output. The input `bc` is expected to be created by iterating the barcode
 generator from `setup_barcodes()`. Returns a `String`.
 """
-format_barcode(bc::Tuple{NTuple{18, Char}, Nothing})::String = join(bc[1], "")
-format_barcode(bc::Tuple{NTuple{16, Char}, Nothing})::String = join(bc[1], "")
+format_barcode(bc::Tuple{NTuple{18, Char}, Nothing})::String = join(bc[begin], "")
+format_barcode(bc::Tuple{NTuple{16, Char}, Nothing})::String = join(bc[begin], "")
 format_barcode(bc::Nothing) = error("There are no more barcodes available for the selected barcode type.")

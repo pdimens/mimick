@@ -26,10 +26,9 @@ mimick(
     mol_len = 80000,
     insert_length = 500,
     insert_stdev = 50,
-    read_len = [150,150],
+    read_length = [150,150],
     singletons = 0.35,
     circular = false,
     attempts = 25,
     seed = 0
 )
-

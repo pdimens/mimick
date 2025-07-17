@@ -1,6 +1,6 @@
 ## R1 ##
 """
-`format_R1(format::Symbol, molecule::ProcessedMolecule)`
+    format_R1(format::Symbol, molecule::ProcessedMolecule) -> Nothing
 
 Converts a ProcessedMolecule into a String of FASTQ records, formatted in the style of `format`
 (i.e. `haplotagging`, `stlfr`, `tellseq`, `tenx`, `standard`).
@@ -69,7 +69,7 @@ end
 
 ## R2 ##
 """
-`format_R2(format::Symbol, molecule::ProcessedMolecule)`
+    format_R2(format::Symbol, molecule::ProcessedMolecule) -> Nothing
 
 Converts a ProcessedMolecule into a String of FASTQ records, formatted in the style of `format`
 (i.e. `haplotagging`, `stlfr`, `tellseq`, `tenx`, `standard`).

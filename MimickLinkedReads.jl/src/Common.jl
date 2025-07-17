@@ -1,9 +1,12 @@
 """
-`safe_read(filename::String)`
+    safe_read(filename::String)
 
 Read in a file that might be gzipped. Returns an IO stream.
 """
 function safe_read(filename::String)
+    if !isfile(filename)
+        error("$file does not exist.")
+    end
     try
         readline(GzipDecompressorStream(open(filename, "r")))
         return GzipDecompressorStream(open(filename, "r"))
@@ -31,7 +34,6 @@ Accepts
 - "standard:stlfr" -> `(:stlfr, :standard)`
 """
 function interperet_format(fmt::String)::Tuple{Symbol,Symbol}
-    format = lowercase(fmt)
     if occursin("standard", fmt)
         out_format = :standard
         if occursin("stlfr", fmt)

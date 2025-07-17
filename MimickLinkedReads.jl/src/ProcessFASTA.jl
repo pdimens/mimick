@@ -5,6 +5,9 @@ Delete an existing faidx (if present) and re-index the input fasta file.
 Returns the name of the fasta index file.
 """
 function index_fasta(fasta::String)::String
+    if !isfile(fasta)
+        error("$fasta does not exist.")
+    end
     fai = fasta * ".fai"
     if isfile(fai)
         rm(fai)
