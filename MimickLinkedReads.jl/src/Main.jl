@@ -59,7 +59,7 @@ function mimick(fasta::Vector{String}, format::String; prefix::String = "simulat
 end
 
 """
-    mimick(fasta::String, vcf:String; kwargs...) -> Nothing
+    mimick(fasta::String, vcf:String, format::String; kwargs...) -> Nothing
 
 The wrapper function that simulates linked-reads in a given `format` for all the samples in `vcf`. There is a single `fasta` input file that each sample
 will have converted into its haplotypes by applying the SNP and INDEL variants in `vcf`. Assumes phased genotypes. Writes one pair of R1 and R2 reads per sample.
@@ -89,6 +89,7 @@ function mimick(fasta::String, vcf::String, format::String; prefix::String = "si
     bc_fmt, fq_fmt = interperet_format(format)
     mkpath(dirname(prefix))
     if endswith(lowercase(vcf), "bcf")
+        error("BCF file type is not yet supported")
         fmt = :BCF
     else
         fmt = :VCF
@@ -120,8 +121,8 @@ function mimick(fasta::String, vcf::String, format::String; prefix::String = "si
                         end
                         filter!(is_incomplete, schema)
                     end
+                    Progress.update!(job)
                 end;end
-                Progress.update!(job)
             end
         end
     end

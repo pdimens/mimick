@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mimick"
+version = "0.0.0"
+authors = [
+    {name = "Pavel Dimens"},
+    {name = "David Bolognini"}
+]
+description = "Simulate linked-read data"
+requires-python = ">=3.10"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "GPL-3.0-or-later"
+dependencies = [
+    'juliacall',
+    'rich-click'
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["test"]
+
+[project.scripts]
+mimick = "mimick.__main__:mimick"
+test_mimick = "mimick.__main__:mimick_test"
+
+[project.urls]
+Homepage = "https://github.com/pdimens/mimick"

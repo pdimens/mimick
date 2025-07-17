@@ -17,10 +17,10 @@ env:
 
 jobs:
   Nucleotides:
-    name: "Test Nucleotides: to ${{ matrix.lr_to }}"
+    name: "Test ${{ matrix.lr_to }}"
     strategy:
       matrix:
-        lr_to: [10x, haplotagging, standard, stlfr, tellseq]
+        format: [10x, haplotagging, standard, stlfr, tellseq]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -41,64 +41,21 @@ jobs:
         run: |
           python3 -m pip install --upgrade build && python3 -m build
           pip install dist/*.whl
+          python -c 'from juliacall import Main as jl; jl.seval("using Pkg"); jl.Pkg.develop(path="./MimickLinkedReads.jl"); jl.seval("using MimickLinkedReads")' 
 
       - name: Create Test Data
         shell: micromamba-shell {0}
         run: |
-          resources/create_test_data.py
+          test/create_test_data.py
 
-      - name: Test Barcode file
+      - name: Test Single Sample
         shell: micromamba-shell {0}
         run: |
-          mimick --segments 1 -o nucleotides_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 nucleotides.bc test.hap1.fa test.hap2.fa &&\
-          zcat nucleotides_${{ matrix.lr_to }}.R1.fq.gz | head -8
+          mimick -t 4 -g 10 --format ${{ matrix.format}} -o single_sample/${{ matrix.format}} test.hap1.fa test.hap2.fa &&\
+          zcat single_sample/${{ matrix.format}}.R1.fq.gz | head -8
       
-      - name: Test Generated Barcodes
+      - name: Test Multisample
         shell: micromamba-shell {0}
         run: |
-          mimick --segments 1 -o ${{ matrix.lr_to }}_standard -O standard --coverage 3 -q 1 18,1000000 test.hap1.fa test.hap2.fa &&\
-          zcat ${{ matrix.lr_to }}_standard.R1.fq.gz | head -8
-
-  Combinatorial:
-    name: "Test Combinatorial: ${{ matrix.lr_from }} segments to ${{ matrix.lr_to }}"
-    strategy:
-      matrix:
-        lr_from: [3, 4]
-        lr_to: [10x, haplotagging, standard, "standard:haplotagging", "standard:stlfr", stlfr, tellseq]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - name: Setup Mamba
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          init-shell: bash
-          generate-run-shell: true
-          environment-file: resources/mimick.yaml
-          cache-environment: false
-          post-cleanup: 'all'
-
-      - name: Install Mimick
-        shell: micromamba-shell {0}
-        run: |
-          python3 -m pip install --upgrade build && python3 -m build
-          pip install dist/*.whl
-
-      - name: Create Test Data
-        shell: micromamba-shell {0}
-        run: |
-          resources/create_test_data.py
-
-      - name: Test Barcode file
-        shell: micromamba-shell {0}
-        run: |
-          mimick --segments ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_${{ matrix.lr_to }} -O ${{ matrix.lr_to }} --coverage 10 -q 1 combinatorial.bc test.hap1.fa test.hap2.fa &&\
-          zcat ${{ matrix.lr_from }}_${{ matrix.lr_to }}.R1.fq.gz | head -8
-      
-      - name: Test Generated Barcodes
-        shell: micromamba-shell {0}
-        run: |
-          mimick --segments ${{ matrix.lr_from }} -o ${{ matrix.lr_from }}_standard -O standard --coverage 3 -q 1 8,200 test.hap1.fa test.hap2.fa &&\
-          zcat ${{ matrix.lr_from }}_standard.R1.fq.gz | head -8
+          mimick -t 4 -g 5 --format ${{ matrix.format}} -o ${{ matrix.format}}/ --vcf test/test.vcf test/fasta.fa &&\
+          zcat ${{ matrix.format }}/tsk_0.R1.fq.gz | head -8
