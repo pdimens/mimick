@@ -46,12 +46,12 @@ jobs:
       - name: Create Test Data
         shell: micromamba-shell {0}
         run: |
-          test/create_test_data.py
+          cd test/ && ./create_test_data.py
 
       - name: Test Single Sample
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 10 --format ${{ matrix.format}} -o single_sample/${{ matrix.format}} test.hap1.fa test.hap2.fa &&\
+          mimick -t 4 -g 10 --format ${{ matrix.format}} -o single_sample/${{ matrix.format}} test/hap1.fa test/hap2.fa &&\
           zcat single_sample/${{ matrix.format}}.R1.fq.gz | head -8
       
       - name: Test Multisample
