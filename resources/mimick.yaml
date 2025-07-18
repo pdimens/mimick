@@ -3,9 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - numpy
-  - rich-click =1.8.9
-  - click =8.2
-  - pysam
-  - python
-  - pywgsim =0.6
+  - click >=8
+  - rich-click >=1.8
+  - python >=3.10
+  - pyjuliacall >=0.9.26

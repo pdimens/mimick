@@ -14,10 +14,8 @@ requires-python = ">=3.10"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = "GPL-3.0-or-later"
 dependencies = [
-    'numpy',
-    'rich-click',
-    'pysam',
-    'pywgsim',
+    'juliacall',
+    'rich-click'
 ]
 
 [tool.setuptools.packages.find]
@@ -26,6 +24,7 @@ exclude = ["test"]
 
 [project.scripts]
 mimick = "mimick.__main__:mimick"
+test_mimick = "mimick.__main__:mimick_test"
 
 [project.urls]
 Homepage = "https://github.com/pdimens/mimick"

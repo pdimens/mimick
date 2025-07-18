@@ -5,10 +5,11 @@ __pycache__/
 
 # C extensions
 *.so
-
 # test things
 test*.fa
 TEST/
+*.fai
+simulated/
 
 # Distribution / packaging
 .Python
