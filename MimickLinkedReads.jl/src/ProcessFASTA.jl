@@ -43,7 +43,6 @@ function process_fasta(fasta::String, haplotype::Int, coverage::Float64, read_le
             Schema(haplotype, chrom, reads_required, seq)
         end
     end
-    rm(fai, force = true)
 end
 
 """
@@ -63,6 +62,7 @@ function setup_schema(fasta_files::Vector{String}, coverage::Float64, read_len::
         @simd for _schema in schemas
             d[join([_schema.chrom,_schema.haplotype], "_")] = _schema
         end
+        rm(i *".fai", force = true)
     end
     return d
 end
