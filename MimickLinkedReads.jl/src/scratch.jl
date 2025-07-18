@@ -1,6 +1,6 @@
 mimick(
     ["test/hap1.fa", "test/hap2.fa"],
-    "stlfr",
+    "tenx",
     prefix = "simulated/SIM",
     coverage = 100,
     n_molecules = 2,
@@ -12,8 +12,7 @@ mimick(
     singletons = 0.35,
     circular = false,
     attempts = 25,
-    seed = 0,
-    quiet = true
+    seed = 0
 )
 
 mimick(
