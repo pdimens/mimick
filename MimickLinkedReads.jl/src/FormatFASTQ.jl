@@ -49,7 +49,7 @@ function format_R1(::Val{:tenx}, molecule::ProcessedMolecule)::String
         fq = ""
         _qual = "I"^(length(molecule.read_sequences.first[1]) + length(molecule.barcode))
         for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i]) 1:N:0:ATGACA\n" * molecule.barcode * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+            fq *= header * "$(molecule.read_breakpoints[i])|$(molecule.barcode) 1:N:0:ATGACA\n" * molecule.barcode * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -118,7 +118,7 @@ function format_R2(::Val{:tenx}, molecule::ProcessedMolecule)::String
         fq = ""
         _qual = "I"^length(molecule.read_sequences.second[1])
         for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i]) 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+            fq *= header * "$(molecule.read_breakpoints[i])|$(molecule.barcode) 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq

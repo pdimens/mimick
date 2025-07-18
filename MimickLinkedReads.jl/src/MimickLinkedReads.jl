@@ -7,7 +7,7 @@ using Distributions
 using FASTX
 using Random
 using VariantCallFormat
-using Term.Progress
+using ProgressMeter
 
 include("Structs.jl")
 include("Barcodes.jl")

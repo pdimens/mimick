@@ -154,40 +154,6 @@ function mutate!(seq::LongDNA{4}, ::Val{:indel}, position::Int, ref::String, rep
     spliceinto!(seq, position:position_end, replacement)
 end
 
-
-"""
-    spliceinto!(seq::BioSequence, span::UnitRange, x)
-Delete the symbols at indices `span` in `seq`, and then copy `x` into the
-first deleted position, then return `seq`.
-
-`span` must be nonempty, or this function will throw an `ArgumentError`. To handle
-potentially empty spans, check if the span is empty, and if so use `spliceinto(seq, first(span), x)`.
-
-This was taken from BioSequences.jl, will be removed when the package is updated.
-"""
-function spliceinto!(seq::BioSequence, span::UnitRange, x)
-    isempty(span) && throw(ArgumentError("span cannot be empty"))
-    @boundscheck checkbounds(seq, span)
-    oldlen = length(seq)
-    xlen = length(x)
-    if length(span) == xlen
-        # Same lengths: Just copy in x
-        copyto!(seq, first(span), x, 1, length(span))
-    elseif length(span) < xlen
-        # x is longer. Resize and shift to make room for more symbols,
-        # then copy in x
-        resize!(seq, oldlen + xlen - length(span))
-        copyto!(seq, first(span) + xlen, seq, last(span) + 1, oldlen - last(span))
-        copyto!(seq, first(span), x, 1, xlen)
-    else
-        # Span is longer. Delete the rightmost bases (to cause the smallest possible shift),
-        # then copy in
-        deleteat!(seq, first(span) + xlen:last(span))
-        copyto!(seq, first(span), x, 1, xlen)
-    end
-    return seq
-end
-
 function build_sample_schema(schema::Dict{String, Schema}, variants::Dict{String, Vector{Mutation}})
     haplotypes = collect(keys(variants))
     contigs = collect(keys(schema))
