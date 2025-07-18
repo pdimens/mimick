@@ -1,7 +1,7 @@
 name = "MimickLinkedReads"
 uuid = "83862e06-e039-4a9e-a627-fc3a1d1c4f8e"
 authors = ["pdimens <pdimens@gmail.com> and contributors"]
-version = "2.0.0-DEV"
+version = "2.0.1-DEV"
 
 [deps]
 BioSequences = "7e6ae17a-c86d-528c-b3b9-7f778a29fe59"

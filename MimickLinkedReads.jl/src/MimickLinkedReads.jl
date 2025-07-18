@@ -2,6 +2,7 @@ module MimickLinkedReads
 
 using Base.Threads
 using BioSequences
+using CodecBGZF
 using CodecZlib
 using Distributions
 using FASTX
@@ -15,10 +16,8 @@ include("Common.jl")
 include("FormatFASTQ.jl")
 include("Breakpoints.jl")
 include("ProcessFASTA.jl")
-#include("ProcessFASTQ.jl")
 include("ProcessVariants.jl")
 include("Main.jl")
 export mimick
-# Write your package code here.
 
 end

@@ -15,7 +15,7 @@ click.rich_click.OPTION_GROUPS = {
     "mimick": [
         {
             "name": "General Options",
-            "options": ["--help", "--circular", "--output-prefix", "--seed", "--threads", "--version"],
+            "options": ["--help", "--circular", "--output-prefix", "--quiet", "--seed", "--threads", "--version"],
             "panel_styles": {"border_style": "dim"}
         },
         {
@@ -35,7 +35,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
 @click.option('-c','--circular', is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
 @click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
-#@click.option('-q','--quiet', show_default = True, default = "0", type = click.Choice([0,1,2]), help = '`0` all output, `1` no progress bar, `2` no output')
+@click.option('-q','--quiet', is_flag= True, default = False, help = 'toggle to hide progress bar')
 @click.option('-t','--threads', help='number of threads to use for multi-sample simulation', type=click.IntRange(min=1), default=2, show_default=True)
 @click.option('-s','--seed', help='random seed for simulation', type=click.IntRange(min=-1, clamp = True), default=-1)
 #Linked-read simulation
@@ -51,22 +51,25 @@ click.rich_click.OPTION_GROUPS = {
 @click.option('-S','--singletons', help='proportion of barcodes that will only have one read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.option('-v','--vcf', help='VCF-formatted file containing genotypes from which to create per-sample haplotypes', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True))
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(fasta, circular, output_prefix, fmt, seed, threads,genomic_coverage,insert_size,read_lengths,insert_stdev, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons, vcf):
+def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_coverage,insert_size,read_lengths,insert_stdev, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons, vcf):
     """
     Simulate linked-read FASTQ data for one or many individuals
 
     There are two modes of operation:
-    1. Input multiple FASTA files (haplotypes) to simulate linked reads for a single individual.
-    2. Input one FASTA and VCF file to simulate linked reads for all samples in the VCF file with haplotypes reflective of their SNPs and indels
+    1. Input one or more **FASTA** files (haplotypes) to simulate linked reads for a single individual.
+    2. Input one **FASTA** and **VCF** file to simulate linked reads for all samples in the VCF file with haplotypes reflective of their SNPs and indels.
 
     With the exception of `10x`, all other formats are demultiplexed. Below are the common linked-read chemistries
     (to be used in `--format`) and their configurations: 
-    | chemistry    | `--read-lengths` | Description                                  |
-    |:-------------|:----------------:|:---------------------------------------------|
-    | 10x/tellseq  |    `134,150`     | single barcode on R1                         |
-    | haplotagging |    `150,150`     | I1 and I2 each with combinatorial 2-barcodes |
-    | stlfr        |    `150,108`     | combinatorial 3-barcode on R2                |
+    | chemistry    | `--read-lengths` | Description          | FASTQ format          |
+    |:-------------|:----------------:|:---------------------|:----------------------|
+    | 10x          |    `134,150`     | single barcode on R1 | barcode inline on R1  |
+    | haplotagging |    `150,150`     | 2-barcodes in I1/I2  | BX:Z:AxxCxxBxxDxx tag |
+    | stlfr        |    `150,108`     | 3-barcode on R2      | @SEQID#1_2_3          |
+    | tellseq      |    `132,150`     | single barcode on R1 | @SEQID:ATGC           |
     """
+    if fmt == "10x":
+        fmt = "tenx"
     os.environ['PYTHON_JULIACALL_THREADS'] = f"{threads}"
     os.environ['PYTHON_JULIACALL_HANDLE_SIGNALS'] = "yes"
     from juliacall import Main as jl
@@ -79,15 +82,16 @@ def mimick(fasta, circular, output_prefix, fmt, seed, threads,genomic_coverage,i
             prefix = output_prefix,
             coverage = genomic_coverage,
             n_molecules = molecules_per,
-            mol_cov = molecule_coverage,
-            mol_len = molecule_length,
+            mol_coverage = molecule_coverage,
+            mol_length = molecule_length,
             insert_length = insert_size,
             insert_stdev = insert_stdev,
             read_length = jl.collect(jl.Int, read_lengths),
             singletons = singletons,
             circular = circular,
             attempts = molecule_attempts,
-            seed = seed
+            seed = seed,
+            quiet = quiet
     )
     else:
         jl.mimick(
@@ -96,15 +100,16 @@ def mimick(fasta, circular, output_prefix, fmt, seed, threads,genomic_coverage,i
             prefix = output_prefix,
             coverage = genomic_coverage,
             n_molecules = molecules_per,
-            mol_cov = molecule_coverage,
-            mol_len = molecule_length,
+            mol_coverage = molecule_coverage,
+            mol_length = molecule_length,
             insert_length = insert_size,
             insert_stdev = insert_stdev,
             read_length = jl.collect(jl.Int, read_lengths),
             singletons = singletons,
             circular = circular,
             attempts = molecule_attempts,
-            seed = seed
+            seed = seed,
+            quiet = quiet
         )
 
 def mimick_test():

@@ -43,6 +43,7 @@ function process_fasta(fasta::String, haplotype::Int, coverage::Float64, read_le
             Schema(haplotype, chrom, reads_required, seq)
         end
     end
+    rm(fai, force = true)
 end
 
 """

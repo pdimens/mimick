@@ -106,11 +106,12 @@ git checkout mimick.jl
 ## 1. Install half the deps
 The pythonic deps need to be installed via conda/mamba, first by creating an evironment with the dependencies
 ```bash
-conda create -f resources/mimick.yaml
+conda env create -n mimick --file resources/mimick.yaml
 ```
 
 Then by `pip`-installing Mimick
 ```bash
+conda activate mimick
 pip install -e . --no-deps
 ```
 
