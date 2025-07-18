@@ -57,5 +57,5 @@ jobs:
       - name: Test Multisample
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 5 --format ${{ matrix.format}} -o ${{ matrix.format}}/ --vcf test/test.vcf test/fasta.fa &&\
+          mimick -t 4 -g 5 --format ${{ matrix.format}} -o ${{ matrix.format}}/ --vcf test/test.vcf.gz test/fasta.fa &&\
           zcat ${{ matrix.format }}/tsk_0.R1.fq.gz | head -8
