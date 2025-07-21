@@ -20,11 +20,11 @@ and mix-match barcodes with linked-read chemistries.
 - TELLseq
 
 ## Simulation parameters
-- input chemistry and output FASTQ format
+- output FASTQ format
 - overall coverage depth
 - average molecule length
 - molecule coverage / reads per molecule
-- molecules per barcode (barcode clashing)
+- molecules per barcode (barcode convolution)
 - proportion of singletons (unlinked barcodes)
 - standard Illumina read characteristics e.g. read length, insert size, etc.
 
