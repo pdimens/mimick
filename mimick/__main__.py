@@ -34,7 +34,7 @@ click.rich_click.OPTION_GROUPS = {
 @click.version_option("0.0.0", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
 @click.option('-c','--circular', is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
-@click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/SIM", show_default=True)
+@click.option('-o','--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/", show_default=True)
 @click.option('-q','--quiet', is_flag= True, default = False, help = 'toggle to hide progress bar')
 @click.option('-t','--threads', help='number of threads to use for multi-sample simulation', type=click.IntRange(min=1), default=2, show_default=True)
 @click.option('-s','--seed', help='random seed for simulation', type=click.IntRange(min=-1, clamp = True), default=-1)
@@ -79,7 +79,7 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
             fasta[0],
             vcf,
             fmt,
-            prefix = output_prefix,
+            outdir = output_prefix,
             coverage = genomic_coverage,
             n_molecules = molecules_per,
             mol_coverage = molecule_coverage,

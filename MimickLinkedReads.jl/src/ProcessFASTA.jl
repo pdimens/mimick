@@ -6,20 +6,18 @@ Returns the name of the fasta index file.
 """
 function index_fasta(fasta::String)::String
     if !isfile(fasta)
-        error("$fasta does not exist.")
+        error("$fasta was not found.")
     end
     fai = fasta * ".fai"
     if isfile(fai)
         rm(fai)
     end
-    #TODO DEAL WITH GZIP SITUATION
     try
         faidx(fasta)
     catch y
-        error("Failed to index $fasta, is it a properly formatted FASTA file?")
-    finally
-        return fai
+        error("Failed to index $fasta, is it a properly formatted FASTA file? B/Gzipped FASTA are not supported.")
     end
+    return fai
 end
 
 """
@@ -62,7 +60,7 @@ function setup_schema(fasta_files::Vector{String}, coverage::Float64, read_len::
         @simd for _schema in schemas
             d[join([_schema.chrom,_schema.haplotype], "_")] = _schema
         end
-        rm(i *".fai", force = true)
+        rm(j *".fai", force = true)
     end
     return d
 end
@@ -74,5 +72,6 @@ function setup_schema(fasta_file::String, coverage::Float64, read_len::Vector{In
     @simd for _schema in schemas
         d[_schema.chrom] = _schema
     end
+    rm(fasta_file * ".fai", force = true)
     return d
 end

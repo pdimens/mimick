@@ -69,7 +69,7 @@ will have converted into its haplotypes by applying the SNP and INDEL variants i
 The `format` is expected to be one of `"haplotagging"`, `"stlfr"`, `"tellseq"`, `"tenx"`, `"standard"`, `"standard:haplotagging"`, `"standard:stlfr"`
 
 ## Keyword Arguments
-- prefix: `String` of the output file prefix, can be in the form of `path/to/dir/pref` (default: `simulated/SIM`)
+- outdir: `String` of the output directory, can be in the form of `path/to/dir (default: `simulated/`)
 - coverage: `Int` or `Float` of desired output read depth (default: `30`)
 - n_molecules: `Int` of the average number of molecules per barcode. A negative number will be fixed for that amount (e.g. `-1` = "exactly one molecules per barcode", default: `2`)
 - mol_coverage: `Float64` of proportional coverage (e.g. `0.3` = 30%) or an `Int` of average reads per molecule (default: `0.2`)
@@ -83,12 +83,12 @@ The `format` is expected to be one of `"haplotagging"`, `"stlfr"`, `"tellseq"`, 
 - seed: `Int` of seed for randomization. Numbers >=0 will set the seed to that value, whereas negative numbers ignore setting a seed (default: `-1`)
 - quiet: `Bool` suppress progress bar if `true`
 """
-function mimick(fasta::String, vcf::String, format::String; prefix::String = "simulated/", coverage::Union{Int,Float64} = 30, n_molecules::Int = 2, mol_coverage::Float64 = 0.2, mol_length::Int64 = 80000, insert_length::Int = 500, insert_stdev::Int = 50, read_length::Vector{Int} = [150,150], singletons::Float64 = 0.35, circular::Bool = false, attempts::Int = 25, seed::Int = -1, quiet::Bool = false)
+function mimick(fasta::String, vcf::String, format::String; outdir::String = "simulated", coverage::Union{Int,Float64} = 30, n_molecules::Int = 2, mol_coverage::Float64 = 0.2, mol_length::Int64 = 80000, insert_length::Int = 500, insert_stdev::Int = 50, read_length::Vector{Int} = [150,150], singletons::Float64 = 0.35, circular::Bool = false, attempts::Int = 25, seed::Int = -1, quiet::Bool = false)
     if seed >= 0
         Random.seed!(seed)
     end
     master_schema = setup_schema(fasta, coverage, read_length)
-    params = SimParams(prefix, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular = circular, attempts = attempts)
+    params = SimParams(outdir, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular = circular, attempts = attempts)
     bc_fmt, fq_fmt = interperet_format(format)
     if endswith(lowercase(vcf), "bcf")
         error("BCF file type is not yet supported")
@@ -97,21 +97,15 @@ function mimick(fasta::String, vcf::String, format::String; prefix::String = "si
         fmt = :VCF
     end
     samplenames = get_samples(vcf, fmt)
-    mkpath(dirname(prefix))
-    # add an underscore if the prefix is in path/pref notation
-    if basename(prefix) != ""
-        prefix *= "_"
-    end
+    mkpath(outdir)
     progress = Progress(length(samplenames), barglyphs=BarGlyphs("[=> ]"), color = :magenta, enabled = !quiet)
-    #@showprogress Base.Threads.@threads for idx in eachindex(samplenames)
     Threads.@threads for idx in eachindex(samplenames)
-        outprefix = prefix * samplenames[idx]
+        outprefix = joinpath(outdir, samplenames[idx])
         barcodes = setup_barcodes(bc_fmt)
         variants = get_sample_variants(vcf, fmt, idx)
         schema = build_sample_schema(master_schema, variants)
         # variants are no longer needed, free it up
         variants = nothing
-        #open(GzipCompressorStream, "$outprefix.R1.fq.gz", "w") do R1; open(GzipCompressorStream, "$outprefix.R2.fq.gz", "w") do R2 
         R1 = BGZFCompressorStream(open("$outprefix.R1.fq.gz", "w"), nthreads = 1)
         R2 = BGZFCompressorStream(open("$outprefix.R2.fq.gz", "w"), nthreads = 1)
             while !isempty(schema)
