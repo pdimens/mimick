@@ -44,55 +44,56 @@ jobs:
         shell: micromamba-shell {0}
         run: |
           cd test/ && ./create_test_data.py
+          gzip -d fasta.fa.gz
 
       - name: Test Single Sample 10X
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 10 --format 10x -o single_sample/10X test/hap1.fa test/hap2.fa &&\
+          mimick -t 4 --quiet -g 10 --format 10x -o single_sample/10X test/hap1.fa test/hap2.fa &&\
           zcat single_sample/10X.R1.fq.gz | head -8
       - name: Test Single Sample haplotagging
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 10 --format haplotagging -o single_sample/haplotagging test/hap1.fa test/hap2.fa &&\
+          mimick -t 4 --quiet -g 10 --format haplotagging -o single_sample/haplotagging test/hap1.fa test/hap2.fa &&\
           zcat single_sample/haplotagging.R1.fq.gz | head -8
-      - name: Test Single Sample 10X
+      - name: Test Single Sample stLFR
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 10 --format stlfr -o single_sample/stlfr test/hap1.fa test/hap2.fa &&\
+          mimick -t 4 --quiet -g 10 --format stlfr -o single_sample/stlfr test/hap1.fa test/hap2.fa &&\
           zcat single_sample/stlfr.R1.fq.gz | head -8
-      - name: Test Single Sample tellseq
+      - name: Test Single Sample TELLseq
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 10 --format tellseq -o single_sample/tellseq test/hap1.fa test/hap2.fa &&\
+          mimick -t 4 --quiet -g 10 --format tellseq -o single_sample/tellseq test/hap1.fa test/hap2.fa &&\
           zcat single_sample/tellseq.R1.fq.gz | head -8
       - name: Test Single Sample standard
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 10 --format standard:stlfr -o single_sample/std_stlfr test/hap1.fa test/hap2.fa &&\
+          mimick -t 4 --quiet -g 10 --format standard:stlfr -o single_sample/std_stlfr test/hap1.fa test/hap2.fa &&\
           zcat single_sample/std_stlfr.R1.fq.gz | head -8
 
       - name: Test Multisample 10X
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 5 --format 10x -o 10X/ --vcf test/test.vcf.gz test/fasta.fa &&\
+          mimick -t 4 --quiet -g 5 --format 10x -o 10X/ --vcf test/test.vcf.gz test/fasta.fa &&\
           zcat 10X/tsk_0.R1.fq.gz | head -8
       - name: Test Multisample haplotagging
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 5 --format haplotagging -o haplotagging/ --vcf test/test.vcf.gz test/fasta.fa &&\
+          mimick -t 4 --quiet -g 5 --format haplotagging -o haplotagging/ --vcf test/test.vcf.gz test/fasta.fa &&\
           zcat haplotagging/tsk_0.R1.fq.gz | head -8
-      - name: Test Multisample 10X
+      - name: Test Multisample stLFR
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 5 --format stlfr -o stlfr/ --vcf test/test.vcf.gz test/fasta.fa &&\
+          mimick -t 4 --quiet -g 5 --format stlfr -o stlfr/ --vcf test/test.vcf.gz test/fasta.fa &&\
           zcat stlfr/tsk_0.R1.fq.gz | head -8
-      - name: Test Multisample tellseq
+      - name: Test Multisample TELLseq
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 5 --format tellseq -o tellseq/ --vcf test/test.vcf.gz test/fasta.fa &&\
+          mimick -t 4 --quiet -g 5 --format tellseq -o tellseq/ --vcf test/test.vcf.gz test/fasta.fa &&\
           zcat tellseq/tsk_0.R1.fq.gz | head -8
       - name: Test Multisample standard
         shell: micromamba-shell {0}
         run: |
-          mimick -t 4 -g 5 --format standard:stlfr -o std_stlfr/ --vcf test/test.vcf.gz test/fasta.fa &&\
+          mimick -t 4 --quiet -g 5 --format standard:stlfr -o std_stlfr/ --vcf test/test.vcf.gz test/fasta.fa &&\
           zcat std_stlfr/tsk_0.R1.fq.gz | head -8
