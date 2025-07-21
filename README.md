@@ -40,8 +40,10 @@ molecule coverage. These characteristics are **very** important regarding the pe
 chromosomes/contigs **and** haplotypes. This form of barcode sharing is a common phenomenon in real linked-read
 libraries, but a characteristic existing simulators don't capture (e.g. XENIA only allowed barcode sharing within
 a chromosome within a haplotype). The documentation explains this in better detail.
-5. It's parallelized to simulate reads from one molecule per thread, taking full advantage of threads from start to finish,
-accounting for back-pressure, RAM, and disk usage.
+5. As of version 3.0 (upcoming), it supports multi-sample simulation by way of one FASTA and one VCF as input. Sample haplotypes
+are made by applying SNP and indel variants from VCF to the contigs in the FASTA.
+6. It's fast. The Julia version (v3+) is a signficant speedup for single-sample simulation and the multi-sample simulation
+is parallelized across samples.
 
 ### Authors
 
