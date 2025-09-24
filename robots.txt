@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pdimens.github.io/mimick/sitemap.xml.gz
