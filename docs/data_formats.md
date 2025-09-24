@@ -1,4 +1,7 @@
-# Linked-read Data Formats
+---
+label: Linked-Read Data Formats
+icon: file-binary
+---
 
 Linked-read chemistries continue to evolve and it seems like every new method wants to use their own bespoke
 convention for putting barcodes in FASTQ files (because that's exactly what's happening, unfortunately). Until
@@ -13,6 +16,7 @@ You can specify the linked-read barcode chemistry to simulate using the combinat
 
 The table below serves as a guide for the configurations for the common linked-read varieties: 
 
+{.compact}
 | Chemistry    | `--segments` | `--lengths` | Format                                       | `--output-type` default |
 |:-------------|:------------:|:-----------:|:---------------------------------------------|:------------------------|
 | 10x/tellseq  |     `1`      |  `134,150`  | single barcode on R1                         | `tellseq`               |
@@ -34,6 +38,7 @@ experiment you are trying to do, you can specify any of the linked-read types as
 You can suffix `standard` with `:haplotagging` or `:stlfr` (e.g. `standard:stlfr`) to output the standard format
 with that kind of barcode encoding style, otherwise `standard` (no suffix) will use the nucleotide barcode.
 
+{.compact}
 | --output-type    | Barcode Location                         | default for | Example                    |
 |:-----------------|:-----------------------------------------|:-----------:|:---------------------------|
 | `10x`            | start of R1 sequence                     |             | `ATAGACCATAGA`GGACA...     |

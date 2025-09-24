@@ -1,0 +1,55 @@
+start:
+  pro: true
+nav:
+  mode: stack
+input: .
+output: .retype
+url: pdimens.github.io/mimick/
+meta:
+  title: " | Mimick"
+footer:
+  copyright: "&copy; Copyright {{ year }}. All rights reserved."
+showSidebarFilter: false
+theme:
+  base:
+    base-link-weight: 500
+    nav-item-text-active-weight: 700
+    image-rounded: 0.75rem
+    nav-item-text-stack: "#1e66f5"
+branding:
+  label: v2.3
+  logo: static/mimick_logo.png
+  logoDark: static/mimick_logo.png
+  logoAlign: left
+favicon: static/mimick_icon.png
+search:
+  mode: partial
+edit:
+  repo: "https://github.com/pdimens/mimick/edit"
+  base: /
+  branch: "docs"
+links:
+- text: Harpy
+  link: https://pdimens.github.io/harpy/
+  icon: https://raw.githubusercontent.com/pdimens/harpy/refs/heads/docs/static/logo_navbar.png
+  target: blank
+- text: Therkildsen Lab
+  link: https://www.therkildsenlab.org/
+  icon: https://www.therkildsenlab.org/uploads/1/4/5/5/145548022/published/new-logo-smaller.png
+  target: blank
+- text: Cornell GIH
+  link: https://www.genomicsinnovation.cornell.edu/
+  icon: https://raw.githubusercontent.com/pdimens/harpy/refs/heads/docs/static/biotech.png
+  target: blank
+- text: Source
+  link: https://github.com/pdimens/mimick
+  icon: mark-github
+  target: blank
+- text: Submit Issue
+  link: https://github.com/pdimens/mimick/issues/new/
+  icon: bug
+  target: blank
+exclude:
+  - "src/"
+  - "test/"
+  - "mimick/"

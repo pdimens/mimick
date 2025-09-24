@@ -1,11 +1,13 @@
-# Installing Mimick
+---
+label: Installing Mimick
+icon: desktop-download
+order: 99
+---
 
 There are three ways you can install Mimick: conda, pixi, pip. Make note of the names of the code blocks, as they
 describe installation and usage variations.
 
-<!-- tabs:start -->
-#### **conda**
-
++++ conda
 ## Install with conda
 To install Mimick using conda (or miniconda, mamba, etc.) into an existing environment, it's as simple as:
 ```you're already in the environment
@@ -39,9 +41,7 @@ conda update -c conda-forge bioconda::mimick
 conda update -n env_name -c conda-forge bioconda::mimick
 ```
 
-
-####  **pixi**
-
++++ pixi
 ### Install with pixi
 Pixi is a new ultra-fast Rust-based environment manager much like conda is. If you haven't tried it out, you ought to give it a shot.
 With it, you can install Mimick to be accessible in your PATH, i.e. a "global" installation:
@@ -53,7 +53,9 @@ pixi init -c conda-forge -c bioconda projectname && cd projectname
 pixi add mimick
 ```
 
-!> Make sure `~/.pixi/bin` is in your PATH using `export PATH=~/.pixi/bin:$PATH`
+!!!warning
+ Make sure `~/.pixi/bin` is in your PATH using `export PATH=~/.pixi/bin:$PATH`
+!!!
 
 ### Using with pixi
 If installed globally, this is very similar to the conda installation:
@@ -82,7 +84,7 @@ cd path/to/projectdir
 pixi update mimick
 ```
 
-#### **pip**
++++ pip
 ### Install with pip
 If neither conda nor pixi appeal to you, Mimick can be installed with pip too. To do that, you will need to first
 download [the latest release](https://github.com/pdimens/mimick/releases) (recommended) or clone
@@ -111,4 +113,4 @@ mimick options... args...
 ### Updating with pip
 You'll need to repeat the [Install with pip](#install-with-pip) process above.
 
-<!-- tabs:end -->
++++

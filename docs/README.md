@@ -1,11 +1,20 @@
-# Mimick
-Linked-read sequence simulator
+---
+label: Home
+hidden: true
+icon: home
+---
 
-![mimick_logo](_media/mimick_logo.png)
+![](static/mimick_logo.png)
 
-Mimick is a simulator for linked-read FASTQ data.Mimick started its life as XENIA, a module in
-[VISOR](https://github.com/davidebolo1993/VISOR).  It allows you to simulate an arbitrary number
-of haplotypes, set overall coverage, molecule coverage, and mix-match barcodes with linked-read chemistries.
+Mimick is a simulator for linked-read FASTQ data. It started its life as XENIA, a module in
+[VISOR](https://github.com/davidebolo1993/VISOR), and has since added features and perks. Mimick
+allows you to simulate an arbitrary number of haplotypes, set overall coverage, molecule coverage,
+and mix-match barcodes with linked-read chemistries.
+
+==- Why "mimick"? 
+It's simple, really. This software mimics linked-read data, Pavel has an affinity for naming software after [fictional monsters](https://en.wikipedia.org/wiki/Mimic_(Dungeons_%26_Dragons)) and "mimick" (with a "k") is the old-English spelling of the word, leaving `mimic` available for some other bioinformatician to use for a less farcical reason. Despite the lore of mimics being deadly traps, this software is anything but, we promise.
+===
+
 
 ## Supported Linked-Read Types:
 - 10X
@@ -14,11 +23,9 @@ of haplotypes, set overall coverage, molecule coverage, and mix-match barcodes w
 - TELLseq
 
 ## Get Started
-See the [installation guide](install.md) and then call up `mimick` in the command line to be greeted with:
+See the [installation](install.md) and [usage](usage.md) guides, then call up `mimick` in the command line to be greeted with:
 
-```terminal
-$| mimick
-
+```bash
  Usage: mimick [OPTIONS] BARCODES FASTA...                                                              
 
  Simulate linked-read FASTQ using genome haplotypes. Barcodes can be supplied one of two ways:          
@@ -100,11 +107,8 @@ $| mimick
 │                          [default: 0; 0<=x<=1]                                                       │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-
  Documentation: https://pdimens.github.io/mimick/
 ```
-
-!> Why "mimick"? It's simple, really. This software mimics linked-read data, Pavel has an affinity for naming software after [fictional monsters](https://en.wikipedia.org/wiki/Mimic_(Dungeons_%26_Dragons)) and "mimick" (with a "k") is the old-English spelling of the word, leaving `mimic` available for some other bioinformatician to use for a less farcical reason. Despite the lore of mimics being deadly traps, this software is anything but, we promise.
 
 ### Authors
 <img src="https://avatars.githubusercontent.com/u/19176506?v=4" width="50" height="50" style="border-radius: 50%; object-fit: cover;"/> [@pdimens](https://github.com/pdimens) (Mimick)

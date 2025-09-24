@@ -1,3 +1,8 @@
+---
+label: Algorithm Overview
+icon: git-compare
+---
+
 # The simulation process
 Or algorithm, if you want to be fancy about it. Note that mentions of "contig" below are synonymous with
 "chromosome" if your input FASTA files are chromosome-scale.
@@ -20,7 +25,7 @@ graph LR
     step6 -->| break if all targets are reached | step1
 ```
 
-### Step 0: Parse the FASTA file(s)
+### 0: Parse the FASTA file(s)
 The FASTA files are processed into schema that contain characteristics for each contig, along with the
 sequence in it. These schema are part of the recipes that get processed during simulation. Schema contain information
 such as the sequence length (adjusted for ambiguous bases), haplotype number, reads per molecule, and other important
@@ -49,7 +54,7 @@ each with 3 contigs and no BED file suggesting otherwise, Mimick will produce 2 
 The schema are internal objects held in memory, not files you will be able to browse.
 
 ## The loop
-### Step 1: Pick a barcode
+### 1: Pick a barcode
 Whether you chose to have barcodes generated or provided your own, Mimick picks the first one and also generates
 an output version of it. Since input barcodes are always nucleotides, the barcodes will have a corresponding haplotagging or
 stLFR analogue created if that's the desired output. You can think of the barcode as the oligo-covered bead in TELLseq/stLFR/haplotagging
@@ -65,7 +70,7 @@ output_barcode = "1_32_441"
 output_barcode = "A01C23B01D83"
 ```
 
-### Step 2: Making the molecule recipes
+### 2: Making the molecule recipes
 Based on the `--molecules-per` parameter, Mimick will decide how many unrelated molecules will be associated with the barcode.
 Then, it's a matter of randomly choosing (with replacement) which schema to make molecules from. Remember, each contig for each
 haplotype has its own schema, so unrelated molecules can come from anywhere, which is a very important feature of these simulations.
@@ -93,19 +98,19 @@ mol_id: 1422882321
 read_count: 1
 ```
 
-### Step 3: Submitting the molecule recipes for simulation
+### 3: Submitting the molecule recipes for simulation
 This is the part that's multithreaded. Once we have a molecule recipe and its associated fasta file, Mimick hands the information over to `wgsim` via `pywgsim`,
 where the fasta file will then be the input "genome" from which the software will randomly generate the target number of reads for that molecule. The reads
-that are simulated never actually have the bacode on them-- it's only if `--output-type 10x` that the barcode is added inline to R1 during Step X.
+that are simulated never actually have the bacode on them-- it's only if `--output-type 10x` that the barcode is added inline to R1 during X.
 
-### Step 4: Monitor schema targets
+### 4: Monitor schema targets
 The number of reads that were generated for every molecule are added to that molecule's source schema to track the number of reads already produced for
 that contig for that haplotype. Once a schema reaches its reads target, that schema will be removed from the list of schema that are randomly sampled
 to determine molecules in [Step 2](#step-2-making-the-molecule-recipes). This ensures that read `--coverage` is honored.
 
-### Step 5: Repeat until all schema read targets are met
+### 5: Repeat until all schema read targets are met
 Once there are no more schema left to sample, simulation is done!
 
-### Step X: Convert and append reads
+### X: Convert and append reads
 A separate concurrent process converts the reads simulated from a molecule into the format specified by `--output-type` and writes the reads to final R1 and R2
 FASTQ files.

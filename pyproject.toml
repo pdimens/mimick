@@ -15,7 +15,7 @@ readme = {file = "README.md", content-type = "text/markdown"}
 license = "GPL-3.0-or-later"
 dependencies = [
     'juliacall',
-    'rich-click'
+    'rich-click>=1.9'
 ]
 
 [tool.setuptools.packages.find]
