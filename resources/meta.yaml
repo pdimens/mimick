@@ -28,7 +28,7 @@ requirements:
     - setuptools >=80
   run:
     - click >=8.2
-    - rich-click >=1.9
+    - rich-click >=1.9.3
     - python >=3.10
     - pyjuliacall >=0.9.26
 
