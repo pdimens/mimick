@@ -21,11 +21,11 @@ config = click.RichHelpConfiguration(
 @click.version_option("0.0.0", prog_name="mimick")
 @click.command(epilog = "Documentation: https://pdimens.github.io/mimick/", no_args_is_help = True)
 @click.rich_config(config)
-@click.option('-c','--circular', panel = "General Options", is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
-@click.option('-o','--output-prefix', panel = "General Options", help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/", show_default=True)
-@click.option('-q','--quiet', panel = "General Options", is_flag= True, default = False, help = 'toggle to hide progress bar')
-@click.option('-t','--threads', panel = "General Options", help='number of threads to use for multi-sample simulation', type=click.IntRange(min=1), default=2, show_default=True)
-@click.option('-s','--seed', panel = "General Options", help='random seed for simulation', type=click.IntRange(min=-1, clamp = True), default=-1)
+@click.option('-c', '--circular', panel = "General Options", is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
+@click.option('-o', '--output-prefix', panel = "General Options", help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/", show_default=True)
+@click.option('-q', '--quiet', panel = "General Options", is_flag= True, default = False, help = 'toggle to hide progress bar')
+@click.option('-t', '--threads', panel = "General Options", help='number of threads to use for multi-sample simulation', type=click.IntRange(min=1), default=2, show_default=True)
+@click.option('-s', '--seed', panel = "General Options", help='random seed for simulation', type=click.IntRange(min=-1, clamp = True), default=-1)
 @click.option('-f', '--format', 'fmt', panel = "Linked-Read Simulation", help='FASTQ output format',show_default=True, default = "standard:haplotagging", type = click.Choice(["10x", "stlfr", "standard", "standard:haplotagging", "standard:stlfr", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-g', '--genomic-coverage', panel = "Linked-Read Simulation", help='mean coverage (depth) target for simulated data', show_default=True, default=30.0, type=click.FloatRange(min=0.05))
 @click.option('-i', '--insert-size', panel = "Linked-Read Simulation", help='outer distance between the two read ends in bp', default=500, show_default=True, type=click.IntRange(min=0))
@@ -46,8 +46,10 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
     1. Input one or more **FASTA** files (haplotypes) to simulate linked reads for a single individual.
     2. Input one **FASTA** and **VCF** file to simulate linked reads for all samples in the VCF file with haplotypes reflective of their SNPs and indels.
 
-    With the exception of `10x`, all other formats are demultiplexed. Below are the common linked-read chemistries
-    (to be used in `--format`) and their configurations: 
+    With the exception of `10x`, all other formats are demultiplexed. Output can be in `standard:chemistry` format (e.g. `standard:stlfr` outputs standard
+    format with stLFR-style barcodes), where the barcode is encoded as a `BX:Z:` tag and a `VX:i` validation tag. Below are the common linked-read chemistries
+    (to be used in `--format`) and their configurations:
+
     | chemistry    | `--read-lengths` | Description          | FASTQ format          |
     |:-------------|:----------------:|:---------------------|:----------------------|
     | 10x          |    `134,150`     | single barcode on R1 | barcode inline on R1  |
