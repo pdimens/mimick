@@ -179,4 +179,5 @@ cython_debug/
 .pypirc
 # pixi environments
 .pixi/*
+pixi.lock
 !.pixi/config.toml
