@@ -12,11 +12,9 @@ most sensible way to install it would be:
 ```bash
 git clone https://github.com/pdimens/mimick.git
 ```
-2. Change to the `mimick` directory and swap to the `mimick.jl` branch
+2. Change to the `mimick` directory
 ```bash
 cd mimick
-
-git checkout mimick.jl
 ```
 
 3. Start a Julia REPL session. You can do this however feels natural: using the 
@@ -95,12 +93,10 @@ Same as before
 git clone https://github.com/pdimens/mimick.git
 ```
 
-Then change to the `mimick` directory and swap to the `mimick.jl` branch
+Then change to the `mimick` directory
 
 ```bash
 cd mimick
-
-git checkout mimick.jl
 ```
 
 ## 1. Install half the deps
@@ -135,12 +131,8 @@ mimick
     single individual.                                                           
   2 Input one FASTA and VCF file to simulate linked reads for all samples in the 
     VCF file with haplotypes reflective of their SNPs and indels                 
-                                                                                 
- With the exception of 10x, all other formats are demultiplexed. Below are the   
- common linked-read chemistries (to be used in --format) and their               
- configurations:
  ...                                             
- ```
+```
 
 A basic usage for the FASTA + VCF mode is:
 ```bash
