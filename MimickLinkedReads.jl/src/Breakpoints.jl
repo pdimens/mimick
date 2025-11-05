@@ -79,12 +79,7 @@ function extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r
     return
 end
 
-"""
-    circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int}) -> String
-
-Circular indexing to account for end position overflow. Returns a DNA sequences as a String.
-"""
-@inline function circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int})::String
+@inline function circular_index(seq::LongDNA{4}, range::UnitRange{Int})::LongDNA{4}
     n = length(seq)
     @inbounds begin
         if range.stop > n
@@ -93,7 +88,16 @@ Circular indexing to account for end position overflow. Returns a DNA sequences 
             subseq = seq[range]
         end
     end
-    return string(subseq)
+    return subseq
+end
+
+"""
+    circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int}) -> String
+
+Circular indexing to account for end position overflow. Returns a DNA sequences as a String.
+"""
+@inline function circular_index_R1(seq::LongDNA{4}, range::UnitRange{Int})::String
+    return string(circular_index(seq, range))
 end
 
 """
@@ -103,15 +107,7 @@ Circular indexing to account for end position overflow. Returns a reverse-compli
 sequence as a String.
 """
 @inline function circular_index_R2(seq::LongDNA{4}, range::UnitRange{Int})::String
-    n = length(seq)
-    @inbounds begin
-        if range.stop > n
-            subseq = seq[range.start:end] * seq[begin:(range.stop % n)]
-        else
-            subseq = seq[range]
-        end
-    end
-    return string(reverse_complement!(subseq))
+    return string(reverse_complement!(circular_index(seq, range)))
 end
 
 """
