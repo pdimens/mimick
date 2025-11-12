@@ -1,9 +1,0 @@
-name: mimick
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - click >=8.2
-  - rich-click >=1.9
-  - python >=3.10
-  - pyjuliacall >=0.9.26

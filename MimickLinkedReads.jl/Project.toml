@@ -1,7 +1,7 @@
 name = "MimickLinkedReads"
 uuid = "83862e06-e039-4a9e-a627-fc3a1d1c4f8e"
+version = "3.0.0"
 authors = ["pdimens <pdimens@gmail.com> and contributors"]
-version = "0.0.0"
 
 [deps]
 BioSequences = "7e6ae17a-c86d-528c-b3b9-7f778a29fe59"
@@ -18,4 +18,5 @@ BioSequences = "3.5.0"
 CodecBGZF = "0.1.1"
 ProgressMeter = "1.10.4"
 Random = "1.11.0"
+VariantCallFormat = "0.5.9"
 julia = "1.6.7"
