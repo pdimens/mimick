@@ -33,7 +33,8 @@ jobs:
           activate-environment: true
       - name: Install MimickLinkedReads.jl
         run: |
-          python -c 'from juliacall import Main as jl; jl.seval("using Pkg ; Pkg.add(url=\"https://github.com/pdimens/mimick.git\", subdir=\"MimickLinkedReads.jl\")")' 
+          export PYTHON_JULIACALL_THREADS=2
+          python -c -X juliacall-heap-size-hint=2G 'from juliacall import Main as jl; jl.seval("using Pkg ; Pkg.add(url=\"https://github.com/pdimens/mimick.git\", subdir=\"MimickLinkedReads.jl\")")' 
 
       - name: Create Test Data
         run: |
