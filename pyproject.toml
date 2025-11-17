@@ -38,3 +38,7 @@ mimick = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 
+[tool.pixi.dependencies]
+pyjuliacall = ">=0.9.28,<0.10"
+rich-click = ">=1.9.4,<2"
+

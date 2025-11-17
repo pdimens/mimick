@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 
+import shutil
 import os
 import sys
+
 import rich_click as click
+from rich import print as rprint
 from .cli_classes import ReadLengths
+
+os.environ['PYTHON_JULIACALL_HANDLE_SIGNALS'] = "yes"
+
+if shutil.which("julia"):
+    os.environ['PYTHON_JULIAPKG_EXE'] = shutil.which("julia")
+from juliacall import Main as jl
 
 config = click.RichHelpConfiguration(
     max_width=80,
@@ -67,12 +76,15 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
     | stlfr        |    `150,108`     | 3-barcode on R2      | @SEQID#1_2_3          |
     | tellseq      |    `132,150`     | single barcode on R1 | @SEQID:ATGC           |
     """
+    try:
+        jl.seval("using MimickLinkedReads")
+    except:
+        mimick_install()
+
+    os.environ['PYTHON_JULIACALL_THREADS'] = f"{threads}"
+
     if fmt == "10x":
         fmt = "tenx"
-    os.environ['PYTHON_JULIACALL_THREADS'] = f"{threads}"
-    os.environ['PYTHON_JULIACALL_HANDLE_SIGNALS'] = "yes"
-    from juliacall import Main as jl
-    jl.seval("using MimickLinkedReads")
     if vcf:
         jl.mimick(
             fasta[0],
@@ -111,12 +123,23 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
             quiet = quiet
         )
 
+def mimick_install():
+    """Install the Mimick Julia backend"""
+    os.environ['PYTHON_JULIACALL_THREADS'] = "2"
+    rprint("[magenta] Installing the MimickLinkedreads Julia backend. This typically only needs to happen once.")
+    try:
+        jl.seval('using Pkg')
+        jl.Pkg.add(url="https://github.com/pdimens/mimick.git", subdir = "MimickLinkedReads.jl")
+        jl.seval('using MimickLinkedReads')
+    except Exception as e:
+        print("Failed to install MimickLinkedReads.jl. See the Julia error:")
+        print(e)
+
 def mimick_test():
     """
     A simple function to make sure JuliaCall is working properly after a conda installation
     """
     try:
-        from juliacall import Main as jl
         jl.seval("using MimickLinkedReads")
         print("Success!")
     except Exception as e:
