@@ -2,7 +2,6 @@
 
 import shutil
 import os
-import sys
 
 import rich_click as click
 from rich import print as rprint
@@ -12,7 +11,6 @@ os.environ['PYTHON_JULIACALL_HANDLE_SIGNALS'] = "yes"
 
 if shutil.which("julia"):
     os.environ['PYTHON_JULIAPKG_EXE'] = shutil.which("julia")
-from juliacall import Main as jl
 
 config = click.RichHelpConfiguration(
     max_width=80,
@@ -43,7 +41,7 @@ config = click.RichHelpConfiguration(
 @click.option('-c', '--circular', is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
 @click.option('-o', '--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/", show_default=True)
 @click.option('-q', '--quiet', is_flag= True, default = False, help = 'toggle to hide progress bar')
-@click.option('-t', '--threads', help='number of threads to use for multi-sample simulation', type=click.IntRange(min=1), default=2, show_default=True)
+@click.option('-t', '--threads', help='number of threads to use for multi-sample simulation', type=click.IntRange(min=2), default=2, show_default=True)
 @click.option('-s', '--seed', help='random seed for simulation', type=click.IntRange(min=-1, clamp = True), default=-1)
 @click.option('-f', '--format', 'fmt', help='FASTQ output format',show_default=True, default = "standard:haplotagging", type = click.Choice(["10x", "stlfr", "standard", "standard:haplotagging", "standard:stlfr", "haplotagging", "tellseq"], case_sensitive=False))
 @click.option('-g', '--genomic-coverage', help='mean coverage (depth) target for simulated data', show_default=True, default=30.0, type=click.FloatRange(min=0.05))
@@ -76,56 +74,62 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
     | stlfr        |    `150,108`     | 3-barcode on R2      | @SEQID#1_2_3          |
     | tellseq      |    `132,150`     | single barcode on R1 | @SEQID:ATGC           |
     """
+    os.environ['PYTHON_JULIACALL_THREADS'] = f"{threads}"
+    from juliacall import Main as jl
     try:
         jl.seval("using MimickLinkedReads")
     except:
         mimick_install()
 
-    os.environ['PYTHON_JULIACALL_THREADS'] = f"{threads}"
+    fmt = "tenx" if fmt == "10x" else fmt
 
-    if fmt == "10x":
-        fmt = "tenx"
-    if vcf:
-        jl.mimick(
-            fasta[0],
-            vcf,
-            fmt,
-            outdir = output_prefix,
-            coverage = genomic_coverage,
-            n_molecules = molecules_per,
-            mol_coverage = molecule_coverage,
-            mol_length = molecule_length,
-            insert_length = insert_size,
-            insert_stdev = insert_stdev,
-            read_length = jl.collect(jl.Int, read_lengths),
-            singletons = singletons,
-            circular = circular,
-            attempts = molecule_attempts,
-            seed = seed,
-            quiet = quiet
-    )
-    else:
-        jl.mimick(
-            jl.collect(fasta),
-            fmt,
-            prefix = output_prefix,
-            coverage = genomic_coverage,
-            n_molecules = molecules_per,
-            mol_coverage = molecule_coverage,
-            mol_length = molecule_length,
-            insert_length = insert_size,
-            insert_stdev = insert_stdev,
-            read_length = jl.collect(jl.Int, read_lengths),
-            singletons = singletons,
-            circular = circular,
-            attempts = molecule_attempts,
-            seed = seed,
-            quiet = quiet
+    try:
+        if vcf:
+            jl.mimick(
+                fasta[0],
+                vcf,
+                fmt,
+                outdir = output_prefix,
+                coverage = genomic_coverage,
+                n_molecules = molecules_per,
+                mol_coverage = molecule_coverage,
+                mol_length = molecule_length,
+                insert_length = insert_size,
+                insert_stdev = insert_stdev,
+                read_length = jl.collect(jl.Int, read_lengths),
+                singletons = singletons,
+                circular = circular,
+                attempts = molecule_attempts,
+                seed = seed,
+                quiet = quiet
         )
+        else:
+            jl.mimick(
+                jl.collect(fasta),
+                fmt,
+                prefix = output_prefix,
+                coverage = genomic_coverage,
+                n_molecules = molecules_per,
+                mol_coverage = molecule_coverage,
+                mol_length = molecule_length,
+                insert_length = insert_size,
+                insert_stdev = insert_stdev,
+                read_length = jl.collect(jl.Int, read_lengths),
+                singletons = singletons,
+                circular = circular,
+                attempts = molecule_attempts,
+                seed = seed,
+                quiet = quiet
+            )
+    except KeyboardInterrupt:
+        rprint("[yellow]Terminating Mimick")
+    except Exception as e:
+        rprint(f"[red]{e}")
 
 def mimick_install():
-    """Install the Mimick Julia backend"""
+    """Install the Mimick Julia backend (dev version from github)"""
     os.environ['PYTHON_JULIACALL_THREADS'] = "2"
+    from juliacall import Main as jl
     rprint("[magenta] Installing the MimickLinkedreads Julia backend. This typically only needs to happen once.")
     try:
         jl.seval('using Pkg')
@@ -146,11 +150,3 @@ def mimick_test():
         print(e)
         print("Failure!")
 
-if __name__ =='__main__':
-    try:
-        mimick()
-    except KeyboardInterrupt:
-        exit(1)
-    except Exception as e:
-        print(e)
-        sys.exit(1)
