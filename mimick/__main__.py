@@ -127,13 +127,15 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
         rprint(f"[red]{e}")
 
 def mimick_install():
-    """Install the Mimick Julia backend (dev version from github)"""
+    """Install the Mimick Julia backend"""
     os.environ['PYTHON_JULIACALL_THREADS'] = "2"
     from juliacall import Main as jl
-    rprint("[magenta] Installing the MimickLinkedreads Julia backend. This typically only needs to happen once.")
+    import mimick
+    rprint("[magenta]Installing the MimickLinkedreads Julia backend. This typically only needs to happen once.")
     try:
         jl.seval('using Pkg')
-        jl.Pkg.add(url="https://github.com/pdimens/mimick.git", subdir = "MimickLinkedReads.jl")
+        #jl.Pkg.develop(path=os.path.join(os.path.dirname(mimick.__path__[0]), "MimickLinkedReads.jl/"))
+        jl.Pkg.develop(path=os.path.join(mimick.__path__[0], "MimickLinkedReads.jl/"))
         jl.seval('using MimickLinkedReads')
     except Exception as e:
         print("Failed to install MimickLinkedReads.jl. See the Julia error:")
@@ -143,6 +145,7 @@ def mimick_test():
     """
     A simple function to make sure JuliaCall is working properly after a conda installation
     """
+    from juliacall import Main as jl
     try:
         jl.seval("using MimickLinkedReads")
         print("Success!")
