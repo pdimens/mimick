@@ -2,7 +2,6 @@
 
 import shutil
 import os
-
 import rich_click as click
 from rich import print as rprint
 from .cli_classes import ReadLengths
