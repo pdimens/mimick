@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/mimick">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.816812462818">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.816905477499">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -32,12 +32,12 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link href="../static/mimick_icon.png" rel="icon">
-    <link href="../resources/css/retype.css?v=3.11.0.816812462818" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=3.11.0.816905477499" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.816812462818" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.816905477499" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.816812462818" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.816812462818" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.816905477499" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.816905477499" defer></script>
     <link href="../resources/css/katex.css?v=3.11.0" rel="stylesheet">
     <script id="katex-js" data-cfasync="false" src="../resources/js/katex.js?v=3.11.0" defer></script>
 </head>
@@ -59,7 +59,7 @@
                                 <img class="max-h-10 dark:hidden md:inline-block" src="../static/mimick_logo.png">
                                 <img class="max-h-10 hidden dark:inline-block" src="../static/mimick_logo.png">
                             </span>
-                        </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v2.3</span>
+                        </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v3.0</span>
                     </div>
         
                     <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
@@ -267,9 +267,9 @@
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick options... BARCODES FASTA1 FAST2...</code></pre>
 </doc-codeblock></div>
 <p>Use <code v-pre>--help</code> or <code v-pre>-h</code> or call <code v-pre>mimick</code> without arguments to call up the docstring.</p>
-<p>The minimum input files required by Mimick is a single FASTA file, uncompressed or <strong>bgzip compressed</strong>.
+<p>The minimum input files required by Mimick is a single FASTA file, uncompressed or gzip compressed.
 The result will be a single set of paired-end reads, a GFF file of mutations, and a manifest of all the molecules created.
-Mimick scales with the number of threads provided.</p>
+Mimick scales with the number of threads provided, although not linearly (the slowest part is writing compressed files to disk).</p>
 <p>If you want to separate out the haplotypes from the final output, you can
 leverage the fact that all the simulated reads start with <code v-pre>@HAP:X_</code> where <code v-pre>X</code> is the haplotype number, starting with <code v-pre>1</code>,
 corresponding to the order in which FASTA files were provided. The read names also
@@ -296,35 +296,28 @@ done</code></pre>
 <tbody>
 <tr>
 <td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>BARCODES</code></td>
-<td style="text-align: center;"></td>
-<td style="text-align: left;">input barcode file or length,count</td>
-<td style="text-align: left;">REQUIRED</td>
-</tr>
-<tr>
-<td style="text-align: center;"></td>
 <td style="text-align: left;"><code v-pre>FASTA</code></td>
 <td style="text-align: center;"></td>
 <td style="text-align: left;">input fasta file(s)</td>
 <td style="text-align: left;">REQUIRED</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-C</code></td>
+<td style="text-align: center;"><code v-pre>-c</code></td>
 <td style="text-align: left;"><code v-pre>--circular</code></td>
-<td style="text-align: center;"><code v-pre>False</code></td>
+<td style="text-align: center;"></td>
 <td style="text-align: left;">toggle to let Mimick know the input contigs are circular/prokaryotic</td>
-<td style="text-align: left;">cannot be used with <code v-pre>-r/--regions</code></td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: center;"><code v-pre>-o</code></td>
 <td style="text-align: left;"><code v-pre>--output-prefix</code></td>
-<td style="text-align: center;"><code v-pre>simulated/SIM</code></td>
+<td style="text-align: center;"><code v-pre>simulated/</code></td>
 <td style="text-align: left;">output file prefix</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-O</code></td>
-<td style="text-align: left;"><code v-pre>--output-type</code></td>
+<td style="text-align: center;"><code v-pre>-f</code></td>
+<td style="text-align: left;"><code v-pre>--format</code></td>
 <td style="text-align: center;"><a href="../data_formats/#linked-read-simulation-types">varies</a></td>
 <td style="text-align: left;">output format of FASTQ files</td>
 <td style="text-align: left;"></td>
@@ -332,19 +325,12 @@ done</code></pre>
 <tr>
 <td style="text-align: center;"><code v-pre>-q</code></td>
 <td style="text-align: left;"><code v-pre>--quiet</code></td>
-<td style="text-align: center;"><code v-pre>0</code></td>
-<td style="text-align: left;"><code v-pre>0</code> all output, <code v-pre>1</code> no progress bar, <code v-pre>2</code> no output</td>
-<td style="text-align: left;"></td>
-</tr>
-<tr>
-<td style="text-align: center;"><code v-pre>-r</code></td>
-<td style="text-align: left;"><code v-pre>--regions</code></td>
 <td style="text-align: center;"></td>
-<td style="text-align: left;">one or more regions to simulate, in BED format</td>
+<td style="text-align: left;">toggle to hide the progress bar</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-S</code></td>
+<td style="text-align: center;"><code v-pre>-s</code></td>
 <td style="text-align: left;"><code v-pre>--seed</code></td>
 <td style="text-align: center;"></td>
 <td style="text-align: left;">random seed for simulation</td>
@@ -358,101 +344,73 @@ done</code></pre>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--coverage</code></td>
+<td style="text-align: center;"><code v-pre>-g</code></td>
+<td style="text-align: left;"><code v-pre>--genomic-coverage</code></td>
 <td style="text-align: center;"><code v-pre>30</code></td>
 <td style="text-align: left;">mean coverage target for simulated data</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--distance</code></td>
+<td style="text-align: center;"><code v-pre>-i</code></td>
+<td style="text-align: left;"><code v-pre>--insert-size</code></td>
 <td style="text-align: center;"><code v-pre>500</code></td>
 <td style="text-align: left;">outer distance between the two ends in bp</td>
-<td style="text-align: left;">must be &gt;<code v-pre>--length</code></td>
+<td style="text-align: left;">must be &gt;<code v-pre>--read-lengths</code></td>
 </tr>
 <tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--error</code></td>
-<td style="text-align: center;"><code v-pre>0.02</code></td>
-<td style="text-align: left;">base error rate</td>
-<td style="text-align: left;">must be between 0-1, will be fixed for this value</td>
-</tr>
-<tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--extindels</code></td>
-<td style="text-align: center;"><code v-pre>0.25</code></td>
-<td style="text-align: left;">indels extension rate</td>
-<td style="text-align: left;">must be between 0-1</td>
-</tr>
-<tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--indels</code></td>
-<td style="text-align: center;"><code v-pre>0.15</code></td>
-<td style="text-align: left;">indels creation rate</td>
-<td style="text-align: left;">must be between 0-1</td>
-</tr>
-<tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--lengths</code></td>
-<td style="text-align: center;"><code v-pre>150,150</code></td>
-<td style="text-align: left;">length of R1,R2 reads in bp</td>
-<td style="text-align: left;">each must be &gt;10 and separated by a comma, no spaces</td>
-</tr>
-<tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--mutation</code></td>
-<td style="text-align: center;"><code v-pre>0.001</code></td>
-<td style="text-align: left;">mutation rate</td>
-<td style="text-align: left;">must be between 0-1</td>
-</tr>
-<tr>
-<td style="text-align: center;"></td>
-<td style="text-align: left;"><code v-pre>--stdev</code></td>
+<td style="text-align: center;"><code v-pre>-d</code></td>
+<td style="text-align: left;"><code v-pre>--insert-stdev</code></td>
 <td style="text-align: center;"><code v-pre>50</code></td>
 <td style="text-align: left;">standard deviation of --distance</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-a</code></td>
+<td style="text-align: center;"><code v-pre>-A</code></td>
 <td style="text-align: left;"><code v-pre>--molecule-attempts</code></td>
 <td style="text-align: center;"><code v-pre>300</code></td>
 <td style="text-align: left;">number of attempts to create a molecule with &lt;70% ambiguous bases before exiting with an error</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-c</code></td>
+<td style="text-align: center;"><code v-pre>-C</code></td>
 <td style="text-align: left;"><code v-pre>--molecule-coverage</code></td>
 <td style="text-align: center;"><code v-pre>0.2</code></td>
 <td style="text-align: left;">mean percent coverage per molecule if &lt;1, else mean number of reads per molecule</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-m</code></td>
+<td style="text-align: center;"><code v-pre>-L</code></td>
 <td style="text-align: left;"><code v-pre>--molecule-length</code></td>
 <td style="text-align: center;"><code v-pre>80000</code></td>
 <td style="text-align: left;">mean length of molecules in bp, drawn from exponential distribution</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-n</code></td>
+<td style="text-align: center;"><code v-pre>-N</code></td>
 <td style="text-align: left;"><code v-pre>--molecules-per</code></td>
 <td style="text-align: center;"><code v-pre>3</code></td>
 <td style="text-align: left;">mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. <code v-pre>-2</code>) will be fixed for that number</td>
 <td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-x</code></td>
-<td style="text-align: left;"><code v-pre>--segments</code></td>
-<td style="text-align: center;"><code v-pre>4</code></td>
-<td style="text-align: left;">treat barcodes as combinatorial with this many segments</td>
-<td style="text-align: left;">see <a href="../data_formats/#linked-read-data-formats">data formats</a> for more information</td>
+<td style="text-align: center;"><code v-pre>-l</code></td>
+<td style="text-align: left;"><code v-pre>--read-lengths</code></td>
+<td style="text-align: center;"><code v-pre>150,150</code></td>
+<td style="text-align: left;">length of R1,R2 reads in bp</td>
+<td style="text-align: left;">each must be &gt;10 and separated by a comma, no spaces</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-s</code></td>
+<td style="text-align: center;"><code v-pre>-S</code></td>
 <td style="text-align: left;"><code v-pre>--singletons</code></td>
 <td style="text-align: center;"><code v-pre>0</code></td>
 <td style="text-align: left;">proportion of barcodes will only have a single read pair</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code v-pre>-v</code></td>
+<td style="text-align: left;"><code v-pre>--vcf</code></td>
+<td style="text-align: center;"></td>
+<td style="text-align: left;">VCF-formatted file containing genotypes from which to create per-sample haplotypes</td>
 <td style="text-align: left;"></td>
 </tr>
 </tbody>
@@ -467,39 +425,6 @@ done</code></pre>
 </doc-anchor-target>
 <p>Running Mimick will always require a barcode specification and at least one input FASTA file.</p>
 <doc-tabs>
-<doc-tab v-cloak id="barcodes">
-<template #title>Barcodes</template>
-<doc-anchor-target id="randomly-generate">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#randomly-generate">#</doc-anchor-trigger>
-        <span>Randomly generate</span>
-    </h3>
-</doc-anchor-target>
-<p>Mimick lets you put in length and count parameters, which it will use to randomly generate barcodes.
-The format is <code v-pre>bp,count</code> (no spaces), where <code v-pre>bp</code> is the base-pair length the barcodes should be and
-<code v-pre>count</code> is how many barcodes it should generate of length <code v-pre>bp</code>. For example, if you specify <code v-pre>16,4000000</code>,
-Mimick will generate 4 million unique 16bp barcodes, effectively mimicking 10X barcodes (see what I did there?).
-Specify that you want to use the barcodes as-is with <code v-pre>-x/--segments 1</code>. Mimick will write a file containing
-the barcodes it generated. In practice, this would look something like:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">randomly generated barcodes</div>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick --segments 1 16,4000000 hap1.fasta hap2.fasta
-#                16bp^ ^4 million barcodes</code></pre>
-</doc-codeblock></div>
-<doc-anchor-target id="specific-barcodes">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#specific-barcodes">#</doc-anchor-trigger>
-        <span>Specific barcodes</span>
-    </h3>
-</doc-anchor-target>
-<p>Alternatively, if you have a set of barcodes you absolutely want to use, just put the filename as the first positional argument.
-In practice, this would look something like:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">barcodes as a file</div>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick --segments 1 barcodes.txt hap1.fasta hap2.fasta
-#                        ^file of barcodes</code></pre>
-</doc-codeblock></div>
-</doc-tab>
 <doc-tab v-cloak id="fasta-files">
 <template #title>FASTA file(s)</template>
 <p>You will need at least 1 fasta file as input, which goes at the very end of the command. If providing more than 1
@@ -508,8 +433,8 @@ There is no strict enforcement of the fasta files being from the same genome, it
 the simulator (but I&#x27;m open to being surprised).</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <div class="codeblock-title">fasta inputs</div>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick --segments 1 16,4000000 hap1.fasta hap2.fasta
-#                   ^barcodes  ^fasta 1   ^fasta 2</code></pre>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick hap1.fasta hap2.fasta
+#      ^fasta 1   ^fasta 2</code></pre>
 </doc-codeblock></div>
 <doc-anchor-target id="circular-dna">
     <h3>
@@ -548,7 +473,7 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 </thead>
 <tbody>
 <tr>
-<td style="text-align: center;"><code v-pre>-C</code></td>
+<td style="text-align: center;"><code v-pre>-c</code></td>
 <td style="text-align: left;"><code v-pre>--circular</code></td>
 <td style="text-align: center;"><code v-pre>False</code></td>
 <td style="text-align: left;">toggle to let Mimick know the input contigs are circular/prokaryotic</td>
@@ -556,26 +481,20 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 <tr>
 <td style="text-align: center;"><code v-pre>-o</code></td>
 <td style="text-align: left;"><code v-pre>--output-prefix</code></td>
-<td style="text-align: center;"><code v-pre>simulated/SIM</code></td>
+<td style="text-align: center;"><code v-pre>simulated/</code></td>
 <td style="text-align: left;">output file prefix</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-O</code></td>
-<td style="text-align: left;"><code v-pre>--output-type</code></td>
+<td style="text-align: center;"><code v-pre>-f</code></td>
+<td style="text-align: left;"><code v-pre>--format</code></td>
 <td style="text-align: center;"><a href="../data_formats/#linked-read-simulation-types">varies</a></td>
 <td style="text-align: left;">output format of FASTQ files</td>
 </tr>
 <tr>
 <td style="text-align: center;"><code v-pre>-q</code></td>
 <td style="text-align: left;"><code v-pre>--quiet</code></td>
-<td style="text-align: center;"><code v-pre>0</code></td>
-<td style="text-align: left;"><code v-pre>0</code> all output, <code v-pre>1</code> no progress bar, <code v-pre>2</code> no output</td>
-</tr>
-<tr>
-<td style="text-align: center;"><code v-pre>-r</code></td>
-<td style="text-align: left;"><code v-pre>--regions</code></td>
-<td style="text-align: center;"></td>
-<td style="text-align: left;">one or more regions to simulate, in BED format</td>
+<td style="text-align: center;"><code v-pre>False</code></td>
+<td style="text-align: left;">toggle to hide progress bar</td>
 </tr>
 <tr>
 <td style="text-align: center;"><code v-pre>-S</code></td>
@@ -589,6 +508,12 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 <td style="text-align: center;"><code v-pre>2</code></td>
 <td style="text-align: left;">number of threads to use for simulation</td>
 </tr>
+<tr>
+<td style="text-align: center;"><code v-pre>-v</code></td>
+<td style="text-align: left;"><code v-pre>--vcf</code></td>
+<td style="text-align: center;"></td>
+<td style="text-align: left;">VCF-formatted file containing genotypes from which to create per-sample haplotypes</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -601,73 +526,6 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 <p>Mimick lets you specify different output fastq types regardless of the intended linked-read
 simulation type. See <a href="../data_formats/">Data Formats</a> for more information.</p>
 </doc-tab>
-<doc-tab v-cloak id="fastq-simulation-with-pywgsim">
-<template #title>FASTQ simulation with pywgsim</template>
-<p>These options govern how <code v-pre>wgsim</code> will simulate FASTQ files from genomic regions. These are no short names for
-these options.</p>
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="compact">
-<thead>
-<tr>
-<th style="text-align: left;">name</th>
-<th style="text-align: center;">default</th>
-<th style="text-align: left;">description</th>
-<th style="text-align: left;">notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code v-pre>--coverage</code></td>
-<td style="text-align: center;"><code v-pre>30</code></td>
-<td style="text-align: left;">mean coverage target for simulated data</td>
-<td style="text-align: left;"></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>--distance</code></td>
-<td style="text-align: center;"><code v-pre>500</code></td>
-<td style="text-align: left;">outer distance between the two ends in bp</td>
-<td style="text-align: left;">must be &gt;<code v-pre>--length</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>--error</code></td>
-<td style="text-align: center;"><code v-pre>0.02</code></td>
-<td style="text-align: left;">base error rate</td>
-<td style="text-align: left;">must be between 0-1, will be fixed for this value</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>--extindels</code></td>
-<td style="text-align: center;"><code v-pre>0.25</code></td>
-<td style="text-align: left;">indels extension rate</td>
-<td style="text-align: left;">must be between 0-1</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>--indels</code></td>
-<td style="text-align: center;"><code v-pre>0.15</code></td>
-<td style="text-align: left;">indels creation rate</td>
-<td style="text-align: left;">must be between 0-1</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>--lengths</code></td>
-<td style="text-align: center;"><code v-pre>150,150</code></td>
-<td style="text-align: left;">lengths of R1,R2 reads in bp</td>
-<td style="text-align: left;">each must be &gt;10 and separated by a comma, no spaces</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>--mutation</code></td>
-<td style="text-align: center;"><code v-pre>0.001</code></td>
-<td style="text-align: left;">mutation rate</td>
-<td style="text-align: left;">must be between 0-1</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>--stdev</code></td>
-<td style="text-align: center;"><code v-pre>50</code></td>
-<td style="text-align: left;">standard deviation of --distance</td>
-<td style="text-align: left;"></td>
-</tr>
-</tbody>
-</table>
-</div>
-</doc-tab>
 <doc-tab v-cloak id="linked-read-simulation">
 <template #title>Linked-read simulation</template>
 <p>These are the options available specific to linked-read parameters, such as the average molecule length, etc.</p>
@@ -679,44 +537,79 @@ these options.</p>
 <th style="text-align: left;">long name</th>
 <th style="text-align: center;">default</th>
 <th style="text-align: left;">description</th>
+<th style="text-align: left;">notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: center;"><code v-pre>-a</code></td>
+<td style="text-align: center;"></td>
+<td style="text-align: left;"><code v-pre>FASTA</code></td>
+<td style="text-align: center;"></td>
+<td style="text-align: left;">input fasta file(s)</td>
+<td style="text-align: left;">REQUIRED</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code v-pre>-g</code></td>
+<td style="text-align: left;"><code v-pre>--genomic-coverage</code></td>
+<td style="text-align: center;"><code v-pre>30</code></td>
+<td style="text-align: left;">mean coverage target for simulated data</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code v-pre>-i</code></td>
+<td style="text-align: left;"><code v-pre>--insert-size</code></td>
+<td style="text-align: center;"><code v-pre>500</code></td>
+<td style="text-align: left;">outer distance between the two ends in bp</td>
+<td style="text-align: left;">must be &gt;<code v-pre>--read-lengths</code></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code v-pre>-d</code></td>
+<td style="text-align: left;"><code v-pre>--insert-stdev</code></td>
+<td style="text-align: center;"><code v-pre>50</code></td>
+<td style="text-align: left;">standard deviation of --distance</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code v-pre>-A</code></td>
 <td style="text-align: left;"><code v-pre>--molecule-attempts</code></td>
 <td style="text-align: center;"><code v-pre>300</code></td>
 <td style="text-align: left;">number of attempts to create a molecule with &lt;70% ambiguous bases before exiting with an error</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-c</code></td>
+<td style="text-align: center;"><code v-pre>-C</code></td>
 <td style="text-align: left;"><code v-pre>--molecule-coverage</code></td>
 <td style="text-align: center;"><code v-pre>0.2</code></td>
-<td style="text-align: left;">mean percent coverage per molecule if &lt;1, else mean number of reads per molecule&#x27;</td>
+<td style="text-align: left;">mean percent coverage per molecule if &lt;1, else mean number of reads per molecule</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-m</code></td>
+<td style="text-align: center;"><code v-pre>-L</code></td>
 <td style="text-align: left;"><code v-pre>--molecule-length</code></td>
 <td style="text-align: center;"><code v-pre>80000</code></td>
-<td style="text-align: left;">mean length of molecules in bp&#x27;</td>
+<td style="text-align: left;">mean length of molecules in bp, drawn from exponential distribution</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-n</code></td>
+<td style="text-align: center;"><code v-pre>-N</code></td>
 <td style="text-align: left;"><code v-pre>--molecules-per</code></td>
 <td style="text-align: center;"><code v-pre>3</code></td>
-<td style="text-align: left;">mean number of unrelated molecules per barcode, where a negative number (e.g. <code v-pre>-2</code>) will use a fixed number of unrelated molecules and a positive one will draw from a Normal distribution</td>
+<td style="text-align: left;">mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. <code v-pre>-2</code>) will be fixed for that number</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-x</code></td>
-<td style="text-align: left;"><code v-pre>--segments</code></td>
-<td style="text-align: center;"><code v-pre>4</code></td>
-<td style="text-align: left;">treat barcodes as combinatorial with this many segments</td>
+<td style="text-align: center;"><code v-pre>-l</code></td>
+<td style="text-align: left;"><code v-pre>--read-lengths</code></td>
+<td style="text-align: center;"><code v-pre>150,150</code></td>
+<td style="text-align: left;">length of R1,R2 reads in bp</td>
+<td style="text-align: left;">each must be &gt;10 and separated by a comma, no spaces</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code v-pre>-s</code></td>
+<td style="text-align: center;"><code v-pre>-S</code></td>
 <td style="text-align: left;"><code v-pre>--singletons</code></td>
 <td style="text-align: center;"><code v-pre>0</code></td>
 <td style="text-align: left;">proportion of barcodes will only have a single read pair</td>
+<td style="text-align: left;"></td>
 </tr>
 </tbody>
 </table>

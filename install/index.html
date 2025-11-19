@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/mimick">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.816812462818">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.816905477499">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -32,11 +32,12 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link href="../static/mimick_icon.png" rel="icon">
-    <link href="../resources/css/retype.css?v=3.11.0.816812462818" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=3.11.0.816905477499" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.816812462818" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.816905477499" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.816812462818" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.816905477499" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.816905477499" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -56,7 +57,7 @@
                                 <img class="max-h-10 dark:hidden md:inline-block" src="../static/mimick_logo.png">
                                 <img class="max-h-10 hidden dark:inline-block" src="../static/mimick_logo.png">
                             </span>
-                        </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v2.3</span>
+                        </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v3.0</span>
                     </div>
         
                     <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
@@ -290,6 +291,12 @@ a new conda environment and install Mimick into it using one command:</p>
 <div class="codeblock-title">local environment</div>
 <pre translate="no" class="language-none"><code v-pre class="language-none">conda create -p path/to/workdir/mimick -c bioconda -c conda-forge mimick</code></pre>
 </doc-codeblock></div>
+<p>Then, run the install script provided by Mimick itself, which will install the internally-bundled MimickLinkedReads.jl
+Julia package.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash"># activate environment with mimick...
+install_mimick</code></pre>
+</doc-codeblock></div>
 <doc-anchor-target id="using-with-conda">
     <h3>
         <doc-anchor-trigger class="header-anchor-trigger" to="#using-with-conda">#</doc-anchor-trigger>
@@ -316,6 +323,11 @@ a new conda environment and install Mimick into it using one command:</p>
 <div class="codeblock-title">you&#x27;re not in the environment</div>
 <pre translate="no" class="language-none"><code v-pre class="language-none">conda update -n env_name -c conda-forge bioconda::mimick</code></pre>
 </doc-codeblock></div>
+<p>Because of the Julia package backend, you will need to reinstall the Julia package:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash"># activate environment with mimick...
+install_mimick</code></pre>
+</doc-codeblock></div>
 </doc-tab>
 <doc-tab v-cloak id="pixi">
 <template #title>pixi</template>
@@ -325,17 +337,6 @@ a new conda environment and install Mimick into it using one command:</p>
         <span>Install with pixi</span>
     </h3>
 </doc-anchor-target>
-<p>Pixi is a new ultra-fast Rust-based environment manager much like conda is. If you haven&#x27;t tried it out, you ought to give it a shot.
-With it, you can install Mimick to be accessible in your PATH, i.e. a &quot;global&quot; installation:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">global install</div>
-<pre translate="no" class="language-none"><code v-pre class="language-none">pixi global install -c conda-forge -c bioconda mimick</code></pre>
-</doc-codeblock></div>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">local install</div>
-<pre translate="no" class="language-none"><code v-pre class="language-none">pixi init -c conda-forge -c bioconda projectname &amp;&amp; cd projectname
-pixi add mimick</code></pre>
-</doc-codeblock></div>
 <div class="flex mb-6">
     <div class="shrink-0 w-1.5 rounded-tl-lg rounded-bl-lg bg-callout-warning"></div>
     <div class="flex w-full py-4 border border-l-0 rounded-tr-lg rounded-br-lg doc-callout bg-callout-base-bg border-callout-base-border" role="alert">
@@ -348,53 +349,11 @@ pixi add mimick</code></pre>
             </svg>
         </div>
         <div class="pr-5 ml-3 w-full">
-<p>Make sure <code v-pre>~/.pixi/bin</code> is in your PATH using <code v-pre>export PATH=~/.pixi/bin:$PATH</code></p>
+<p>Julia does not install correctly when using Pixi. <strong>Do not use this method.</strong></p>
+<p>See <a href="https://discourse.julialang.org/t/managing-julia-versions-using-pixi/116165/12" class="outbound" target="_blank"><span>here</span><svg xmlns="http://www.w3.org/2000/svg" class="retype-outbound-trigger docs-icon ml-1" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path d="M15.5 2.25a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V4.06l-6.22 6.22a.75.75 0 1 1-1.06-1.06L19.94 3h-3.69a.75.75 0 0 1-.75-.75Z"/><path d="M2.5 4.25c0-.966.784-1.75 1.75-1.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.25.25 0 0 0-.25.25v15.5c0 .138.112.25.25.25h15.5a.25.25 0 0 0 .25-.25v-8.5a.75.75 0 0 1 1.5 0v8.5a1.75 1.75 0 0 1-1.75 1.75H4.25a1.75 1.75 0 0 1-1.75-1.75V4.25Z"/></g></svg></a> for more information</p>
         </div>
     </div>
 </div>
-<doc-anchor-target id="using-with-pixi">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#using-with-pixi">#</doc-anchor-trigger>
-        <span>Using with pixi</span>
-    </h3>
-</doc-anchor-target>
-<p>If installed globally, this is very similar to the conda installation:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">install globally</div>
-<pre translate="no" class="language-none"><code v-pre class="language-none">mimick options... args...</code></pre>
-</doc-codeblock></div>
-<p>If you installed Mimick locally using Pixi, you can do one of two things:</p>
-<ol>
-<li>activate the pixi shell in the directory you installed it into, then run <code v-pre>mimick</code>:</li>
-</ol>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">installed locally and activate environment</div>
-<pre translate="no" class="language-none"><code v-pre class="language-none">pixi shell
-mimick options... args...</code></pre>
-</doc-codeblock></div>
-<ol start="2">
-<li>be in the directory you installed Mimick into and call it with <code v-pre>pixi run mimick</code> instead of just <code v-pre>mimick</code>:</li>
-</ol>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">installed locally and not activating environment</div>
-<pre translate="no" class="language-none"><code v-pre class="language-none">pixi run mimick options... args...</code></pre>
-</doc-codeblock></div>
-<doc-anchor-target id="updating-with-pixi">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#updating-with-pixi">#</doc-anchor-trigger>
-        <span>Updating with pixi</span>
-    </h3>
-</doc-anchor-target>
-<p>Once again, slightly different depending on whether it was installed globally or locally:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">installed globally</div>
-<pre translate="no" class="language-none"><code v-pre class="language-none">pixi global update mimick</code></pre>
-</doc-codeblock></div>
-<div class="codeblock-wrapper"><doc-codeblock>
-<div class="codeblock-title">installed locally</div>
-<pre translate="no" class="language-none"><code v-pre class="language-none">cd path/to/projectdir
-pixi update mimick</code></pre>
-</doc-codeblock></div>
 </doc-tab>
 <doc-tab v-cloak id="pip">
 <template #title>pip</template>
@@ -422,6 +381,12 @@ tar -xvzf mimick.tar.gz</code></pre>
 <div class="codeblock-title">local pip installation</div>
 <pre translate="no" class="language-none"><code v-pre class="language-none">cd mimick
 pip install .</code></pre>
+</doc-codeblock></div>
+<p>Then, run the install script provided by Mimick itself, which will install the internally-bundled MimickLinkedReads.jl
+Julia package.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash"># activate environment with mimick...
+install_mimick</code></pre>
 </doc-codeblock></div>
 <doc-anchor-target id="using-with-pip">
     <h3>
@@ -508,6 +473,6 @@ pip install .</code></pre>
 
     <div id="retype-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "Installing Mimick", level: 1, icon: "file", hasPrism: false, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "Installing Mimick", level: 1, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>

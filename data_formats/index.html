@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/mimick">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.816812462818">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.816905477499">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -32,12 +32,12 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link href="../static/mimick_icon.png" rel="icon">
-    <link href="../resources/css/retype.css?v=3.11.0.816812462818" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=3.11.0.816905477499" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.816812462818" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.816905477499" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.816812462818" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.816812462818" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.816905477499" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.816905477499" defer></script>
     <link href="../resources/css/katex.css?v=3.11.0" rel="stylesheet">
     <script id="katex-js" data-cfasync="false" src="../resources/js/katex.js?v=3.11.0" defer></script>
 </head>
@@ -59,7 +59,7 @@
                                 <img class="max-h-10 dark:hidden md:inline-block" src="../static/mimick_logo.png">
                                 <img class="max-h-10 hidden dark:inline-block" src="../static/mimick_logo.png">
                             </span>
-                        </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v2.3</span>
+                        </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v3.0</span>
                     </div>
         
                     <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
@@ -273,39 +273,42 @@ input and output linked-read types.</p>
         <span>Linked-read simulation types</span>
     </h2>
 </doc-anchor-target>
-<p>You can specify the linked-read barcode chemistry to simulate using the combination of <code v-pre>--lengths</code>, <code v-pre>--segments</code> and
-<code v-pre>--output-type</code>. For example, you can generate 96 6bp barcodes (common haplotagging style), select <code v-pre>--segments 3</code>
-(combinatorial 3-barcode, the stLFR style), and have <code v-pre>--output-type tellseq</code> (<code v-pre>@seqid:barcode</code> header format).</p>
+<p>You can specify the linked-read barcode chemistry to simulate using the combination of <code v-pre>--read-lengths</code>, and
+<code v-pre>--format</code>. For example, you can simulate the common stLFR style (combinatorial 3-barcode on R2)
+with <code v-pre>--format stlfr</code> and <code v-pre>--read-lengths 150,108</code>. You can also mix-match these options, such as
+<code v-pre>--format haplotagging --read-lengths 134,150</code> (<code v-pre>@seqid:barcode</code> header format).</p>
 <p>The table below serves as a guide for the configurations for the common linked-read varieties:</p>
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="compact">
 <thead>
 <tr>
 <th style="text-align: left;">Chemistry</th>
-<th style="text-align: center;"><code v-pre>--segments</code></th>
-<th style="text-align: center;"><code v-pre>--lengths</code></th>
+<th style="text-align: center;"><code v-pre>--read-lengths</code></th>
 <th style="text-align: left;">Format</th>
-<th style="text-align: left;"><code v-pre>--output-type</code> default</th>
+<th style="text-align: left;">barcode <code v-pre>--format</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">10x/tellseq</td>
-<td style="text-align: center;"><code v-pre>1</code></td>
+<td style="text-align: left;">10x</td>
 <td style="text-align: center;"><code v-pre>134,150</code></td>
 <td style="text-align: left;">single barcode on R1</td>
 <td style="text-align: left;"><code v-pre>tellseq</code></td>
 </tr>
 <tr>
+<td style="text-align: left;">tellseq</td>
+<td style="text-align: center;"><code v-pre>132,150</code></td>
+<td style="text-align: left;">single barcode on R1</td>
+<td style="text-align: left;"><code v-pre>tellseq</code></td>
+</tr>
+<tr>
 <td style="text-align: left;">haplotagging</td>
-<td style="text-align: center;"><code v-pre>4</code></td>
 <td style="text-align: center;"><code v-pre>150,150</code></td>
 <td style="text-align: left;">I1 and I2 each with combinatorial 2-barcodes</td>
 <td style="text-align: left;"><code v-pre>standard:haplotagging</code></td>
 </tr>
 <tr>
 <td style="text-align: left;">stlfr</td>
-<td style="text-align: center;"><code v-pre>3</code></td>
 <td style="text-align: center;"><code v-pre>150,108</code></td>
 <td style="text-align: left;">combinatorial 3-barcode on R2</td>
 <td style="text-align: left;"><code v-pre>stlfr</code></td>
@@ -314,9 +317,8 @@ input and output linked-read types.</p>
 </table>
 </div>
 <p>The simulation process never actually includes the barcodes in the reads, so the read lengths you
-specify with <code v-pre>--lengths</code> will be the <strong>final demultiplexed read lengths</strong> (this means <code v-pre>--output-type 10x</code> will
-have a longer R1 to add the barcode inline). Unlike 10x and tellseq, which use barcodes directly,
-you need far fewer barcodes as input for haplotagging and stlfr. For example, standard haplotagging uses 96
+specify with <code v-pre>--lengths</code> will be the <strong>final demultiplexed read lengths</strong>. Unlike 10x and tellseq, which use barcodes directly,
+far fewer unique barcodes are needed for the combinatorial chemistries (haplotagging and stlfr). For example, standard haplotagging uses 96
 barcodes per segment and standard stlfr uses 1537 barcodes per segment. Haplotagging will make <span class="math">N^4</span> barcode combinations,
 whereas stLFR will make <span class="math">N^3</span> combinations.</p>
 <doc-anchor-target id="linked-read-output-types">
@@ -328,16 +330,15 @@ whereas stLFR will make <span class="math">N^3</span> combinations.</p>
 <p>Like discussed above, there are <em>options</em> for how the resulting linked-read data can look. Why would you want one
 format over another? Well, it could be personal preference or the software you want to use is configured for a very
 specific format (which is a <strong>problem</strong> for the linked-read ecosystem). Regardless of the <em>kind</em> of linked-read
-experiment you are trying to do, you can specify any of the linked-read types as the output format with <code v-pre>--output-type</code>.
+experiment you are trying to do, you can specify any of the linked-read types as the output format with <code v-pre>--format</code>.
 You can suffix <code v-pre>standard</code> with <code v-pre>:haplotagging</code> or <code v-pre>:stlfr</code> (e.g. <code v-pre>standard:stlfr</code>) to output the standard format
 with that kind of barcode encoding style, otherwise <code v-pre>standard</code> (no suffix) will use the nucleotide barcode.</p>
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="compact">
 <thead>
 <tr>
-<th style="text-align: left;">--output-type</th>
+<th style="text-align: left;">--format</th>
 <th style="text-align: left;">Barcode Location</th>
-<th style="text-align: center;">default for</th>
 <th style="text-align: left;">Example</th>
 </tr>
 </thead>
@@ -345,31 +346,26 @@ with that kind of barcode encoding style, otherwise <code v-pre>standard</code> 
 <tr>
 <td style="text-align: left;"><code v-pre>10x</code></td>
 <td style="text-align: left;">start of R1 sequence</td>
-<td style="text-align: center;"></td>
 <td style="text-align: left;"><code v-pre>ATAGACCATAGA</code>GGACA...</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code v-pre>haplotagging</code></td>
 <td style="text-align: left;">sequence header as <code v-pre>BX:Z:ACBD</code></td>
-<td style="text-align: center;"></td>
 <td style="text-align: left;"><code v-pre>@SEQID BX:Z:A0C331B34D87</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code v-pre>standard[:...]</code></td>
 <td style="text-align: left;">sequence header as <code v-pre>BX:Z:BARCODE VX:i:N</code></td>
-<td style="text-align: center;">all others</td>
 <td style="text-align: left;"><code v-pre>@SEQID BX:Z:ATACGAGACA</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code v-pre>stlfr</code></td>
 <td style="text-align: left;">appended to sequence ID via <code v-pre>#1_2_3</code></td>
-<td style="text-align: center;"><code v-pre>-x 3</code></td>
 <td style="text-align: left;"><code v-pre>@SEQID#1_354_39</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code v-pre>tellseq</code></td>
 <td style="text-align: left;">appended to sequence ID via <code v-pre>:ATCG</code></td>
-<td style="text-align: center;"><code v-pre>-x 1</code></td>
 <td style="text-align: left;"><code v-pre>@SEQID:TATTAGCAC</code></td>
 </tr>
 </tbody>
@@ -381,11 +377,7 @@ with that kind of barcode encoding style, otherwise <code v-pre>standard</code> 
         <span>Proper read pairing</span>
     </h2>
 </doc-anchor-target>
-<p>A consideration for downstream application using the simulated linked reads is that you might need to
-make sure the paired-end reads are properly paired, since Mimick does not enforce validating proper
-read pairs from <code v-pre>wgsim</code>. Sometimes software gets fussy when it expects proper (synchronized) reads pairs
-and doesn&#x27;t get them, like <code v-pre>bwa</code>, for example. Often times the reads are already properly paired and this isn&#x27;t
-a concern. If you need to ensure proper pairing, a quick way to do it is using <code v-pre>seqkit</code> (or similar):</p>
+<p>Mimick should properly pair reads, but in the event you need to do that manually, you can use <code v-pre>seqkit</code>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash"># if the forward/reverse specification is the /1 /2 format
 seqkit pair --id-regexp '^(\S+)\/[12]' -1 sample_0${i}.R1.fq.gz -2 sample_0${i}.R2.fq.gz
