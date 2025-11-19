@@ -26,6 +26,13 @@ conda create -n mimick -c bioconda -c conda-forge mimick
 conda create -p path/to/workdir/mimick -c bioconda -c conda-forge mimick
 ```
 
+Then, run the install script provided by Mimick itself, which will install the internally-bundled MimickLinkedReads.jl
+Julia package.
+```bash
+# activate environment with mimick...
+install_mimick
+```
+
 ### Using with conda
 You'll need to activate the environment you installed Mimick into, then call it with:
 ```run Mimick
@@ -41,48 +48,19 @@ conda update -c conda-forge bioconda::mimick
 conda update -n env_name -c conda-forge bioconda::mimick
 ```
 
+Because of the Julia package backend, you will need to reinstall the Julia package:
+```bash
+# activate environment with mimick...
+install_mimick
+```
+
 +++ pixi
 ### Install with pixi
-Pixi is a new ultra-fast Rust-based environment manager much like conda is. If you haven't tried it out, you ought to give it a shot.
-With it, you can install Mimick to be accessible in your PATH, i.e. a "global" installation:
-```global install
-pixi global install -c conda-forge -c bioconda mimick
-```
-```local install
-pixi init -c conda-forge -c bioconda projectname && cd projectname
-pixi add mimick
-```
-
 !!!warning
- Make sure `~/.pixi/bin` is in your PATH using `export PATH=~/.pixi/bin:$PATH`
+Julia does not install correctly when using Pixi. **Do not use this method.**
+
+See [here](https://discourse.julialang.org/t/managing-julia-versions-using-pixi/116165/12) for more information
 !!!
-
-### Using with pixi
-If installed globally, this is very similar to the conda installation:
-```install globally
-mimick options... args...
-```
-
-If you installed Mimick locally using Pixi, you can do one of two things:
-1. activate the pixi shell in the directory you installed it into, then run `mimick`:
-```installed locally and activate environment
-pixi shell
-mimick options... args...
-```
-2. be in the directory you installed Mimick into and call it with `pixi run mimick` instead of just `mimick`:
-```installed locally and not activating environment
-pixi run mimick options... args...
-```
-
-### Updating with pixi
-Once again, slightly different depending on whether it was installed globally or locally:
-```installed globally
-pixi global update mimick
-```
-```installed locally
-cd path/to/projectdir
-pixi update mimick
-```
 
 +++ pip
 ### Install with pip
@@ -102,6 +80,13 @@ Then, you will need to enter the Mimick directory and do a local `pip` installat
 ```local pip installation
 cd mimick
 pip install .
+```
+
+Then, run the install script provided by Mimick itself, which will install the internally-bundled MimickLinkedReads.jl
+Julia package.
+```bash
+# activate environment with mimick...
+install_mimick
 ```
 
 ### Using with pip

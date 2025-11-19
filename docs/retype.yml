@@ -17,7 +17,7 @@ theme:
     image-rounded: 0.75rem
     nav-item-text-stack: "#1e66f5"
 branding:
-  label: v2.3
+  label: v3.0
   logo: static/mimick_logo.png
   logoDark: static/mimick_logo.png
   logoAlign: left

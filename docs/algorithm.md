@@ -3,6 +3,12 @@ label: Algorithm Overview
 icon: git-compare
 ---
 
+!!!info
+This page currently describes the Mimick v2 algorithm. The Julia-based algorithm of Mimick v3 is similar, but
+doesn't submit anything to wgsim-- it creates the breakpoints itself. Also, the new multi-sample VCF algorithm needs
+to be described separately. In other words, this page **needs to be updated**.
+!!!
+
 # The simulation process
 Or algorithm, if you want to be fancy about it. Note that mentions of "contig" below are synonymous with
 "chromosome" if your input FASTA files are chromosome-scale.
@@ -106,7 +112,7 @@ that are simulated never actually have the bacode on them-- it's only if `--outp
 ### 4: Monitor schema targets
 The number of reads that were generated for every molecule are added to that molecule's source schema to track the number of reads already produced for
 that contig for that haplotype. Once a schema reaches its reads target, that schema will be removed from the list of schema that are randomly sampled
-to determine molecules in [Step 2](#step-2-making-the-molecule-recipes). This ensures that read `--coverage` is honored.
+to determine molecules in [Step 2](#2-making-the-molecule-recipes). This ensures that read `--coverage` is honored.
 
 ### 5: Repeat until all schema read targets are met
 Once there are no more schema left to sample, simulation is done!
