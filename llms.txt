@@ -1,0 +1,6 @@
+﻿#  | Mimick
+
+- [Installing Mimick](https://pdimens.github.io/mimick/install.md): There are three ways you can install Mimick: conda, pixi, pip. Make note of the names of the code blocks, as they describe installation and usage variations.
+- [Using Mimick](https://pdimens.github.io/mimick/usage.md): Use --help or -h or call mimick without arguments to call up the docstring.
+- [The simulation process](https://pdimens.github.io/mimick/algorithm.md): This page currently describes the Mimick v2 algorithm. The Julia-based algorithm of Mimick v3 is similar, but doesn't submit anything to wgsim-- it creates the breakpoints itself.
+- [Linked-Read Data Formats](https://pdimens.github.io/mimick/data_formats.md): Linked-read chemistries continue to evolve and it seems like every new method wants to use their own bespoke convention for putting barcodes in FASTQ files (because that's exactly what's happening, unfortunately).
