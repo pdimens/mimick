@@ -77,19 +77,20 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
     quiet = f"{quiet}".lower()
     if vcf:
         fa = f'"{fasta[0]}"'
-        cmd.append(f'using MimickLinkedReads\n mimick({fa}, "{vcf}", "{fmt}", outdir = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int[{read_lengths}], singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
+        cmd.append(f'using MimickLinkedReads\n mimick({fa}, "{vcf}", "{fmt}", outdir = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
     else:
         fa = "[" + ", ".join(f'"{i}"' for i in fasta) + "]"
         cmd.append(f'using MimickLinkedReads; mimick({fa}, "{fmt}", prefix = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
-        with subprocess.Popen(cmd) as mmk:
-            try:
-                exitcode = mmk.wait()
-                if exitcode != 0:
-                    raise Exception
-            except KeyboardInterrupt:
-                rprint("[yellow]Terminating Mimick")
-            except Exception as e:
-                rprint(f"[red]{e}")
+    
+    with subprocess.Popen(cmd) as mmk:
+        try:
+            exitcode = mmk.wait()
+            if exitcode != 0:
+                raise Exception
+        except KeyboardInterrupt:
+            rprint("[yellow]Terminating Mimick")
+        except Exception as e:
+            rprint(f"[red]{e}")
 
 def pkglist():
     x = subprocess.run(
