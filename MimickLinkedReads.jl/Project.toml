@@ -1,6 +1,6 @@
 name = "MimickLinkedReads"
 uuid = "83862e06-e039-4a9e-a627-fc3a1d1c4f8e"
-version = "3.0.0"
+version = "3.0.2"
 authors = ["pdimens <pdimens@gmail.com> and contributors"]
 
 [deps]

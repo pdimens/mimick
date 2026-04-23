@@ -38,8 +38,8 @@ function mimick(fasta::Vector{String}, format::String; prefix::String = "simulat
     total_reads = sum(i.second.tracker.reads_required for i in pairs(schema))
     current_reads = 0
     progress = Progress(total_reads; dt=0.25, barglyphs=BarGlyphs("[=> ]"), color = :yellow, enabled = !quiet)
-    R1 = BGZFCompressorStream(open("$prefix.R1.fq.gz", "w"), nthreads = div(nthreads(),2))
-    R2 = BGZFCompressorStream(open("$prefix.R2.fq.gz", "w"), nthreads = nthreads() - div(nthreads(),2))
+    R1 = BGZFCompressorStream(open("$prefix.R1.fq.gz", "w"), nthreads = max(1, div(nthreads(),2)))
+    R2 = BGZFCompressorStream(open("$prefix.R2.fq.gz", "w"), nthreads = max(1, nthreads() - div(nthreads(),2)))
     while !isempty(schema)
         candidates = keys(schema)
         n_mol = get_n_molecules(params)

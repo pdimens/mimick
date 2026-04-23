@@ -18,6 +18,10 @@ include("Breakpoints.jl")
 include("ProcessFASTA.jl")
 include("ProcessVariants.jl")
 include("Main.jl")
+
 export mimick
+
+precompile(mimick, (String, String))
+precompile(mimick, (Vector{String}, String))
 
 end

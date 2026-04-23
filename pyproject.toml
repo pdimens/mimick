@@ -14,7 +14,6 @@ requires-python = ">=3.10"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = "GPL-3.0-or-later"
 dependencies = [
-    'juliacall',
     'rich-click>=1.9.3'
 ]
 
@@ -24,6 +23,7 @@ exclude = ["test"]
 
 [project.scripts]
 mimick = "mimick.__main__:mimick"
+install_mimick = "mimick.__main__:mimick_install"
 test_mimick = "mimick.__main__:mimick_test"
 
 [project.urls]
@@ -39,6 +39,6 @@ mimick = { path = ".", editable = true }
 [tool.pixi.tasks]
 
 [tool.pixi.dependencies]
-pyjuliacall = ">=0.9.28,<0.10"
 rich-click = ">=1.9.4,<2"
+juliaup = ">=1.19.9,<2"
 

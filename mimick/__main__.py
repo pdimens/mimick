@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 
-import shutil
 import os
+import subprocess
 import rich_click as click
 from rich import print as rprint
 from .cli_classes import ReadLengths
-
-os.environ['PYTHON_JULIACALL_HANDLE_SIGNALS'] = "yes"
-
-if shutil.which("julia"):
-    os.environ['PYTHON_JULIAPKG_EXE'] = shutil.which("julia")
 
 config = click.RichHelpConfiguration(
     max_width=80,
@@ -73,80 +68,58 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
     | stlfr        |    `150,108`     | 3-barcode on R2      | @SEQID#1_2_3          |
     | tellseq      |    `132,150`     | single barcode on R1 | @SEQID:ATGC           |
     """
-    os.environ['PYTHON_JULIACALL_THREADS'] = f"{threads}"
-    from juliacall import Main as jl
-    try:
-        jl.seval("using MimickLinkedReads")
-    except:
+    if "MimickLinkedReads" not in pkglist():
         mimick_install()
 
     fmt = "tenx" if fmt == "10x" else fmt
+    cmd = ["julia", "--threads", f"{threads}", "-e"]
+    circular = f"{circular}".lower()
+    quiet = f"{quiet}".lower()
+    if vcf:
+        fa = f'"{fasta[0]}"'
+        cmd.append(f'using MimickLinkedReads\n mimick({fa}, "{vcf}", "{fmt}", outdir = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int[{read_lengths}], singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
+    else:
+        fa = "[" + ", ".join(f'"{i}"' for i in fasta) + "]"
+        cmd.append(f'using MimickLinkedReads; mimick({fa}, "{fmt}", prefix = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
+        with subprocess.Popen(cmd) as mmk:
+            try:
+                exitcode = mmk.wait()
+                if exitcode != 0:
+                    raise Exception
+            except KeyboardInterrupt:
+                rprint("[yellow]Terminating Mimick")
+            except Exception as e:
+                rprint(f"[red]{e}")
 
-    try:
-        if vcf:
-            jl.mimick(
-                fasta[0],
-                vcf,
-                fmt,
-                outdir = output_prefix,
-                coverage = genomic_coverage,
-                n_molecules = molecules_per,
-                mol_coverage = molecule_coverage,
-                mol_length = molecule_length,
-                insert_length = insert_size,
-                insert_stdev = insert_stdev,
-                read_length = jl.collect(jl.Int, read_lengths),
-                singletons = singletons,
-                circular = circular,
-                attempts = molecule_attempts,
-                seed = seed,
-                quiet = quiet
-        )
-        else:
-            jl.mimick(
-                jl.collect(fasta),
-                fmt,
-                prefix = output_prefix,
-                coverage = genomic_coverage,
-                n_molecules = molecules_per,
-                mol_coverage = molecule_coverage,
-                mol_length = molecule_length,
-                insert_length = insert_size,
-                insert_stdev = insert_stdev,
-                read_length = jl.collect(jl.Int, read_lengths),
-                singletons = singletons,
-                circular = circular,
-                attempts = molecule_attempts,
-                seed = seed,
-                quiet = quiet
-            )
-    except KeyboardInterrupt:
-        rprint("[yellow]Terminating Mimick")
-    except Exception as e:
-        rprint(f"[red]{e}")
+def pkglist():
+    x = subprocess.run(
+        ["julia", "-e", 'using Pkg; foreach(p -> println(p.name), values(Pkg.dependencies()))'],
+        capture_output=True, text=True
+    )
+    return x.stdout.split()
 
 def mimick_install():
     """Install the Mimick Julia backend"""
-    os.environ['PYTHON_JULIACALL_THREADS'] = "2"
-    from juliacall import Main as jl
     import mimick
     rprint("[magenta]Installing the MimickLinkedreads Julia backend. This typically only needs to happen once.")
     try:
-        jl.seval('using Pkg')
-        #jl.Pkg.develop(path=os.path.join(os.path.dirname(mimick.__path__[0]), "MimickLinkedReads.jl/"))
-        jl.Pkg.develop(path=os.path.join(mimick.__path__[0], "MimickLinkedReads.jl/"))
-        jl.seval('using MimickLinkedReads')
+        mmpath = os.path.join(os.path.dirname(mimick.__path__[0]), "MimickLinkedReads.jl/")
+        subprocess.run([
+            "julia",
+            "--threads", "2",
+            "-e",
+            f'using Pkg; Pkg.develop(path="{mmpath}/"); using MimickLinkedReads'
+        ])
     except Exception as e:
         print("Failed to install MimickLinkedReads.jl. See the Julia error:")
         print(e)
 
 def mimick_test():
     """
-    A simple function to make sure JuliaCall is working properly after a conda installation
+    A simple function to make sure MimickLinkedReads is correctly installed and visible
     """
-    from juliacall import Main as jl
     try:
-        jl.seval("using MimickLinkedReads")
+        subprocess.run(["julia", "-e", "using MimickLinkedReads"])
         print("Success!")
     except Exception as e:
         print(e)
