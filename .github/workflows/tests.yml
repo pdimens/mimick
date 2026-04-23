@@ -31,12 +31,7 @@ jobs:
           pixi-version: v0.56.0
           cache: false
           activate-environment: true
-      - name: Install MimickLinkedReads.jl
-        run: |
-          export PYTHON_JULIACALL_THREADS=2
-          export PYTHON_JULIACALL_HEAP_SIZE_HINT=2G
-          export PYTHON_JULIACALL_HANDLE_SIGNALS=yes
-          python -c 'from juliacall import Main as jl; jl.seval("using Pkg ; Pkg.develop(path=\"./MimickLinkedReads.jl\") ; using MimickLinkedReads")' 
+      - run: pixi run build
 
       - name: Create Test Data
         run: |

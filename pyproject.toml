@@ -37,6 +37,7 @@ platforms = ["linux-64"]
 mimick = { path = ".", editable = true }
 
 [tool.pixi.tasks]
+build = "install_mimick"
 
 [tool.pixi.dependencies]
 rich-click = ">=1.9.4,<2"
