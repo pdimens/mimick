@@ -4,13 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "mimick/**"
   pull_request:
     branches:
       - main
-    paths:
-      - "mimick/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
