@@ -6,15 +6,11 @@ on:
       - main
     paths:
       - "mimick/**"
-    paths-ignore:
-      - 'docs/**'
   pull_request:
     branches:
       - main
     paths:
       - "mimick/**"
-    paths-ignore:
-      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
