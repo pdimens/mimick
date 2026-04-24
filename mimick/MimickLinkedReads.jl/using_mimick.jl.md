@@ -1,4 +1,6 @@
 # Using Mimick's Julia port
+** THESE INSTRUCTIONS ARE DEPRECATED**
+
 These instructions are _for now_.
 
 ## 1. Install Julia

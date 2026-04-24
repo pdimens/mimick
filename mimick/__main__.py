@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 import rich_click as click
 from rich import print as rprint
 from .cli_classes import ReadLengths
@@ -102,9 +103,9 @@ def pkglist():
 def mimick_install():
     """Install the Mimick Julia backend"""
     import mimick
-    rprint("[magenta]Installing the MimickLinkedreads Julia backend. This typically only needs to happen once.")
+    rprint("[magenta]Installing the MimickLinkedreads Julia backend.\nThis typically only needs to happen once.")
     try:
-        mmpath = os.path.join(os.path.dirname(mimick.__path__[0]), "MimickLinkedReads.jl/")
+        mmpath = os.path.join(os.path.dirname(mimick.__path__[0]), "mimick", "MimickLinkedReads.jl/")
         subprocess.run([
             "julia",
             "--threads", "2",
@@ -120,9 +121,21 @@ def mimick_test():
     A simple function to make sure MimickLinkedReads is correctly installed and visible
     """
     try:
-        subprocess.run(["julia", "-e", "using MimickLinkedReads"])
+        rprint("Is MimickLinkedReads.jl installed?", end = " ")
+        if "MimickLinkedReads" not in pkglist():
+            rprint("[yellow]❌\nInstalling MimickLinkedReads.jl")
+            mimick_install()
+        else:
+            rprint("[green]✓")
+        rprint("Does MimickLinkedReads.jl import?", end = " ")
+        cmd = subprocess.run(["julia", "-e", "using MimickLinkedReads"], text = True, capture_output=True)
+        if cmd.returncode != 0:
+            rprint("[yellow]❌")
+            rprint("[red]" + cmd.stderr, end = "")
+            raise Exception
+        rprint("[green]✓")
         print("Success!")
     except Exception as e:
-        print(e)
         print("Failure!")
+        sys.exit(1)
 
