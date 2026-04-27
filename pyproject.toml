@@ -29,6 +29,9 @@ test_mimick = "mimick.__main__:mimick_test"
 [project.urls]
 Homepage = "https://github.com/pdimens/mimick"
 
+[tool.setuptools.package-data]
+mimick = ["**/*"]
+
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64"]
