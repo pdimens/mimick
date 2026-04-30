@@ -36,11 +36,11 @@ generalized for existing options, both in terms of data formats and the simulati
 2. Circular DNA support. Yay prokaryotes!
 3. Mimick provides more parameters to tune your simulations for realistic linked-read library simulation in the form of singletons and 
 molecule coverage. These characteristics are **very** important regarding the performance of a linked-read library.
-4. As of version 2.0, Mimick uses a barcode-first simulation approach, which allows barcodes to be shared **across**
+4. Mimick uses a barcode-first simulation approach (v2+), which allows barcodes to be shared **across**
 chromosomes/contigs **and** haplotypes. This form of barcode sharing is a common phenomenon in real linked-read
 libraries, but a characteristic existing simulators don't capture (e.g. XENIA only allowed barcode sharing within
 a chromosome within a haplotype). The documentation explains this in better detail.
-5. As of version 3.0 (upcoming), it supports multi-sample simulation by way of one FASTA and one VCF as input. Sample haplotypes
+5. It supports multi-sample simulation (v3+) by way of one FASTA and one VCF as input. Sample haplotypes
 are made by applying SNP and indel variants from VCF to the contigs in the FASTA.
 6. It's fast. The Julia version (v3+) is a signficant speedup for single-sample simulation and the multi-sample simulation
 is parallelized across samples.
