@@ -25,7 +25,7 @@ function find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vecto
     range_start = molecule.position.start
     range_end = molecule.position.stop
     range_size = range_end - range_start + 1
-    
+
     # if the lengths are kinda close to the total molecule size, just use them sequentially and skip everything else
     if sum(lengths) > range_size - 200
         @inbounds molecule.read_breakpoints .= cumsum_to_ranges([range_start, lengths...])
@@ -40,9 +40,9 @@ function find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vecto
         while !placed && attempts < max_attempts
             attempts += 1
             start_pos = rand(range_start:last_possible)
-            interval_attempt = start_pos:start_pos + len
+            interval_attempt = start_pos:start_pos+len
             for _interval in occupied_intervals
-                !isempty(intersect(interval_attempt,_interval)) && continue
+                !isempty(intersect(interval_attempt, _interval)) && continue
             end
             @inbounds occupied_intervals[i] = interval_attempt
             placed = true
@@ -66,11 +66,11 @@ mutates `ProcessedMolecule.read_sequences` in place with updated read sequences.
 function extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r1_len::Int, r2_len::Int)
     r1_len -= 1
     r2_len -= 1
-     @fastmath @inbounds for (i,breakpoint) in enumerate(molecule.read_breakpoints)
+    @fastmath @inbounds for (i, breakpoint) in enumerate(molecule.read_breakpoints)
         R1 = circular_index_R2(sequence, breakpoint.start:breakpoint.start+r1_len)
         R2 = circular_index_R1(sequence, (breakpoint.stop-r2_len):breakpoint.stop)
-        if count(==("N"), R1)/r1_len > 0.05 || count(==("N"), R2)/r2_len > 0.05
-            return Vector{Pair{String, String}}(undef, 1)
+        if count(==("N"), R1) / r1_len > 0.05 || count(==("N"), R2) / r2_len > 0.05
+            return Vector{Pair{String,String}}(undef, 1)
             error("Too many Ns")
         end
         @inbounds molecule.read_sequences.first[i] = R1
@@ -83,7 +83,7 @@ end
     n = length(seq)
     @inbounds begin
         if range.stop > n
-            subseq = seq[range.start:end] * seq[begin:(range.stop % n)]
+            subseq = seq[range.start:end] * seq[begin:(range.stop%n)]
         else
             subseq = seq[range]
         end
@@ -119,8 +119,15 @@ a molecule length from an exponential distribution and returns it as an `Int`.
 function get_molecule_size(params::SimParams, seq_len::Int)::Int
     molecule_length = seq_len + 1
     # make sure the molecule is not longer than the sequence
-    while molecule_length > seq_len
+    # attempt getting a molecule size 30x before falling back to
+    # the sequence length
+    attempts = 0
+    while molecule_length > seq_len && attempts < 30
+        attempts += 1
         molecule_length = rand(params.molecule_length)
+    end
+    if molecule_length > seq_len
+        molecule_length = seq_len
     end
     return trunc(Int, molecule_length)
 end
@@ -147,8 +154,8 @@ function calculate_n_frags(params::SimParams, molsize::Int)::Int
         # the number of fragments should be imperfect, so we draw N from an
         # exponential distribution with a minimum set to 2 reads to avoid singletons
         # set ceiling to avoid N being greater than can be sampled
-        @fastmath max_possible = molsize/params.insert_size_buffer
-        _exp = truncated(Exponential(_n), lower = 2.0, upper = max_possible)
+        @fastmath max_possible = molsize / params.insert_size_buffer
+        _exp = truncated(Exponential(_n), lower=2.0, upper=max_possible)
         N = rand(_exp)
     end
     return trunc(Int, N)
@@ -158,7 +165,7 @@ end
     calculate_insert_sizes(params::SimParams, molsize::Int) -> Vector{Int}
 
 Given simulation parameters and molecule size, calculates how many how many inserts
-should be simulated (and their lengths) from the molecule. Returns a `Vector{Int}` of 
+should be simulated (and their lengths) from the molecule. Returns a `Vector{Int}` of
 fragment lengths.
 """
 function calculate_insert_sizes(params::SimParams, molsize::Int)::Vector{Int}
@@ -190,6 +197,8 @@ function get_sequences(schema::Schema, params::SimParams, barcode::String, molec
     i = 0
     # set the max start position to be (length - mol_length) to avoid overflow if not circular
     adjusted_end = params.circular ? seq_len : seq_len - molecule_length
+    start_pos = 0
+    end_pos = 0
 
     while i <= params.attempts && !isassigned(molecule.read_sequences.first, n_frags)
         i += 1
@@ -201,7 +210,7 @@ function get_sequences(schema::Schema, params::SimParams, barcode::String, molec
         extract_sequences!(molecule, schema.sequence, params.length_R1, params.length_R2)
     end
     if !isassigned(molecule.read_sequences.first, n_frags)
-        error("After $attempts attempts, unable to create reads for $(schema.chrom) from molecule spanning $start_pos-$end_pos. This could be due to either a failure to create $N non-overlapping reads or too many N's (ambiguous bases) in the resulting reads.")
+        error("After $params.attempts attempts, unable to create reads for $(schema.chrom) from molecule spanning $start_pos-$end_pos. This could be due to either a failure to create $n_frags non-overlapping reads or too many N's (ambiguous bases) in the resulting reads.")
     end
     return molecule
 end

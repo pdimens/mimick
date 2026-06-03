@@ -5,7 +5,7 @@ Read in a file that might be gzipped. Returns an IO stream.
 """
 function safe_read(filename::String)
     if !isfile(filename)
-        error("$file does not exist.")
+        error("$filename does not exist.")
     end
     try
         readline(GzipDecompressorStream(open(filename, "r")))
@@ -44,7 +44,7 @@ function interperet_format(fmt::String)::Tuple{Symbol,Symbol}
             barcode_format = :tellseq
         end
 
-    elseif fmt ∈ ["stlfr", "haplotagging","tellseq","tenx"]
+    elseif fmt ∈ ["stlfr", "haplotagging", "tellseq", "tenx"]
         out_format = Symbol(fmt)
         barcode_format = Symbol(fmt)
     else
@@ -67,5 +67,5 @@ is_incomplete(schema::Pair{String,Schema})::Bool = schema.second.tracker.reads_c
 Randomly sample a `Distribution` (or `UnitRange`) and return a rounded `Int`.
 """
 @inline get_n_molecules(params::SimParams)::Int = get_n_molecules(params.n_molecules)
-@inline get_n_molecules(dist::Distribution{Univariate, Continuous})::Int = trunc(Int,round(rand(dist), digits = 0))
+@inline get_n_molecules(dist::Distribution{Univariate,Continuous})::Int = trunc(Int, round(rand(dist), digits=0))
 @inline get_n_molecules(dist::UnitRange{Int})::Int = dist.start

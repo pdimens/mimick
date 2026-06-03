@@ -3,7 +3,7 @@ name: Upload Release Tarball
 on:
   push:
     tags:
-    - '*' # Push events of any tag created
+      - "*" # Push events of any tag created
 
 jobs:
   build_tarball:
@@ -20,7 +20,8 @@ jobs:
         # this removes the :latest tag and replaces with versioned container
         run: |
           sed -i "s/0\.0\.0/${{ github.ref_name }}/g" mimick/__main__.py
-          sed -i "s/0\.0\.0/${{ github.ref_name }}/g" pyproject.toml  
+          sed -i "s/0\.0\.0/${{ github.ref_name }}/g" pyproject.toml
+          sed -i "s/0\.0\.0/${{ github.ref_name }}/g" mimick/MimickLinkedReads.jl/Project.toml
       - name: Build project
         # This builds the release tarball, stripped of unneccessary things
         run: |
