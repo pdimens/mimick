@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "7830037b467e3e5b8fffa5e07a3f0317a70e01c1"
+project_hash = "43092534b40877fcdcccfa590e3bebf7763c937a"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -211,7 +211,7 @@ version = "1.11.0"
 deps = ["BioSequences", "CodecBGZF", "CodecZlib", "Distributions", "FASTX", "ProgressMeter", "Random", "VariantCallFormat"]
 path = "."
 uuid = "83862e06-e039-4a9e-a627-fc3a1d1c4f8e"
-version = "3.0.2"
+version = "0.0.0"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
