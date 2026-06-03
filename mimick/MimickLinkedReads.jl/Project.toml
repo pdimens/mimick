@@ -16,6 +16,7 @@ VariantCallFormat = "28eba6e3-a997-4ad9-87c6-d933b8bca6c1"
 [compat]
 BioSequences = "3.5.0"
 CodecBGZF = "0.1.1"
+Distributions = "0.25.125"
 FASTX = "2.1.7"
 ProgressMeter = "1.10.4"
 Random = "1.11.0"
