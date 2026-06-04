@@ -196,10 +196,10 @@ function get_sequences(schema::Schema, params::SimParams, barcode::String, molec
     seq_len = length(schema.sequence)
     i = 0
     # set the max start position to be (length - mol_length) to avoid overflow if not circular
-    adjusted_end = params.circular ? seq_len : seq_len - molecule_length
+    # it has to be at least 1 so rand(1:adjusted_end) never fails
+    adjusted_end = params.circular ? seq_len : max(seq_len - molecule_length,1)
     start_pos = 0
     end_pos = 0
-
     while i <= params.attempts && !isassigned(molecule.read_sequences.first, n_frags)
         i += 1
         start_pos = rand(1:adjusted_end)

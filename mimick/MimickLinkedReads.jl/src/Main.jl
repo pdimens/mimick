@@ -1,7 +1,7 @@
 """
     mimick(fasta::Vector{String}, format::String; kwargs...) -> Nothing
 
-The wrapper function that simulates linked-reads in a given `format` for a single sample using the input haplotypes provided as a Vector to `fasta`.
+The wrapper function that simulates linked-reads in a given `format` for a single sample using the input Vector of `fasta` haplotypes.
 Writes one pair of R1 and R2 reads. The `format` is expected to be one of `"haplotagging"`, `"stlfr"`, `"tellseq"`, `"tenx"`, `"standard"`,
 `"standard:haplotagging"`, `"standard:stlfr"`
 
@@ -48,6 +48,7 @@ function mimick(fasta::Vector{String}, format::String; prefix::String="simulated
             molsize = get_molecule_size(params, length(schema[target].sequence))
             frags = calculate_insert_sizes(params, molsize)
             molecule = get_sequences(schema[target], params, get_next!(barcodes), molsize, frags)
+            #println(molecule)
             write(R1, format_R1(fq_fmt, molecule))
             write(R2, format_R2(fq_fmt, molecule))
             schema[target].tracker.reads_current += length(frags)
