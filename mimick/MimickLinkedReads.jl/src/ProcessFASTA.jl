@@ -66,7 +66,7 @@ function setup_schema(fasta_files::Vector{String}, coverage::Union{Int,Float64},
     end
     for i in values(d)
         if i.sequence.len <= mol_length
-            @info "Contigs with lengths <= $mol_length (mean molecule length) will have likely result in molecules that span the entire contig."
+            @info "Contigs with lengths <= $mol_length (mean molecule length) will likely result in molecules that span the entire contig."
             break
         end
     end
