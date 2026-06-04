@@ -26,7 +26,7 @@ config = click.RichHelpConfiguration(
 @click.option_panel(
     "General Options",
     options = ["--circular", "--output-prefix", "--quiet", "threads", "--seed", "--vcf", "--version", "--help"],
-    title_style="yellow" 
+    title_style="yellow"
 )
 @click.option_panel(
     "Linked-Read Simulation",
@@ -82,8 +82,9 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
     else:
         fa = "[" + ", ".join(f'"{i}"' for i in fasta) + "]"
         cmd.append(f'using MimickLinkedReads; mimick({fa}, "{fmt}", prefix = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
-    
+
     with subprocess.Popen(cmd) as mmk:
+        exitcode = 0
         try:
             exitcode = mmk.wait()
             if exitcode != 0:
@@ -92,6 +93,9 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
             rprint("[yellow]Terminating Mimick")
         except Exception as e:
             rprint(f"[red]{e}")
+        finally:
+            if exitcode != 0:
+                sys.exit(1)
 
 def pkglist():
     x = subprocess.run(
@@ -138,4 +142,3 @@ def mimick_test():
     except Exception as e:
         print("Failure!")
         sys.exit(1)
-
