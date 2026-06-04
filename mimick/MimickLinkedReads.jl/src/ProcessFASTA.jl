@@ -45,34 +45,30 @@ function process_fasta(fasta::String, haplotype::Int, coverage::Float64, read_le
 end
 
 """
-`setup_schema(fasta_files::Vector{String}, coverage::Union{Int,Float64}, read_len::Vector{Int})`
-`setup_schema(fasta_file::String, coverage::Union{Int,Float64}, read_len::Vector{Int})`
+`setup_schema(fasta_files::Vector{String}, coverage::Union{Int,Float64}, read_len::Vector{Int}, mol_length::Int)`
+`setup_schema(fasta_file::String, coverage::Union{Int,Float64}, read_len::Vector{Int}, mol_length::Int)`
 
 Iterate through input `fasta_files` or `fasta_file` to return a `Dict` of `Schema`. If given
 a single FASTA input, all Schema will have `.haplotype` set to `0`. If given a Vector of FASTA
 files, will encode the haplotypes based on order provided, along with having the haplotype suffixing
-the key with an underscore (e.g. `chr1_1 => Schema`, `chr1_2 => Schema`, etc.)
+the key with an underscore (e.g. `chr1_1 => Schema`, `chr1_2 => Schema`, etc.). `mol_length` is used
+to check sequence length and output a notice about handling contigs smaller than specific mean molecule length.
 """
-setup_schema(fasta_files::Vector{String}, coverage::Int, read_len::Vector{Int})::Dict{String,Schema} = setup_schema(fasta_files, Float64(coverage), read_len)
-function setup_schema(fasta_files::Vector{String}, coverage::Float64, read_len::Vector{Int})::Dict{String,Schema}
+setup_schema(fasta_file::String, coverage::Union{Int,Float64}, read_len::Vector{Int}, mol_length::Int)::Dict{String,Schema} = setup_schema(String[fasta_file], Float64(coverage), read_len, mol_length)
+setup_schema(fasta_files::Vector{String}, coverage::Int, read_len::Vector{Int}, mol_length::Int)::Dict{String,Schema} = setup_schema(fasta_files, Float64(coverage), read_len, mol_length)
+function setup_schema(fasta_files::Vector{String}, coverage::Union{Int,Float64}, read_len::Vector{Int}, mol_length::Int)::Dict{String,Schema}
     d = Dict{String,Schema}()
     @inbounds for (i, j) in enumerate(fasta_files)
-        schemas = process_fasta(j, i, coverage, read_len)
+        schemas = process_fasta(j, i, Float64(coverage), read_len)
         @simd for _schema in schemas
             d[join([_schema.chrom, _schema.haplotype], "_")] = _schema
         end
-        #rm(j * ".fai", force=true)
     end
-    return d
-end
-
-setup_schema(fasta_file::String, coverage::Int, read_len::Vector{Int})::Dict{String,Schema} = setup_schema(fasta_file, Float64(coverage), read_len)
-function setup_schema(fasta_file::String, coverage::Float64, read_len::Vector{Int})::Dict{String,Schema}
-    d = Dict{String,Schema}()
-    schemas = process_fasta(fasta_file, 0, coverage, read_len)
-    @simd for _schema in schemas
-        d[_schema.chrom] = _schema
+    for i in values(d)
+        if i.sequence.len <= mol_length
+            @info "Contigs with lengths <= $mol_length (mean molecule length) will have likely result in molecules that span the entire contig."
+            break
+        end
     end
-    #rm(fasta_file * ".fai", force=true)
     return d
 end

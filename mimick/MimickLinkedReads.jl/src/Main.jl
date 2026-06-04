@@ -30,13 +30,7 @@ function mimick(fasta::Vector{String}, format::String; prefix::String="simulated
         @info "Only 1 read length was provided. Using it for both R1 and R2 read lengths"
         read_length = [read_length, read_length]
     end
-    schema = setup_schema(fasta, coverage, read_length)
-    for i in schema
-        if i.sequence.len <= mol_length
-            @info "Contigs with lengths <= $mol_length (mean molecule length) will have likely result in molecules that span the entire contig."
-            break
-        end
-    end
+    schema = setup_schema(fasta, coverage, read_length, mol_length)
     bc_fmt, fq_fmt = interperet_format(format)
     barcodes = setup_barcodes(bc_fmt)
     params = SimParams(prefix, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular=circular, attempts=attempts)
@@ -93,7 +87,7 @@ function mimick(fasta::String, vcf::String, format::String; outdir::String="simu
     if seed >= 0
         Random.seed!(seed)
     end
-    master_schema = setup_schema(fasta, coverage, read_length)
+    master_schema = setup_schema(fasta, coverage, read_length, mol_length)
     params = SimParams(outdir, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular=circular, attempts=attempts)
     bc_fmt, fq_fmt = interperet_format(format)
     if endswith(lowercase(vcf), "bcf")
