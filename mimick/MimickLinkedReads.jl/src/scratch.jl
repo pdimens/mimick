@@ -1,5 +1,5 @@
 mimick(
-    ["test/hap1.fa", "test/hap2.fa"],
+    ["test/hap1.fa.gz", "test/hap2.fa.gz"],
     "tenx",
     prefix = "simulated/SIM",
     coverage = 100,
