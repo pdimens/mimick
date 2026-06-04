@@ -21,7 +21,7 @@ include("Main.jl")
 
 export mimick
 
-precompile(mimick, (String, String))
+precompile(mimick, (String, String, String))
 precompile(mimick, (Vector{String}, String))
 
 end
