@@ -115,6 +115,7 @@ end
 
 Given the length of a contig/interval and simulation parameters, randomly draws
 a molecule length from an exponential distribution and returns it as an `Int`.
+Caps the molecule to the size of the contig if average molecule size > contig length.
 """
 function get_molecule_size(params::SimParams, seq_len::Int)::Int
     molecule_length = seq_len + 1
@@ -143,20 +144,24 @@ function calculate_n_frags(params::SimParams, molsize::Int)::Int
     if params.singletons > 0.0 && rand() <= params.singletons
         N = 1.0
     else
-        if params.molecule_coverage < 1
-            # set a minimum number of 2 reads to avoid singletons
-            @fastmath exact_inserts = (molsize * params.molecule_coverage) / params.insert_size_buffer
-            _n = max(2.0, exact_inserts)
-        else
-            # molecule coverage given as an integer, convert to float
-            _n = Float64(params.molecule_coverage)
-        end
-        # the number of fragments should be imperfect, so we draw N from an
-        # exponential distribution with a minimum set to 2 reads to avoid singletons
-        # set ceiling to avoid N being greater than can be sampled
         @fastmath max_possible = molsize / params.insert_size_buffer
-        _exp = truncated(Exponential(_n), lower=2.0, upper=max_possible)
-        N = rand(_exp)
+        if max_possible == 1
+            N = 1.0
+        else
+            if params.molecule_coverage < 1
+                # set a minimum number of 2 reads to avoid singletons
+                @fastmath exact_inserts = (molsize * params.molecule_coverage) / params.insert_size_buffer
+                _n = max(2.0, exact_inserts)
+            else
+                # molecule coverage given as an integer, convert to float
+                _n = Float64(params.molecule_coverage)
+            end
+            # the number of fragments should be imperfect, so we draw N from an
+            # exponential distribution with a minimum set to 2 reads to avoid singletons
+            # set ceiling to avoid N being greater than can be sampled
+            _exp = truncated(Exponential(_n), lower=2.0, upper=max_possible)
+            N = rand(_exp)
+        end
     end
     return trunc(Int, N)
 end
@@ -164,7 +169,7 @@ end
 """
     calculate_insert_sizes(params::SimParams, molsize::Int) -> Vector{Int}
 
-Given simulation parameters and molecule size, calculates how many how many inserts
+Given simulation parameters and molecule size, calculates how many inserts
 should be simulated (and their lengths) from the molecule. Returns a `Vector{Int}` of
 fragment lengths.
 """
@@ -176,6 +181,7 @@ function calculate_insert_sizes(params::SimParams, molsize::Int)::Vector{Int}
         attempts += 1
         read_sizes = rand(params.insert_size, n_reads)
     end
+    #TODO there should be some kind of tolerant conditional here for small contigs
     if sum(read_sizes) > molsize
         error("FAILED TO FIND PRACTICAL READ SIZES LESS THAN MOLECULE.\nMolecule Length: $molsize\nRead Lengths: $read_sizes\nTotal Insert Length:$(sum(read_sizes))")
     end
