@@ -14,13 +14,13 @@ Writes one pair of R1 and R2 reads. The `format` is expected to be one of `"hapl
 - insert_length: `Int` of average length of inserts (molecule fragments) from which sequences are generated (default: `500`)
 - insert_stdev: `Int` of standard deviation of `insert_length` (default: `50`)
 - read_length: `Vector{Int}` of [R1,R2] read lengths in bp (default: `[150,150]`)
-- singletons: `Float64` if the proportion of barcodes that will have only one read pair (default: `0.35`)
+- singletons: `Float64` if the proportion of barcodes that will have only one read pair (default: `0.70`)
 - circular: `Bool` of whether to treat input FASTA contigs as circular DNA when simulating molecules (default: `false`)
 - attempts: `Int` of how many times to attempt creating a feasible molecule for a barcode before terminating with an error (default: `25`)
 - seed: `Int` of seed for randomization. Numbers >=0 will set the seed to that value, whereas negative numbers ignore setting a seed (default: `-1`)
 - quiet: `Bool` suppress progress bar if `true`
 """
-function mimick(fasta::Vector{String}, format::String; prefix::String = "simulated/SIM", coverage::Union{Int,Float64} = 30, n_molecules::Int = 2, mol_coverage::Float64 = 0.2, mol_length::Int64 = 80000, insert_length::Int = 500, insert_stdev::Int = 50, read_length::Vector{Int} = [150,150], singletons::Float64 = 0.35, circular::Bool = false, attempts::Int = 25, seed::Int = -1, quiet::Bool = false)
+function mimick(fasta::Vector{String}, format::String; prefix::String="simulated/SIM", coverage::Union{Int,Float64}=30, n_molecules::Int=2, mol_coverage::Float64=0.2, mol_length::Int64=80000, insert_length::Int=500, insert_stdev::Int=50, read_length::Vector{Int}=[150, 150], singletons::Float64=0.70, circular::Bool=false, attempts::Int=25, seed::Int=-1, quiet::Bool=false)
     if seed >= 0
         Random.seed!(seed)
     end
@@ -31,15 +31,21 @@ function mimick(fasta::Vector{String}, format::String; prefix::String = "simulat
         read_length = [read_length, read_length]
     end
     schema = setup_schema(fasta, coverage, read_length)
+    for i in schema
+        if i.sequence.len <= mol_length
+            @info "Contigs with lengths <= $mol_length (mean molecule length) will have likely result in molecules that span the entire contig."
+            break
+        end
+    end
     bc_fmt, fq_fmt = interperet_format(format)
     barcodes = setup_barcodes(bc_fmt)
-    params = SimParams(prefix,insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular = circular, attempts = attempts)
+    params = SimParams(prefix, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular=circular, attempts=attempts)
     mkpath(dirname(prefix))
     total_reads = sum(i.second.tracker.reads_required for i in pairs(schema))
     current_reads = 0
-    progress = Progress(total_reads; dt=0.25, barglyphs=BarGlyphs("[=> ]"), color = :yellow, enabled = !quiet)
-    R1 = BGZFCompressorStream(open("$prefix.R1.fq.gz", "w"), nthreads = max(1, div(nthreads(),2)))
-    R2 = BGZFCompressorStream(open("$prefix.R2.fq.gz", "w"), nthreads = max(1, nthreads() - div(nthreads(),2)))
+    progress = Progress(total_reads; dt=0.25, barglyphs=BarGlyphs("[=> ]"), color=:yellow, enabled=!quiet)
+    R1 = BGZFWriter(open("$prefix.R1.fq.gz", "w"), n_workers=max(1, div(nthreads(), 2)))
+    R2 = BGZFWriter(open("$prefix.R2.fq.gz", "w"), n_workers=max(1, nthreads() - div(nthreads(), 2)))
     while !isempty(schema)
         candidates = keys(schema)
         n_mol = get_n_molecules(params)
@@ -77,18 +83,18 @@ The `format` is expected to be one of `"haplotagging"`, `"stlfr"`, `"tellseq"`, 
 - insert_length: `Int` of average length of inserts (molecule fragments) from which sequences are generated (default: `500`)
 - insert_stdev: `Int` of standard deviation of `insert_length` (default: `50`)
 - read_length: `Vector{Int}` of [R1,R2] read lengths in bp (default: `[150,150]`)
-- singletons: `Float64` if the proportion of barcodes that will have only one read pair (default: `0.35`)
+- singletons: `Float64` if the proportion of barcodes that will have only one read pair (default: `0.7`)
 - circular: `Bool` of whether to treat input FASTA contigs as circular DNA when simulating molecules (default: `false`)
 - attempts: `Int` of how many times to attempt creating a feasible molecule for a barcode before terminating with an error (default: `25`)
 - seed: `Int` of seed for randomization. Numbers >=0 will set the seed to that value, whereas negative numbers ignore setting a seed (default: `-1`)
 - quiet: `Bool` suppress progress bar if `true`
 """
-function mimick(fasta::String, vcf::String, format::String; outdir::String = "simulated", coverage::Union{Int,Float64} = 30, n_molecules::Int = 2, mol_coverage::Float64 = 0.2, mol_length::Int64 = 80000, insert_length::Int = 500, insert_stdev::Int = 50, read_length::Vector{Int} = [150,150], singletons::Float64 = 0.35, circular::Bool = false, attempts::Int = 25, seed::Int = -1, quiet::Bool = false)
+function mimick(fasta::String, vcf::String, format::String; outdir::String="simulated", coverage::Union{Int,Float64}=30, n_molecules::Int=2, mol_coverage::Float64=0.2, mol_length::Int64=80000, insert_length::Int=500, insert_stdev::Int=50, read_length::Vector{Int}=[150, 150], singletons::Float64=0.70, circular::Bool=false, attempts::Int=25, seed::Int=-1, quiet::Bool=false)
     if seed >= 0
         Random.seed!(seed)
     end
     master_schema = setup_schema(fasta, coverage, read_length)
-    params = SimParams(outdir, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular = circular, attempts = attempts)
+    params = SimParams(outdir, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular=circular, attempts=attempts)
     bc_fmt, fq_fmt = interperet_format(format)
     if endswith(lowercase(vcf), "bcf")
         error("BCF file type is not yet supported")
@@ -98,7 +104,7 @@ function mimick(fasta::String, vcf::String, format::String; outdir::String = "si
     end
     samplenames = get_samples(vcf, fmt)
     mkpath(outdir)
-    progress = Progress(length(samplenames), barglyphs=BarGlyphs("[=> ]"), color = :magenta, enabled = !quiet)
+    progress = Progress(length(samplenames), barglyphs=BarGlyphs("[=> ]"), color=:magenta, enabled=!quiet)
     Threads.@threads for idx in eachindex(samplenames)
         outprefix = joinpath(outdir, samplenames[idx])
         barcodes = setup_barcodes(bc_fmt)
@@ -106,22 +112,22 @@ function mimick(fasta::String, vcf::String, format::String; outdir::String = "si
         schema = build_sample_schema(master_schema, variants)
         # variants are no longer needed, free it up
         variants = nothing
-        R1 = BGZFCompressorStream(open("$outprefix.R1.fq.gz", "w"), nthreads = 1)
-        R2 = BGZFCompressorStream(open("$outprefix.R2.fq.gz", "w"), nthreads = 1)
-            while !isempty(schema)
-                candidates = keys(schema)
-                n_mol = get_n_molecules(params)
-                molecule_targets = rand(candidates, n_mol)
-                for target in molecule_targets
-                    molsize = get_molecule_size(params, length(schema[target].sequence))
-                    frags = calculate_insert_sizes(params, molsize)
-                    molecule = get_sequences(schema[target], params, get_next!(barcodes), molsize, frags)
-                    write(R1, format_R1(fq_fmt, molecule))
-                    write(R2, format_R2(fq_fmt, molecule))
-                    schema[target].tracker.reads_current += length(frags)
-                end
-                filter!(is_incomplete, schema)
+        R1 = SyncBGZFWriter(open("$outprefix.R1.fq.gz", "w"))
+        R2 = SyncBGZFWriter(open("$outprefix.R2.fq.gz", "w"))
+        while !isempty(schema)
+            candidates = keys(schema)
+            n_mol = get_n_molecules(params)
+            molecule_targets = rand(candidates, n_mol)
+            for target in molecule_targets
+                molsize = get_molecule_size(params, length(schema[target].sequence))
+                frags = calculate_insert_sizes(params, molsize)
+                molecule = get_sequences(schema[target], params, get_next!(barcodes), molsize, frags)
+                write(R1, format_R1(fq_fmt, molecule))
+                write(R2, format_R2(fq_fmt, molecule))
+                schema[target].tracker.reads_current += length(frags)
             end
+            filter!(is_incomplete, schema)
+        end
         close(R1)
         close(R2)
         next!(progress)

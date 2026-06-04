@@ -1,22 +1,42 @@
 """
     safe_read(filename::String)
 
-Read in a file that might be gzipped. Returns an IO stream.
+Read in a file that might be b/gzipped. Returns an IO stream.
 """
-function safe_read(filename::String)
+function safe_read(filename::String)::IO
     if !isfile(filename)
         error("$filename does not exist.")
     end
-    try
-        readline(GzipDecompressorStream(open(filename, "r")))
-        return GzipDecompressorStream(open(filename, "r"))
-    catch e
-        if isa(e, CodecZlib.ZlibError) || isa(e, EOFError)
-            return open(filename, "r")
-        else
-            rethrow(e)
+
+    # --- Probe + open helper to avoid duplicating the close-on-error logic ---
+    function probe_and_open(make_stream::Function)
+        stream = make_stream()
+        try
+            readline(stream)
+        catch
+            close(stream)
+            rethrow()
         end
+        close(stream)
+        return make_stream()  # fresh stream rewound to the start
     end
+
+    # 1. Try Gzip
+    try
+        return probe_and_open(() -> GzipDecompressorStream(open(filename, "r")))
+    catch e
+        e isa CodecZlib.ZlibError || rethrow()
+    end
+
+    # 2. Try BGZip
+    try
+        return probe_and_open(() -> BGZFReader(open(filename, "r")))
+    catch e
+        e isa BGZFLib.BGZFError || rethrow()
+    end
+
+    # 3. Try plain (rethrow anything unexpected)
+    return probe_and_open(() -> open(filename, "r"))
 end
 
 """

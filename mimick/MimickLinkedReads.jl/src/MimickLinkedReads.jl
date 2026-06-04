@@ -2,7 +2,7 @@ module MimickLinkedReads
 
 using Base.Threads
 using BioSequences
-using CodecBGZF
+using BGZFLib
 using CodecZlib
 using Distributions
 using FASTX
