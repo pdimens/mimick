@@ -20,7 +20,7 @@ jobs:
   Tests:
     strategy:
       matrix:
-        linktype: [haplotagging, stlfr, tellseq, 10x]
+        linktype: [haplotagging, stlfr, tellseq, 10x, standard:stlfr]
     name: "Simulation Tests"
     runs-on: ubuntu-latest
     steps:
@@ -40,22 +40,30 @@ jobs:
       - name: Create Test Data
         run: test/create_test_data.py test
 
+      - name: Set safe linktype (replace colons for file paths)
+        id: safe
+        run: echo "linktype=${{ matrix.linktype }}" | sed 's/:/-/g' >> "$GITHUB_OUTPUT"
+
       - name: Test Single Sample ${{ matrix.linktype }}
         run: |
-          mimick -t 4 --quiet -g 10 --format 10x -o single_sample/${{ matrix.linktype }} test/hap1.fa.gz test/hap2.fa.gz &&\
-          zcat single_sample/${{ matrix.linktype }}.R1.fq.gz | head -8
+          mimick -t 4 --quiet -g 10 --format ${{ matrix.linktype }} \
+            -o single_sample/${{ steps.safe.outputs.linktype }} test/hap1.fa.gz test/hap2.fa.gz &&\
+          zcat single_sample/${{ steps.safe.outputs.linktype }}.R1.fq.gz | head -8
 
-      - name: Test Single Sample standard with masking
+      - name: Test Single Sample ${{ matrix.linktype }} with masking
         run: |
-          mimick -t 4 --quiet -g 10 --mask-n --format standard:stlfr -o single_sample/std_stlfr test/hap1.fa.gz test/hap2.fa.gz &&\
-          zcat single_sample/std_stlfr.R1.fq.gz | head -8
+          mimick -t 4 --quiet -g 10 --mask-n --format ${{ matrix.linktype }} \
+            -o single_sample_mask/${{ steps.safe.outputs.linktype }} test/hap1.fa.gz test/hap2.fa.gz &&\
+          zcat single_sample_mask/${{ steps.safe.outputs.linktype }}.R1.fq.gz | head -8
 
       - name: Test Multisample ${{ matrix.linktype }}
         run: |
-          mimick -t 4 --quiet -g 5 --format ${{ matrix.linktype }} -o ${{ matrix.linktype }}/ --vcf test/test.vcf.gz test/fasta.fa.gz &&\
-          zcat ${{ matrix.linktype }}/tsk_0.R1.fq.gz | head -8
+          mimick -t 4 --quiet -g 5 --format ${{ matrix.linktype }} \
+            -o ${{ steps.safe.outputs.linktype }}/ --vcf test/test.vcf.gz test/fasta.fa.gz &&\
+          zcat ${{ steps.safe.outputs.linktype }}/tsk_0.R1.fq.gz | head -8
 
-      - name: Test Multisample standard with masking
+      - name: Test Multisample ${{ matrix.linktype }} with masking
         run: |
-          mimick -t 4 --quiet -g 5 --mask-n --format standard:stlfr -o std_stlfr/ --vcf test/test.vcf.gz test/fasta.fa.gz &&\
-          zcat std_stlfr/tsk_0.R1.fq.gz | head -8
+          mimick -t 4 --quiet -g 5 --mask-n --format ${{ matrix.linktype }} \
+            -o ${{ steps.safe.outputs.linktype }}_mask/ --vcf test/test.vcf.gz test/fasta.fa.gz &&\
+          zcat ${{ steps.safe.outputs.linktype }}_mask/tsk_0.R1.fq.gz | head -8
