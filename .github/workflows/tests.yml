@@ -17,10 +17,10 @@ env:
   CACHE_NUMBER: 0 # increase to reset cache manually
 
 jobs:
-  strategy:
-    matrix:
-      linktype: [haplotagging, stlfr, tellseq, 10x]
   Tests:
+    strategy:
+      matrix:
+        linktype: [haplotagging, stlfr, tellseq, 10x]
     name: "Simulation Tests"
     runs-on: ubuntu-latest
     steps:
