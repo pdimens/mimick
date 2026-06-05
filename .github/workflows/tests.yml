@@ -8,9 +8,6 @@ on:
     branches:
       - main
 
-strategy:
-  matrix:
-    linktype: [haplotagging, stlfr, tellseq, 10x]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -20,6 +17,9 @@ env:
   CACHE_NUMBER: 0 # increase to reset cache manually
 
 jobs:
+  strategy:
+    matrix:
+      linktype: [haplotagging, stlfr, tellseq, 10x]
   Tests:
     name: "Simulation Tests"
     runs-on: ubuntu-latest
