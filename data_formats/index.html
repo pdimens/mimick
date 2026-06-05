@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/mimick">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.830285430430">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.833950499638">
 
     <!-- See retype.com -->
-    <meta name="generator" content="Retype 4.5.3">
+    <meta name="generator" content="Retype 4.6.0">
 
     <!-- Primary Meta Tags -->
     <title>Linked-Read Data Formats | Mimick</title>
@@ -39,14 +39,14 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link id="retype-favicon" rel="icon" href="../static/mimick_icon.png" />
-    <link href="../resources/css/retype.css?v=4.5.3.830285430430" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=4.6.0.833950499638" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=4.5.3.830285430430" data-turbo-eval="false" defer></script>
-    <script data-cfasync="false" src="../resources/js/retype.js?v=4.5.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.5.3.830285430430" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.5.3.830285430430" defer></script>
-    <link href="../resources/css/katex.css?v=4.5.3" rel="stylesheet">
-    <script id="katex-js" data-cfasync="false" src="../resources/js/katex.js?v=4.5.3" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.833950499638" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/retype.js?v=4.6.0" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.833950499638" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.6.0.833950499638" defer></script>
+    <link href="../resources/css/katex.css?v=4.6.0" rel="stylesheet">
+    <script id="katex-js" data-cfasync="false" src="../resources/js/katex.js?v=4.6.0" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -244,6 +244,12 @@ input and output linked-read types.</p>
 with <code translate="no" v-pre>--format stlfr</code> and <code translate="no" v-pre>--read-lengths 150,108</code>. You can also mix-match these options, such as
 <code translate="no" v-pre>--format haplotagging --read-lengths 134,150</code> (<code translate="no" v-pre>@seqid:barcode</code> header format).</p>
 <p>The table below serves as a guide for the configurations for the common linked-read varieties:</p>
+<retype-table copy-text="| Chemistry    | `--read-lengths` | Format                                  | barcode `--format`      |
+|:-------------|:-----------:|:---------------------------------------------|:------------------------|
+| 10x          |  `134,150`  | single barcode on R1                         | `tellseq`               |
+| tellseq      |  `132,150`  | single barcode on R1                         | `tellseq`               |
+| haplotagging |  `150,150`  | I1 and I2 each with combinatorial 2-barcodes | `standard:haplotagging` |
+| stlfr        |  `150,108`  | combinatorial 3-barcode on R2                | `stlfr`                 |">
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="compact">
 <thead>
@@ -282,6 +288,7 @@ with <code translate="no" v-pre>--format stlfr</code> and <code translate="no" v
 </tbody>
 </table>
 </div>
+</retype-table>
 <p>The simulation process never actually includes the barcodes in the reads, so the read lengths you
 specify with <code translate="no" v-pre>--lengths</code> will be the <strong>final demultiplexed read lengths</strong>. Unlike 10x and tellseq, which use barcodes directly,
 far fewer unique barcodes are needed for the combinatorial chemistries (haplotagging and stlfr). For example, standard haplotagging uses 96
@@ -294,6 +301,13 @@ specific format (which is a <strong>problem</strong> for the linked-read ecosyst
 experiment you are trying to do, you can specify any of the linked-read types as the output format with <code translate="no" v-pre>--format</code>.
 You can suffix <code translate="no" v-pre>standard</code> with <code translate="no" v-pre>:haplotagging</code> or <code translate="no" v-pre>:stlfr</code> (e.g. <code translate="no" v-pre>standard:stlfr</code>) to output the standard format
 with that kind of barcode encoding style, otherwise <code translate="no" v-pre>standard</code> (no suffix) will use the nucleotide barcode.</p>
+<retype-table copy-text="| --format    | Barcode Location                         | Example                    |
+|:-----------------|:-----------------------------------------|:---------------------------|
+| `10x`            | start of R1 sequence                     | `ATAGACCATAGA`GGACA...     |
+| `haplotagging`   | sequence header as `BX:Z:ACBD`           | `@SEQID BX:Z:A0C331B34D87` |
+| `standard[:...]` | sequence header as `BX:Z:BARCODE VX:i:N` | `@SEQID BX:Z:ATACGAGACA`   |
+| `stlfr`          | appended to sequence ID via `#1_2_3`     | `@SEQID#1_354_39`          |
+| `tellseq`        | appended to sequence ID via `:ATCG`      | `@SEQID:TATTAGCAC`         |">
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="compact">
 <thead>
@@ -332,6 +346,7 @@ with that kind of barcode encoding style, otherwise <code translate="no" v-pre>s
 </tbody>
 </table>
 </div>
+</retype-table>
 <h2 id="proper-read-pairing">Proper read pairing</h2>
 <p>Mimick should properly pair reads, but in the event you need to do that manually, you can use <code translate="no" v-pre>seqkit</code>:</p>
 <div id="proper-read-pairing-code-1" class="codeblock-wrapper"><doc-codeblock>

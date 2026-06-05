@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/mimick">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.830285430430">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.833950499638">
 
     <!-- See retype.com -->
-    <meta name="generator" content="Retype 4.5.3">
+    <meta name="generator" content="Retype 4.6.0">
 
     <!-- Primary Meta Tags -->
     <title>The simulation process | Mimick</title>
     <meta name="title" content="The simulation process | Mimick">
-    <meta name="description" content="This page currently describes the Mimick v2 algorithm. The Julia-based algorithm of Mimick v3 is similar, but doesn't submit anything to wgsim-- it creates the breakpoints itself.">
+    <meta name="description" content="Or algorithm, if you want to be specific. Note that mentions of \"contig\" below are synonymous with \"chromosome\" if your input FASTA files are chromosome-scale.">
 
     <!-- Canonical -->
     <link rel="canonical" href="https://pdimens.github.io/mimick/algorithm/">
@@ -23,7 +23,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://pdimens.github.io/mimick/algorithm/">
     <meta property="og:title" content="The simulation process | Mimick">
-    <meta property="og:description" content="This page currently describes the Mimick v2 algorithm. The Julia-based algorithm of Mimick v3 is similar, but doesn't submit anything to wgsim-- it creates the breakpoints itself.">
+    <meta property="og:description" content="Or algorithm, if you want to be specific. Note that mentions of \"contig\" below are synonymous with \"chromosome\" if your input FASTA files are chromosome-scale.">
     <meta property="og:site_name" content="">
     <meta property="og:locale" content="en_US">
 
@@ -31,7 +31,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://pdimens.github.io/mimick/algorithm/">
     <meta name="twitter:title" content="The simulation process | Mimick">
-    <meta name="twitter:description" content="This page currently describes the Mimick v2 algorithm. The Julia-based algorithm of Mimick v3 is similar, but doesn't submit anything to wgsim-- it creates the breakpoints itself.">
+    <meta name="twitter:description" content="Or algorithm, if you want to be specific. Note that mentions of \"contig\" below are synonymous with \"chromosome\" if your input FASTA files are chromosome-scale.">
 
     <!-- Alternate Markdown -->
     <link rel="alternate" type="text/markdown" href="https://pdimens.github.io/mimick/algorithm.md">
@@ -39,13 +39,12 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link id="retype-favicon" rel="icon" href="../static/mimick_icon.png" />
-    <link href="../resources/css/retype.css?v=4.5.3.830285430430" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=4.6.0.833950499638" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=4.5.3.830285430430" data-turbo-eval="false" defer></script>
-    <script data-cfasync="false" src="../resources/js/retype.js?v=4.5.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.5.3.830285430430" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.5.3.830285430430" defer></script>
-    <script id="mermaid-js" data-cfasync="false" src="../resources/js/mermaid.js?v=4.5.3" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.833950499638" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/retype.js?v=4.6.0" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.833950499638" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.6.0.833950499638" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -231,121 +230,111 @@
                 <doc-page-actions></doc-page-actions>
 
                 <!-- Page content  -->
-<div class="flex mb-6">
-    <div class="shrink-0 w-1.5 rounded-tl-lg rounded-bl-lg bg-callout-info"></div>
-    <div class="flex w-full py-4 border border-l-0 rounded-tr-lg rounded-br-lg doc-callout bg-callout-base-bg border-callout-base-border" role="alert">
-        <div class="flex items-center ml-4 h-7">
-            <svg xmlns="http://www.w3.org/2000/svg" class="block text-callout-info" width="22" height="22" viewBox="0 0 24 24" role="presentation">
-                <g fill="currentColor"><g>
-                    <path d="M12 1C5.93 1 1 5.93 1 12s4.93 11 11 11 11-4.93 11-11S18.07 1 12 1zm0 20c-4.96 0-9-4.04-9-9s4.04-9 9-9 9 4.04 9 9-4.04 9-9 9z"></path>
-                    <path d="M12 11c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zM12.01 7c-.56 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"></path>
-                    <path fill="none" d="M0 0h24v24H0z"></path>
-                </g></g>
-            </svg>
-        </div>
-        <div class="pr-5 ml-3 w-full">
-<p>This page currently describes the Mimick v2 algorithm. The Julia-based algorithm of Mimick v3 is similar, but
-doesn&#x27;t submit anything to wgsim-- it creates the breakpoints itself. Also, the new multi-sample VCF algorithm needs
-to be described separately. In other words, this page <strong>needs to be updated</strong>.</p>
-        </div>
-    </div>
-</div>
 <h1 id="the-simulation-process">The simulation process</h1>
-<p>Or algorithm, if you want to be fancy about it. Note that mentions of &quot;contig&quot; below are synonymous with
+<p>Or <em>algorithm</em>, if you want to be specific. Note that mentions of &quot;contig&quot; below are synonymous with
 &quot;chromosome&quot; if your input FASTA files are chromosome-scale.</p>
-<p>Mimick 2.0 had a complete overhaul that rewrote the entire simulation process and we detail that process below.
-This description will ignore all the checks and validations Mimick does before beginning simulation because it&#x27;s
-more of a user-experience technical detail and not directly relevant to simulation itself.</p>
-<div class="overflow-hidden mb-6 py-4 dark:px-5 dark:bg-white rounded-md"><pre translate="no" class="mermaid w-full">%%{init: {&quot;themeVariables&quot;: { &quot;lineColor&quot;: &quot;#C9C9C9&quot;, &quot;mainBkg&quot;: &quot;#f5f6f9&quot; }}}%%
-graph LR
-    A([process input files]) --&gt; step1
-    step1(pick barcode):::clean --&gt; step2(number of molecules)
-    step2 --&gt; step3(determine molecule source)
-    step3 --&gt; step4(create molecules)
-    step4 --&gt; step5(simulate reads)
-    step5 --&gt; stepx(convert reads format)
-    step5 --&gt; step6(update inventory)
-    step6 --&gt;| break if all targets are reached | step1</pre></div>
+<p>Mimick 2.0 had a complete overhaul that rewrote the entire simulation process. Then the Mimick 3.0 Julia
+port rewrote the algorithm again, making it <em>much</em> more streamlined. Still missing is sequence errors modeled after real Illumina data. That&#x27;s on the wish list.</p>
+<h2 id="single-sample">Single-Sample</h2>
 <h3 id="0-parse-the-fasta-files">0: Parse the FASTA file(s)</h3>
 <p>The FASTA files are processed into schema that contain characteristics for each contig, along with the
-sequence in it. These schema are part of the recipes that get processed during simulation. Schema contain information
-such as the sequence length (adjusted for ambiguous bases), haplotype number, reads per molecule, and other important
-information on what needs to be done for that contig (or interval) for that haplotype. They also contain the target number
-of reads for that contig for that haplotype and a tracker for how many reads have already been generated. They look like this:</p>
+sequence in it. These schema are part of the recipes that get processed during simulation. If <code translate="no" v-pre>--mask-n</code> was
+used, the <code translate="no" v-pre>sequence</code> will have instances of <code translate="no" v-pre>N</code> replaced with a random <code translate="no" v-pre>ATCG</code> base. Schemas look like this:</p>
 <div id="0-parse-the-fasta-files-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-yaml"><code v-pre class="language-yaml">haplotype: 1
-chrom: Contig1
-start: 1
-end: 200000
-read_length: 150.0
-read_pairs_per_mol: 80.0
-reads_current: 0
-reads_required: 10000
-mol_length: 80000
-mol_coverage: 0.3
-singletons: 0.5
-sequence: CTTCACCGAGCTTGCTTCACTTGGTATCGGG... (length = 200000)</code></pre>
+<pre translate="no" class="language-julia"><code v-pre class="language-julia">struct Schema
+    haplotype::Int
+    chrom::String
+    tracker::SchemaTracker
+    sequence::LongSequence{DNAAlphabet{4}}</code></pre>
 </doc-codeblock></div>
-<p>These schema are also used to generate the molecule recipes that get fed into the read simulator (wgsim). Mimick accepts an option BED
-file of intervals, which would restrict the schema to those intervals; if a BED file isn&#x27;t provided (totally fine), Mimick
-assumes you want every contig of your FASTA file(s) to have reads simulated. So, if you have two FASTA files,
-each with 3 contigs and no BED file suggesting otherwise, Mimick will produce 2 * 3 schema (<code translate="no" v-pre>haplotypes * contigs</code>).
-The schema are internal objects held in memory, not files you will be able to browse.</p>
-<h2 id="the-loop">The loop</h2>
+<p>If you aren&#x27;t familiar with Julia code, the syntax is <code translate="no" v-pre>name::Type</code>. The <code translate="no" v-pre>SchemaTracker</code> is just two integers tracking the goal and the current total:</p>
+<div id="0-parse-the-fasta-files-code-2" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-julia"><code v-pre class="language-julia">mutable struct SchemaTracker
+    reads_current::Int
+    reads_required::Int</code></pre>
+</doc-codeblock></div>
+<p>What follows is all done in a loop</p>
 <h3 id="1-pick-a-barcode">1: Pick a barcode</h3>
-<p>Whether you chose to have barcodes generated or provided your own, Mimick picks the first one and also generates
-an output version of it. Since input barcodes are always nucleotides, the barcodes will have a corresponding haplotagging or
-stLFR analogue created if that&#x27;s the desired output. You can think of the barcode as the oligo-covered bead in TELLseq/stLFR/haplotagging
+<p>Barcodes get created using a generator depending on the <code translate="no" v-pre>--format</code>.
+You can think of the barcode as the oligo-covered bead in TELLseq/stLFR/haplotagging
 chemistries.</p>
 <div id="1-pick-a-barcode-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-python"><code v-pre class="language-python">barcode = &quot;ATAGGAGGACCAGGA&quot;
-# if output is 10X or TELLseq
-output_barcode = barcode
-# if output is stLFR
-output_barcode = &quot;1_32_441&quot;
-# if output is haplotagging
-output_barcode = &quot;A01C23B01D83&quot;</code></pre>
+<pre translate="no" class="language-python"><code v-pre class="language-python"># examples
+haplotagging = &quot;A43C21B01D93&quot;
+stlfr = &quot;1_32_441&quot;
+tellseq = &quot;ATAGGGACACAGATGACC&quot;
+10x = &quot;TAGCGAACAGATGACC&quot;</code></pre>
 </doc-codeblock></div>
 <h3 id="2-making-the-molecule-recipes">2: Making the molecule recipes</h3>
 <p>Based on the <code translate="no" v-pre>--molecules-per</code> parameter, Mimick will decide how many unrelated molecules will be associated with the barcode.
 Then, it&#x27;s a matter of randomly choosing (with replacement) which schema to make molecules from. Remember, each contig for each
 haplotype has its own schema, so unrelated molecules can come from anywhere, which is a very important feature of these simulations.
 The &quot;molecules&quot; are just recipes describing which contig/haplotype, which section of it, how many paired
-reads need to be generated from it to meet <code translate="no" v-pre>--molecule-coverage</code> targets, etc. The creation of a recipe also ends with Mimick
-writing a FASTA file of the &quot;molecule&quot; that will be submitted for read simulation. There are a few criteria that need to be met for a molecule:</p>
+reads need to be generated from it to meet <code translate="no" v-pre>--molecule-coverage</code> targets, etc. There are a few criteria that need to be met for a molecule:</p>
 <ul>
-<li>must be at least 650bp (a minimum required for <code translate="no" v-pre>wgsim</code>)</li>
-<li>can&#x27;t be larger than the source contig/interval</li>
-<li>start/end positions cannot exceed those of the source contig/interval</li>
+<li>must be at least 650bp</li>
+<li>if larger than the source contig, caps to its maximum possible length
+<ul>
+<li>e.g. a simulated molecule length was 2000, but the contig is only 1000bp, molecule becomes 1000bp</li>
+</ul>
+</li>
+<li>molecule end position cannot exceed that of the source contig</li>
 </ul>
 <p>The number of reads are calculated based on <code translate="no" v-pre>--molecule-coverage</code> and the molecule size, with a minimum of 2 to prevent singletons. If
 a value &gt;0 is set for <code translate="no" v-pre>--singletons</code>, then there is that percent chance the number of paired reads are overwritten to be 1
-(e.g. <code translate="no" v-pre>--singletons 0.5</code> = 50% chance of singletons for each molecule).</p>
+(e.g. <code translate="no" v-pre>--singletons 0.5</code> = 50% chance of singletons for each molecule). Molecules look like this:</p>
 <div id="2-making-the-molecule-recipes-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-yaml"><code v-pre class="language-yaml">haplotype: 2
-fasta: /path/to/temp/molecules/molecule.fa
-output_basename: hapX.mol_id.barcode
-chrom: Contig2
-start: 5277
-end: 54077
-barcode: GACCCAGACCCAGACCCAGACCCA
-output_barcode: A01C01B01D01
-mol_id: 1422882321
-read_count: 1</code></pre>
+<pre translate="no" class="language-julia"><code v-pre class="language-julia">mutable struct ProcessedMolecule
+    haplotype::Int     # 1
+    barcode::String    # &quot;4_5_11&quot;
+    chrom::String      # &quot;contig1&quot;
+    position::UnitRange{Int}   # 30000:45000
+    read_breakpoints::Vector{UnitRange{Int}}   # [30090:30490, 43700:44000]
+    read_sequences::Pair{Vector{String}, Vector{String}} # [[R1s] =&gt; [R2s]]</code></pre>
 </doc-codeblock></div>
-<h3 id="3-submitting-the-molecule-recipes-for-simulation">3: Submitting the molecule recipes for simulation</h3>
-<p>This is the part that&#x27;s multithreaded. Once we have a molecule recipe and its associated fasta file, Mimick hands the information over to <code translate="no" v-pre>wgsim</code> via <code translate="no" v-pre>pywgsim</code>,
-where the fasta file will then be the input &quot;genome&quot; from which the software will randomly generate the target number of reads for that molecule. The reads
-that are simulated never actually have the bacode on them-- it&#x27;s only if <code translate="no" v-pre>--output-type 10x</code> that the barcode is added inline to R1 during X.</p>
-<h3 id="4-monitor-schema-targets">4: Monitor schema targets</h3>
-<p>The number of reads that were generated for every molecule are added to that molecule&#x27;s source schema to track the number of reads already produced for
-that contig for that haplotype. Once a schema reaches its reads target, that schema will be removed from the list of schema that are randomly sampled
-to determine molecules in <doc-anchor-trigger to="#2-making-the-molecule-recipes">Step 2</doc-anchor-trigger>. This ensures that read <code translate="no" v-pre>--coverage</code> is honored.</p>
+<h3 id="3-creating-sequences-from-a-molecule">3: Creating sequences from a molecule</h3>
+<p>Once we have a &quot;molecule&quot; made and the number of reads to generate from it, an algorithm creates <code translate="no" v-pre>n</code> random non-overlapping
+inserts (start + end positions) along the molecule. Once the insert breakpoints are found, their sequences are finally extracted
+from the haplotype at those breakpoints, and if they contain &gt;5% <code translate="no" v-pre>N</code> sequences, new insert positions are attempted. If <code translate="no" v-pre>N</code> bases were masked with <code translate="no" v-pre>--mask-n</code>, then there is no concern of too many <code translate="no" v-pre>N</code>s.</p>
+<h3 id="4-write-fastq-records">4: Write FASTQ records</h3>
+<p>After an adequate set of sequences is determined from the molecule, the sequences get converted into proper FASTQ records in the
+<code translate="no" v-pre>--format</code> of your choosing. This is done using a BGZip stream for each R1/R2 file. When supplying <code translate="no" v-pre>--threads</code> to single-sample
+simulation, the threads are applied to the BGZip compressors because compression + writing to disk is the performance bottleneck.</p>
+<doc-callout id="careful-parallelization" left-border-class="bg-callout-question" callout-class="bg-callout-base-bg border-callout-base-border" collapsed>
+    <template #icon>
+        <svg xmlns="http://www.w3.org/2000/svg" class="block text-callout-question" width="22" height="22" viewBox="0 0 24 24" role="presentation">
+            <g fill="currentColor"><g>
+                <path d="M20 11C20 6.02944 15.9706 2 11 2C6.02944 2 2 6.02944 2 11C2 15.9706 6.02944 20 11 20C15.9706 20 20 15.9706 20 11ZM22 11C22 17.0751 17.0751 22 11 22C4.92487 22 0 17.0751 0 11C0 4.92487 4.92487 0 11 0C17.0751 0 22 4.92487 22 11Z"></path>
+                <path d="M8.89368 5.54722C9.70794 5.06874 10.665 4.8935 11.5958 5.05308C12.5267 5.21276 13.3713 5.6968 13.9796 6.41929C14.5877 7.14169 14.9212 8.0561 14.92 9.00035L14.9074 9.28062C14.7798 10.6552 13.7345 11.5758 12.9747 12.0824C12.5393 12.3727 12.1107 12.5857 11.795 12.7259C11.6358 12.7967 11.5011 12.8503 11.4044 12.8871C11.3561 12.9055 11.3167 12.9199 11.2882 12.93C11.2741 12.9351 11.2628 12.9397 11.254 12.9427C11.2498 12.9442 11.2462 12.9457 11.2433 12.9466C11.242 12.9471 11.2404 12.9473 11.2394 12.9476L11.2374 12.9486H11.2365L11.1378 12.9759C10.6432 13.087 10.1346 12.8071 9.97083 12.3158C9.79672 11.7926 10.0791 11.2264 10.6017 11.0511V11.0521L10.6036 11.0511C10.6063 11.0502 10.6113 11.0487 10.6183 11.0462C10.6336 11.0408 10.6591 11.0316 10.6925 11.0189C10.7599 10.9932 10.8606 10.953 10.9825 10.8988C11.2293 10.7891 11.551 10.6279 11.8654 10.4183C12.5548 9.95872 12.9198 9.46936 12.92 9.00035V8.9984L12.9122 8.82261C12.8768 8.41362 12.7165 8.02363 12.4503 7.70738C12.1461 7.34604 11.7235 7.10364 11.2579 7.02379C10.7925 6.944 10.3135 7.03158 9.90638 7.27086C9.49929 7.51011 9.1901 7.88601 9.03333 8.3314L8.99427 8.42613C8.7787 8.88497 8.24645 9.11555 7.75794 8.94371C7.23704 8.76045 6.96349 8.18924 7.14661 7.66832L7.20911 7.5023C7.53839 6.68391 8.1303 5.99587 8.89368 5.54722Z"></path>
+                <path d="M11.0098 15L11.1123 15.0049C11.6165 15.0561 12.0098 15.4822 12.0098 16C12.0098 16.5178 11.6165 16.9439 11.1123 16.9951L11.0098 17H11C10.4477 17 10 16.5523 10 16C10 15.4477 10.4477 15 11 15H11.0098Z"></path>
+            </g></g>
+        </svg>
+    </template>
+    <template #title>Careful parallelization</template>
+<p>It might seem like parallelizing read simulation would make more sense than file IO. I thought so too and that was the first implementation in the Julia code. It turned out that the code was so efficient that in many small-to-medium cases, the simulations were 100% finished before the first FASTQ record was written to disk and most of the run time was just waiting
+for the compressed FASTQ records to be written to disk. Providing additional threads to the compression and write turned out
+to actually be the faster solution.</p>
+</doc-callout>
+<h3 id="5-monitor-schema-targets">5: Monitor schema targets</h3>
+<p>The number of reads that were generated for every molecule are tracked in the schema for each contig-haplotype. Once a schema reaches its reads target, that schema will be removed from the list of schema that are randomly sampled
+to determine molecules in <doc-anchor-trigger to="#2-making-the-molecule-recipes">Step 2</doc-anchor-trigger>. This ensures that genomic <code translate="no" v-pre>--coverage</code> is honored.</p>
 <h3 id="5-repeat-until-all-schema-read-targets-are-met">5: Repeat until all schema read targets are met</h3>
 <p>Once there are no more schema left to sample, simulation is done!</p>
-<h3 id="x-convert-and-append-reads">X: Convert and append reads</h3>
-<p>A separate concurrent process converts the reads simulated from a molecule into the format specified by <code translate="no" v-pre>--output-type</code> and writes the reads to final R1 and R2
-FASTQ files.</p>
+<h2 id="multi-sample">Multi-Sample</h2>
+<p>This alternative method of using Mimick uses the same simulation algorithm as the single-sample approach, but is intended for multi-sample simulation, saving a lot of effort. The inputs are a single
+FASTA reference and a VCF file (can be vcf.gz) that contains <em>samples</em> and SNPs/indels. The main difference is that this method
+parallelizes over multiple samples. It does so by using the variant information in the VCF file to &quot;paint&quot; that sample&#x27;s variants onto the FASTA reference and then proceeding as normal. In psuedo-code, that looks like:</p>
+<div id="multi-sample-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-python"><code v-pre class="language-python"># pseudo-code
+samples = get_samples(vcf)
+for sample in samples:     &lt;- parallelized
+    schemas = []
+    variants = get_variants(sample, vcf)
+    for hap in 1:ploidy(variants):
+        haplotype = paint_haplotype(variants, hap, fasta)
+        append(schemas, haplotype)
+    simulate_reads(schemas)</code></pre>
+</doc-codeblock></div>
 
                 
                 <!-- Required only on API pages -->
@@ -418,6 +407,6 @@ FASTQ files.</p>
 
     <div id="retype-overlay-target"></div>
 
-        <script data-cfasync="false">window.__DOCS__ = { "title": "Algorithm Overview", level: 1, icon: "file", hasPrism: true, hasInstagram: false, hasMermaid: true, hasMath: false, tocDepth: 23, "md": "/algorithm.md" }</script>
+        <script data-cfasync="false">window.__DOCS__ = { "title": "Algorithm Overview", level: 1, icon: "file", hasPrism: true, hasInstagram: false, hasMermaid: false, hasMath: false, tocDepth: 23, "md": "/algorithm.md" }</script>
 </body>
 </html>

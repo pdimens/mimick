@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/mimick">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.830285430430">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.833950499638">
 
     <!-- See retype.com -->
-    <meta name="generator" content="Retype 4.5.3">
+    <meta name="generator" content="Retype 4.6.0">
 
     <!-- Primary Meta Tags -->
     <title>Using Mimick | Mimick</title>
@@ -39,14 +39,14 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link id="retype-favicon" rel="icon" href="../static/mimick_icon.png" />
-    <link href="../resources/css/retype.css?v=4.5.3.830285430430" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=4.6.0.833950499638" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=4.5.3.830285430430" data-turbo-eval="false" defer></script>
-    <script data-cfasync="false" src="../resources/js/retype.js?v=4.5.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.5.3.830285430430" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.5.3.830285430430" defer></script>
-    <link href="../resources/css/katex.css?v=4.5.3" rel="stylesheet">
-    <script id="katex-js" data-cfasync="false" src="../resources/js/katex.js?v=4.5.3" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.833950499638" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/retype.js?v=4.6.0" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.833950499638" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.6.0.833950499638" defer></script>
+    <link href="../resources/css/katex.css?v=4.6.0" rel="stylesheet">
+    <script id="katex-js" data-cfasync="false" src="../resources/js/katex.js?v=4.6.0" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -235,11 +235,13 @@
 <h1 id="using-mimick">Using Mimick</h1>
 <div id="using-mimick-usage" class="codeblock-wrapper"><doc-codeblock>
 <div class="codeblock-title">usage</div>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick options... BARCODES FASTA1 FAST2...</code></pre>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick options... FASTA1 FAST2...
+
+mimick options... --vcf FASTA</code></pre>
 </doc-codeblock></div>
 <p>Use <code translate="no" v-pre>--help</code> or <code translate="no" v-pre>-h</code> or call <code translate="no" v-pre>mimick</code> without arguments to call up the docstring.</p>
 <p>The minimum input files required by Mimick is a single FASTA file, uncompressed or gzip compressed.
-The result will be a single set of paired-end reads, a GFF file of mutations, and a manifest of all the molecules created.
+The result will be a single set of paired-end reads (single-sample) or a folder of one read-pair set per sample (multi-sample).
 Mimick scales with the number of threads provided, although not linearly (the slowest part is writing compressed files to disk).</p>
 <p>If you want to separate out the haplotypes from the final output, you can
 leverage the fact that all the simulated reads start with <code translate="no" v-pre>@HAP:X_</code> where <code translate="no" v-pre>X</code> is the haplotype number, starting with <code translate="no" v-pre>1</code>,
@@ -253,6 +255,26 @@ done</code></pre>
 <doc-panel id="all-options" collapsed>
     <template #title>All Options</template>
 <p>For completeness, the table below is all the command line arguments and options</p>
+<retype-table copy-text="| short name | long name             |                         default                          | description                                                                                                                                    | notes                                                                               |
+|:----------:|:----------------------|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
+|            | `FASTA`               |                                                          | input fasta file(s)                                                                                                                            | REQUIRED                                                                            |
+|    `-c`    | `--circular`          |                                                          | toggle to let Mimick know the input contigs are circular/prokaryotic                                                                           |                                                                                     |
+|    `-o`    | `--output-prefix`     |                     `simulated/`                         | output file prefix                                                                                                                             |                                                                                     |
+|    `-f`    | `--format`            | [varies](./data_formats.md#linked-read-simulation-types) | output format of FASTQ files                                                                                                                   |                                                                                     |
+|    `-q`    | `--quiet`             |                                                          | toggle to hide the progress bar                                                                                                                |                                                                                     |
+|    `-m`    | `--mask-n`            |                                                          | toggle to replace `N` bases in FASTA file(s) with random ATCG bases                                                                            |                                                                                     |
+|    `-s`    | `--seed`              |                                                          | random seed for simulation                                                                                                                     | optional and useful for reproducibility                                             |
+|    `-t`    | `--threads`           |                           `2`                            | number of threads to use for simulation                                                                                                        |                                                                                     |
+|    `-g`    | `--genomic-coverage`  |                           `30`                           | mean coverage target for simulated data                                                                                                        |                                                                                     |
+|    `-i`    | `--insert-size`       |                          `500`                           | outer distance between the two ends in bp                                                                                                      | must be &gt;`--read-lengths`                                                           |
+|    `-d`    | `--insert-stdev`      |                           `50`                           | standard deviation of --distance                                                                                                               |                                                                                     |
+|    `-A`    | `--molecule-attempts` |                          `300`                           | number of attempts to create a molecule with &lt;70% ambiguous bases before exiting with an error                                                 |                                                                                     |
+|    `-C`    | `--molecule-coverage` |                          `0.2`                           | mean percent coverage per molecule if &lt;1, else mean number of reads per molecule                                                               |                                                                                     |
+|    `-L`    | `--molecule-length`   |                         `80000`                          | mean length of molecules in bp, drawn from exponential distribution                                                                            |                                                                                     |
+|    `-N`    | `--molecules-per`     |                           `3`                            | mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. `-2`) will be fixed for that number |                                                                                     |
+|    `-l`    | `--read-lengths`      |                        `150,150`                         | length of R1,R2 reads in bp                                                                                                                    | each must be &gt;10 and separated by a comma, no spaces                                |
+|    `-S`    | `--singletons`        |                           `0`                            | proportion of barcodes that will only have a single read pair                                                                                  |                                                                                     |
+|    `-v`    | `--vcf`               |                                                          | VCF-formatted file containing genotypes from which to create per-sample haplotypes                                                             |                                                                                     |">
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="compact">
 <thead>
@@ -298,6 +320,13 @@ done</code></pre>
 <td style="text-align: left;"><code translate="no" v-pre>--quiet</code></td>
 <td style="text-align: center;"> </td>
 <td style="text-align: left;">toggle to hide the progress bar</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: center;"><code translate="no" v-pre>-m</code></td>
+<td style="text-align: left;"><code translate="no" v-pre>--mask-n</code></td>
+<td style="text-align: center;"> </td>
+<td style="text-align: left;">toggle to replace <code translate="no" v-pre>N</code> bases in FASTA file(s) with random ATCG bases</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
@@ -374,7 +403,7 @@ done</code></pre>
 <td style="text-align: center;"><code translate="no" v-pre>-S</code></td>
 <td style="text-align: left;"><code translate="no" v-pre>--singletons</code></td>
 <td style="text-align: center;"><code translate="no" v-pre>0</code></td>
-<td style="text-align: left;">proportion of barcodes will only have a single read pair</td>
+<td style="text-align: left;">proportion of barcodes that will only have a single read pair</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
@@ -387,17 +416,16 @@ done</code></pre>
 </tbody>
 </table>
 </div>
+</retype-table>
 </doc-panel>
 <h2 id="required-arguments">Required Arguments</h2>
-<p>Running Mimick will always require a barcode specification and at least one input FASTA file.</p>
-<doc-tabs>
-<doc-tab v-cloak id="fasta-files">
-<template #title>FASTA file(s)</template>
+<p>Running Mimick will always require a barcode specification and at least one input FASTA file (B/Gzipped is okay).</p>
+<h3 id="fasta-files">FASTA file(s)</h3>
 <p>You will need at least 1 fasta file as input, which goes at the very end of the command. If providing more than 1
 FASTA for a non-haploid species, it&#x27;s assumed that each fasta file is a different haplotype <strong>of the same genome</strong>.
 There is no strict enforcement of the fasta files being from the same genome, it&#x27;s just how you&#x27;ll probably want to use
 the simulator (but I&#x27;m open to being surprised).</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="fasta-files-fasta-inputs" class="codeblock-wrapper"><doc-codeblock>
 <div class="codeblock-title">fasta inputs</div>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">mimick hap1.fasta hap2.fasta
 #      ^fasta 1   ^fasta 2</code></pre>
@@ -405,18 +433,26 @@ the simulator (but I&#x27;m open to being surprised).</p>
 <h3 id="circular-dna">Circular DNA</h3>
 <p>The <code translate="no" v-pre>--circular</code> toggle/flag tells Mimick to treat each contig
 within each FASTA as circular when creating molecules-- this is probably how you&#x27;ll want to simulate prokaryotic/microbial
-genomes. When using <code translate="no" v-pre>--circular</code>, you&#x27;ll see in the <code translate="no" v-pre>.molecules</code> file that some molecule end positions may occur before the start
+genomes. When using <code translate="no" v-pre>--circular</code>, you&#x27;ll see in the read headers that some molecule end positions may occur before the start
 positions, which is an artifact of the circularization. Those positions reflect the start/end positions on the linear sequence in
 the FASTA file and should be interpreted as &quot;started at <code translate="no" v-pre>start</code> and reached the end of the contig, then wrapped around to the
 beginning of the contig and kept going until <code translate="no" v-pre>end</code>.&quot; The corresponding length of the molecule will be accurate and the math
 should make sense as well: <span class="math">end = start + molecule\_size - contig\_size</span></p>
-</doc-tab>
-</doc-tabs>
 <h2 id="options">Options</h2>
 <doc-tabs>
 <doc-tab v-cloak id="general-options">
 <template #title>General options</template>
 <p>These options control inputs/outputs and resources</p>
+<retype-table copy-text="| short name | long name         | default                                                  | description                                                          |
+|:----------:|:------------------|:--------------------------------------------------------:|:---------------------------------------------------------------------|
+|    `-c`    | `--circular`      | `False`                                                  | toggle to let Mimick know the input contigs are circular/prokaryotic |
+|    `-o`    | `--output-prefix` | `simulated/`                                             | output file prefix                                                   |
+|    `-f`    | `--format`        | [varies](./data_formats.md#linked-read-simulation-types) | output format of FASTQ files                                         |
+|    `-q`    | `--quiet`         | `False`                                                  | toggle to hide progress bar                                          |
+|    `-m`    | `--mask-n`        | `False`                                                  | to replace `N` bases in FASTA file(s) with random ATCG bases         |
+|    `-S`    | `--seed`          |                                                          | random seed for simulation                                           |
+|    `-t`    | `--threads`       | `2`                                                      | number of threads to use for simulation                              |
+|    `-v`    | `--vcf`           |                                                          | VCF-formatted file containing genotypes from which to create per-sample haplotypes |">
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="compact">
 <thead>
@@ -453,6 +489,12 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 <td style="text-align: left;">toggle to hide progress bar</td>
 </tr>
 <tr>
+<td style="text-align: center;"><code translate="no" v-pre>-m</code></td>
+<td style="text-align: left;"><code translate="no" v-pre>--mask-n</code></td>
+<td style="text-align: center;"><code translate="no" v-pre>False</code></td>
+<td style="text-align: left;">to replace <code translate="no" v-pre>N</code> bases in FASTA file(s) with random ATCG bases</td>
+</tr>
+<tr>
 <td style="text-align: center;"><code translate="no" v-pre>-S</code></td>
 <td style="text-align: left;"><code translate="no" v-pre>--seed</code></td>
 <td style="text-align: center;"> </td>
@@ -473,6 +515,7 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 </tbody>
 </table>
 </div>
+</retype-table>
 <h3 id="output-type">Output type</h3>
 <p>Mimick lets you specify different output fastq types regardless of the intended linked-read
 simulation type. See <a href="../data_formats/">Data Formats</a> for more information.</p>
@@ -480,6 +523,18 @@ simulation type. See <a href="../data_formats/">Data Formats</a> for more inform
 <doc-tab v-cloak id="linked-read-simulation">
 <template #title>Linked-read simulation</template>
 <p>These are the options available specific to linked-read parameters, such as the average molecule length, etc.</p>
+<retype-table copy-text="| short name | long name             |                         default                          | description                                                                                                                                    | notes                                                                               |
+|:----------:|:----------------------|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
+|            | `FASTA`               |                                                          | input fasta file(s)                                                                                                                            | REQUIRED                                                                            |
+|    `-g`    | `--genomic-coverage`  |                           `30`                           | mean coverage target for simulated data                                                                                                        |                                                                                     |
+|    `-i`    | `--insert-size`       |                          `500`                           | outer distance between the two ends in bp                                                                                                      | must be &gt;`--read-lengths`                                                                 |
+|    `-d`    | `--insert-stdev`      |                           `50`                           | standard deviation of --distance                                                                                                               |                                                                                     |
+|    `-A`    | `--molecule-attempts` |                          `300`                           | number of attempts to create a molecule with &lt;70% ambiguous bases before exiting with an error                                                 |                                                                                     |
+|    `-C`    | `--molecule-coverage` |                          `0.2`                           | mean percent coverage per molecule if &lt;1, else mean number of reads per molecule                                                               |                                                                                     |
+|    `-L`    | `--molecule-length`   |                         `80000`                          | mean length of molecules in bp, drawn from exponential distribution                                                                            |                                                                                     |
+|    `-N`    | `--molecules-per`     |                           `3`                            | mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. `-2`) will be fixed for that number |                                                                                     |
+|    `-l`    | `--read-lengths`      |                        `150,150`                         | length of R1,R2 reads in bp                                                                                                                    | each must be &gt;10 and separated by a comma, no spaces                                |
+|    `-S`    | `--singletons`        |                           `0`                            | proportion of barcodes will only have a single read pair                                                                                       |">
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="compact">
 <thead>
@@ -565,6 +620,7 @@ simulation type. See <a href="../data_formats/">Data Formats</a> for more inform
 </tbody>
 </table>
 </div>
+</retype-table>
 </doc-tab>
 </doc-tabs>
 <div id="retype-backlinks">
