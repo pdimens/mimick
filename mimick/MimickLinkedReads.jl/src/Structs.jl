@@ -117,7 +117,7 @@ function Base.show(io::IO, data::Schema)
 end
 
 """
-    ProcessedMolecule(haplotype, barcode, chrom, position, read_breakpoints, read_sequences)
+    ProcessedMolecule(haplotype, barcode, chrom, position, insert_breakpoints, read_sequences)
 A mutable Struct that contains all the information of read simulation from a single molecule. Used
 to generate formatted FASTQ records.
 """

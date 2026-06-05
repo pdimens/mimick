@@ -12,8 +12,8 @@ function format_R1(::Val{:stlfr}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.first[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])#" * molecule.barcode * " 1:N:0:ATGACA\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])#" * molecule.barcode * " 1:N:0:ATGACA\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -24,8 +24,8 @@ function format_R1(::Val{:haplotagging}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.first[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])/1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])/1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -36,8 +36,8 @@ function format_R1(::Val{:tellseq}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.first[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i]):" * molecule.barcode * " 1:N:0:ATGACA\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i]):" * molecule.barcode * " 1:N:0:ATGACA\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -48,8 +48,8 @@ function format_R1(::Val{:tenx}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^(length(molecule.read_sequences.first[1]) + length(molecule.barcode))
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])|$(molecule.barcode) 1:N:0:ATGACA\n" * molecule.barcode * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])|$(molecule.barcode) 1:N:0:ATGACA\n" * molecule.barcode * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -60,8 +60,8 @@ function format_R1(::Val{:standard}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.first[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])/1\tVX:i:1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])/1\tVX:i:1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.first[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -81,8 +81,8 @@ function format_R2(::Val{:stlfr}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.second[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])#" * molecule.barcode * " 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])#" * molecule.barcode * " 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -93,8 +93,8 @@ function format_R2(::Val{:haplotagging}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.second[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])/2\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])/2\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -105,8 +105,8 @@ function format_R2(::Val{:tellseq}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.second[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i]):" * molecule.barcode * " 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i]):" * molecule.barcode * " 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -117,8 +117,8 @@ function format_R2(::Val{:tenx}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.second[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])|$(molecule.barcode) 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])|$(molecule.barcode) 2:N:0:ATGACA\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
@@ -129,8 +129,8 @@ function format_R2(::Val{:standard}, molecule::ProcessedMolecule)::String
         header = "@" * molecule.chrom * ":$(molecule.haplotype)|$(molecule.position)|"
         fq = ""
         _qual = "I"^length(molecule.read_sequences.second[1])
-        for i in eachindex(molecule.read_breakpoints)
-            fq *= header * "$(molecule.read_breakpoints[i])/2\tVX:i:1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
+        for i in eachindex(molecule.insert_breakpoints)
+            fq *= header * "$(molecule.insert_breakpoints[i])/2\tVX:i:1\tBX:Z:" * molecule.barcode * "\n" * molecule.read_sequences.second[i] * "\n+\n" * _qual * "\n"
         end
     end
     return fq
