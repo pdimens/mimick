@@ -9,7 +9,7 @@ Linked-read sequence simulator
 [![visor badge](https://custom-icon-badges.demolab.com/badge/-VISOR-12922e?style=for-the-badge&logo=package&logoColor=ffffff)](https://github.com/davidebolo1993/VISOR)
 
 Originally known as XENIA from the [VISOR](https://github.com/davidebolo1993/VISOR) project, Mimick is a 
-simulator for linked-read FASTQ data. Mimick allows you to simulate an
+simulator for linked-read FASTQ data. It allows you to simulate an
 arbitrary number of haplotypes, set overall coverage, molecule coverage,
 and choose what kind of linked reads you want.
 
@@ -40,16 +40,18 @@ molecule coverage. These characteristics are **very** important regarding the pe
 chromosomes/contigs **and** haplotypes. This form of barcode sharing is a common phenomenon in real linked-read
 libraries, but a characteristic existing simulators don't capture (e.g. XENIA only allowed barcode sharing within
 a chromosome within a haplotype). The documentation explains this in better detail.
-5. It supports multi-sample simulation (v3+) by way of one FASTA and one VCF as input. Sample haplotypes
+6. `N` bases in the FASTA haplotypes can be replaced with random ATCG bases on the fly
+6. It supports multi-sample simulation (v3+) by way of one FASTA and one VCF as input. Sample haplotypes
 are made by applying SNP and indel variants from VCF to the contigs in the FASTA.
-6. It's fast. The Julia version (v3+) is a signficant speedup for single-sample simulation and the multi-sample simulation
+7. It's fast. The Julia version (v3+) is a signficant speedup for single-sample simulation and the multi-sample simulation
 is parallelized across samples.
 
 ### Authors
+#### Mimick
+<img src="https://avatars.githubusercontent.com/u/19176506?v=4" width="50" height="50" style="border-radius: 50%; object-fit: cover;"/> [@pdimens](https://github.com/pdimens)
 
-<img src="https://avatars.githubusercontent.com/u/19176506?v=4" width="50" height="50" style="border-radius: 50%; object-fit: cover;"/> [@pdimens](https://github.com/pdimens) (Mimick)
-
-<img src="https://avatars.githubusercontent.com/u/39052119?v=4" width="50" height="50" style="border-radius: 50%; object-fit: cover;"/> [@davidebolo1993](https://github.com/davidebolo1993) (VISOR)
+#### VISOR
+<img src="https://avatars.githubusercontent.com/u/39052119?v=4" width="50" height="50" style="border-radius: 50%; object-fit: cover;"/> [@davidebolo1993](https://github.com/davidebolo1993)
 
 > [!NOTE]
 > Why name it "mimick"? Well, this software mimics linked-read data, I have an affinity for naming software after
