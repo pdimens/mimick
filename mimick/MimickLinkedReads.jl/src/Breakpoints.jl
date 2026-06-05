@@ -27,7 +27,7 @@ function seq_breakpoints!(molecule::ProcessedMolecule, lengths::Vector{Int})
     for (i, len) in enumerate(lengths)
         gap = rand(0:remaining_leeway)
         start = cursor + gap
-        molecule.read_breakpoints[i] = start:(start+len-1)
+        molecule.insert_breakpoints[i] = start:(start+len-1)
         cursor = start + len
         remaining_leeway -= gap
     end
@@ -95,7 +95,7 @@ mutates `ProcessedMolecule.read_sequences` in place with updated read sequences.
 function extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r1_len::Int, r2_len::Int)
     r1_len -= 1
     r2_len -= 1
-    @fastmath @inbounds for (i, breakpoint) in enumerate(molecule.read_breakpoints)
+    @fastmath @inbounds for (i, breakpoint) in enumerate(molecule.insert_breakpoints)
         R1 = circular_index_R2(sequence, breakpoint.start:breakpoint.start+r1_len)
         R2 = circular_index_R1(sequence, (breakpoint.stop-r2_len):breakpoint.stop)
         if count(==("N"), R1) / r1_len > 0.05 || count(==("N"), R2) / r2_len > 0.05

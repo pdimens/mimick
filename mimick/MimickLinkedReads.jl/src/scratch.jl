@@ -10,7 +10,7 @@ mimick(
     insert_stdev = 50,
     read_length = [150,150],
     singletons = 0.35,
-    circular = false,
+    circular = true,
     attempts = 25,
     seed = 0
 )

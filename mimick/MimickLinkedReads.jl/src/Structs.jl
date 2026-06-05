@@ -126,7 +126,7 @@ mutable struct ProcessedMolecule
     barcode::String
     chrom::String
     position::UnitRange{Int}
-    read_breakpoints::Vector{UnitRange{Int}}
+    insert_breakpoints::Vector{UnitRange{Int}}
     read_sequences::Pair{Vector{String}, Vector{String}}
 end
 
@@ -134,14 +134,27 @@ function ProcessedMolecule(schema::Schema, barcode::String, n_reads::Int)
     ProcessedMolecule(schema.haplotype, barcode, schema.chrom, 0:0, Vector{UnitRange{Int}}(undef, n_reads), Pair{Vector{LongDNA{4}}, Vector{LongDNA{4}}}(Vector{LongDNA{4}}(undef, n_reads), Vector{LongDNA{4}}(undef, n_reads)))
 end
 
-function Base.show(io::IO, data::Union{ProcessedMolecule,SimParams})
+function Base.show(io::IO, data::SimParams)
     println(io, "$(typeof(data)) Object")
     for i in fieldnames(typeof(data))
         val = getfield(data, i)
         if typeof(val) <: Distribution
-            println(io, " $i::$(supertype(typeof(val)))")
+            println(io, " $i: $(supertype(typeof(val)))")
         else
-            println(io, " $i::", typeof(val), " ", val)
+            println(io, " $i: $val")
         end
+    end
+end
+
+function Base.show(io::IO, data::ProcessedMolecule)
+    println(io, "$(typeof(data)) Object")
+    println(io, "haplotype: ", data.haplotype)
+    println(io, "barcode: ", data.barcode)
+    println(io, "chrom: ", data.chrom)
+    println(io, "position: ", data.position)
+    #println(io, "insert_breakpoints: ", data.insert_breakpoints)
+    println(io, "read_sequences: ")
+    for (i, j, b) in zip(data.read_sequences.first, data.read_sequences.second, data.insert_breakpoints)
+        println("  $(b.start):$(b.stop)  R1: $(i[1:10])…  R2: $(j[1:10])…")
     end
 end
