@@ -1,61 +1,90 @@
+#"""
+#    cumsum_to_ranges(values::Vector{Int64}) -> Vector{UnitRange{Int}}
+#
+#Shortcut method of finding fragment breakpoints. The first value of the `values` Vector
+#is expected to be the molecule start point. The subsequent values (indicies 2+) are expected
+#to be the lengths of the fragments that need breakpoints. This method will return sequential
+#non-overlapping breakpoints.
+#
+#"""
+#function cumsum_to_ranges(values::Vector{Int})::Vector{UnitRange{Int}}
+#    cs = cumsum(values)
+#    @inbounds begin
+#        return [cs[i]+1:cs[i+1] for i in eachindex(cs)[begin:end-1]]
+#    end
+#end
 """
-    cumsum_to_ranges(values::Vector{Int64}) -> Vector{UnitRange{Int}}
-
-Shortcut method of finding fragment breakpoints. The first value of the `values` Vector
-is expected to be the molecule start point. The subsequent values (indicies 2+) are expected
-to be the lengths of the fragments that need breakpoints. This method will return sequential
-non-overlapping breakpoints.
-
+    seq_breakpoints!(molecule::ProcessedMolecule, lengths::Vector{Int})
+Given a `ProcessedMolecule`, it's start:end interval in the `position` field,  and the `lengths` of the inserts, will
+create random non-overlapping breakpoints. Mutates `molecule.breakpoints` in place.
 """
-function cumsum_to_ranges(values::Vector{Int})::Vector{UnitRange{Int}}
-    cs = cumsum(values)
-    @inbounds begin
-        return [cs[i]+1:cs[i+1] for i in eachindex(cs)[begin:end-1]]
+function seq_breakpoints!(molecule::ProcessedMolecule, lengths::Vector{Int})
+    leeway = length(molecule.position) - sum(lengths)
+    @assert leeway >= 0 "Intervals do not fit within range"
+    cursor = first(molecule.position)
+    remaining_leeway = leeway
+
+    for (i, len) in enumerate(lengths)
+        gap = rand(0:remaining_leeway)
+        start = cursor + gap
+        molecule.read_breakpoints[i] = start:(start+len-1)
+        cursor = start + len
+        remaining_leeway -= gap
     end
-end
-
-"""
-    find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vector{Int}, max_attempts::Int)
-
-Given the molecule breakpoints in the `ProcessedMolecule` and the `lengths` of the inserts, will
-attempt (up to `max_attempts`) to randomly identify non-overlapping breakpoints. Mutates `molecule.breakpoints`
-in place.
-"""
-function find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vector{Int}, max_attempts::Int)
-    range_start = molecule.position.start
-    range_end = molecule.position.stop
-    range_size = range_end - range_start + 1
-
-    # if the lengths are kinda close to the total molecule size, just use them sequentially and skip everything else
-    if sum(lengths) > range_size - 200
-        @inbounds molecule.read_breakpoints .= cumsum_to_ranges([range_start, lengths...])
-        return
-    end
-    occupied_intervals = Vector{UnitRange{Int}}(undef, length(lengths))
-    @inbounds for (i, len) in enumerate(lengths)
-        placed = false
-        attempts = 0
-        last_possible = range_end - len
-
-        while !placed && attempts < max_attempts
-            attempts += 1
-            start_pos = rand(range_start:last_possible)
-            interval_attempt = start_pos:start_pos+len
-            for _interval in occupied_intervals
-                !isempty(intersect(interval_attempt, _interval)) && continue
-            end
-            @inbounds occupied_intervals[i] = interval_attempt
-            placed = true
-        end
-        if !placed
-            println("Couldnt place $i")
-            return Vector{UnitRange{Int}}(undef, 1)
-            error("Could not place range of length $len after $max_attempts attempts")
-        end
-    end
-    @inbounds molecule.read_breakpoints .= occupied_intervals
     return
 end
+
+#"""
+#    find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vector{Int}, max_attempts::Int)
+#
+#Given the molecule breakpoints in the `ProcessedMolecule` and the `lengths` of the inserts, will
+#attempt (up to `max_attempts`) to randomly identify non-overlapping breakpoints. Mutates `molecule.breakpoints`
+#in place.
+#"""
+#function find_nonoverlapping_ranges!(molecule::ProcessedMolecule, lengths::Vector{Int}, max_attempts::Int)
+#    range_start = molecule.position.start
+#    range_end = molecule.position.stop
+#    range_size = range_end - range_start + 1
+#    # find how much wiggle room there is
+#    leeway = range_size - sum(lengths)
+#    for i in lengths
+#        last_possible = range_end - len
+#
+#        start_pos = rand(range_start:last_possible)
+#        interval_attempt = start_pos:start_pos+len
+#
+#
+#    end
+#    # if the lengths are kinda close to the total molecule size, just use them sequentially and skip everything else
+#    if sum(lengths) > range_size - 200
+#        @inbounds molecule.read_breakpoints .= cumsum_to_ranges([range_start, lengths...])
+#        return
+#    end
+#    occupied_intervals = Vector{UnitRange{Int}}(undef, length(lengths))
+#    @inbounds for (i, len) in enumerate(lengths)
+#        placed = false
+#        attempts = 0
+#        last_possible = range_end - len
+#
+#        while !placed && attempts < max_attempts
+#            attempts += 1
+#            start_pos = rand(range_start:last_possible)
+#            interval_attempt = start_pos:start_pos+len
+#            for _interval in occupied_intervals
+#                !isempty(intersect(interval_attempt, _interval)) && continue
+#            end
+#            @inbounds occupied_intervals[i] = interval_attempt
+#            placed = true
+#        end
+#        if !placed
+#            println("Couldnt place $i")
+#            return Vector{UnitRange{Int}}(undef, 1)
+#            error("Could not place range of length $len after $max_attempts attempts")
+#        end
+#    end
+#    @inbounds molecule.read_breakpoints .= occupied_intervals
+#    return
+#end
 
 """
     extract_sequences!(molecule::ProcessedMolecule, sequence::LongDNA{4}, r1_len::Int, r2_len::Int)
@@ -181,7 +210,7 @@ function calculate_insert_sizes(params::SimParams, molsize::Int)::Vector{Int}
         attempts += 1
         read_sizes = rand(params.insert_size, n_reads)
     end
-    #TODO there should be some kind of tolerant conditional here for small contigs
+    #TODO there should be some kind of tolerant conditional here for small contigs?
     if sum(read_sizes) > molsize
         error("FAILED TO FIND PRACTICAL READ SIZES LESS THAN MOLECULE.\nMolecule Length: $molsize\nRead Lengths: $read_sizes\nTotal Insert Length:$(sum(read_sizes))")
     end
@@ -211,12 +240,12 @@ function get_sequences(schema::Schema, params::SimParams, barcode::String, molec
         start_pos = rand(1:adjusted_end)
         end_pos = start_pos + molecule_length
         molecule.position = start_pos:end_pos
-        # 50 attempts to create N reads with <95% ambiguous bases
-        find_nonoverlapping_ranges!(molecule, fragments, 50)
+        # attempts to create N reads with <95% ambiguous bases
+        seq_breakpoints!(molecule, fragments)
         extract_sequences!(molecule, schema.sequence, params.length_R1, params.length_R2)
     end
     if !isassigned(molecule.read_sequences.first, n_frags)
-        error("After $params.attempts attempts, unable to create reads for $(schema.chrom) from molecule spanning $start_pos-$end_pos. This could be due to either a failure to create $n_frags non-overlapping reads or too many N's (ambiguous bases) in the resulting reads.")
+        error("After $params.attempts attempts, unable to create reads for $(schema.chrom) from molecule spanning $start_pos-$end_pos due to too many N's (ambiguous bases) in the resulting reads.")
     end
     return molecule
 end

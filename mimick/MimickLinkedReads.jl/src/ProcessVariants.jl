@@ -155,10 +155,11 @@ function mutate!(seq::LongDNA{4}, ::Val{:indel}, position::Int, ref::String, rep
 end
 
 function build_sample_schema(schema::Dict{String, Schema}, variants::Dict{String, Vector{Mutation}})
-    haplotypes = collect(keys(variants))
-    contigs = collect(keys(schema))
+    haplotypes= collect(String, keys(variants))
+    contigs = collect(String, keys(schema))
     contigs_haplos = map(haplotypes) do i
-        _x = findfirst(j -> occursin(j, i[begin:end-2]), contigs)
+        prefix = i[begin:findlast('_', i)-1]
+        _x = findfirst(j -> startswith(j, prefix), contigs)
         (contigs[_x] => i)
     end
     d = Dict{String, Schema}()

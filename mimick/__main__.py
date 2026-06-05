@@ -36,6 +36,7 @@ config = click.RichHelpConfiguration(
 @click.option('-c', '--circular', is_flag= True, default = False, help = 'contigs are circular/prokaryotic')
 @click.option('-o', '--output-prefix', help='output file prefix', type = click.Path(exists = False, writable=True, resolve_path=True), default = "simulated/", show_default=True)
 @click.option('-q', '--quiet', is_flag= True, default = False, help = 'toggle to hide progress bar')
+@click.option('-m', '--mask-n', is_flag= True, default = False, help = 'Replace Ns in the fasta file(s) with random ATCG bases')
 @click.option('-t', '--threads', help='number of threads to use for multi-sample simulation', type=click.IntRange(min=2), default=2, show_default=True)
 @click.option('-s', '--seed', help='random seed for simulation', type=click.IntRange(min=-1, clamp = True), default=-1)
 @click.option('-f', '--format', 'fmt', help='FASTQ output format',show_default=True, default = "standard:haplotagging", type = click.Choice(["10x", "stlfr", "standard", "standard:haplotagging", "standard:stlfr", "haplotagging", "tellseq"], case_sensitive=False))
@@ -50,7 +51,7 @@ config = click.RichHelpConfiguration(
 @click.option('-S', '--singletons', help='proportion of barcodes that will only have one read pair', default=0, show_default=True, type=click.FloatRange(0,1))
 @click.option('-v', '--vcf', help='VCF-formatted file containing genotypes from which to create per-sample haplotypes', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True))
 @click.argument('fasta', type = click.Path(exists=True, dir_okay=False, resolve_path=True, readable=True), nargs = -1, required=True)
-def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_coverage,insert_size,read_lengths,insert_stdev, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons, vcf):
+def mimick(fasta, circular, quiet, mask_n, output_prefix, fmt, seed, threads,genomic_coverage,insert_size,read_lengths,insert_stdev, molecule_coverage, molecule_attempts, molecule_length, molecules_per, singletons, vcf):
     """
     Simulate linked-read FASTQ data for one or many individuals
 
@@ -76,12 +77,13 @@ def mimick(fasta, circular, quiet, output_prefix, fmt, seed, threads,genomic_cov
     cmd = ["julia", "--threads", f"{threads}", "-e"]
     circular = f"{circular}".lower()
     quiet = f"{quiet}".lower()
+    mask_n = f"{mask_n}".lower()
     if vcf:
         fa = f'"{fasta[0]}"'
-        cmd.append(f'using MimickLinkedReads\n mimick({fa}, "{vcf}", "{fmt}", outdir = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
+        cmd.append(f'using MimickLinkedReads\n mimick({fa}, "{vcf}", "{fmt}", outdir = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, mask = {mask_n}, quiet = {quiet})')
     else:
         fa = "[" + ", ".join(f'"{i}"' for i in fasta) + "]"
-        cmd.append(f'using MimickLinkedReads; mimick({fa}, "{fmt}", prefix = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, quiet = {quiet})')
+        cmd.append(f'using MimickLinkedReads; mimick({fa}, "{fmt}", prefix = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, mask = {mask_n}, quiet = {quiet})')
 
     with subprocess.Popen(cmd) as mmk:
         exitcode = 0

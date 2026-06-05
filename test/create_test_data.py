@@ -12,7 +12,7 @@ def fasta():
     return (
         f">Contig1\n{''.join(choices(nuc, k = 200000))}\n"
         f">Contig2\n{''.join(choices(nuc, k = 200000))}\n"
-        f">Contig3\n{''.join(choices(nuc, k = 1000))}\n"
+        f">Contig3\n{''.join(choices(nuc, k = 1000))}NNNN\n"
     ).encode()
 
 for i in [1,2]:

@@ -18,9 +18,10 @@ Writes one pair of R1 and R2 reads. The `format` is expected to be one of `"hapl
 - circular: `Bool` of whether to treat input FASTA contigs as circular DNA when simulating molecules (default: `false`)
 - attempts: `Int` of how many times to attempt creating a feasible molecule for a barcode before terminating with an error (default: `25`)
 - seed: `Int` of seed for randomization. Numbers >=0 will set the seed to that value, whereas negative numbers ignore setting a seed (default: `-1`)
+- mask: `Bool` replaces Ns with a random ATCG base in the input fasta file(s)
 - quiet: `Bool` suppress progress bar if `true`
 """
-function mimick(fasta::Vector{String}, format::String; prefix::String="simulated/SIM", coverage::Union{Int,Float64}=30, n_molecules::Int=2, mol_coverage::Float64=0.2, mol_length::Int64=80000, insert_length::Int=500, insert_stdev::Int=50, read_length::Vector{Int}=[150, 150], singletons::Float64=0.70, circular::Bool=false, attempts::Int=25, seed::Int=-1, quiet::Bool=false)
+function mimick(fasta::Vector{String}, format::String; prefix::String="simulated/SIM", coverage::Union{Int,Float64}=30, n_molecules::Int=2, mol_coverage::Float64=0.2, mol_length::Int64=80000, insert_length::Int=500, insert_stdev::Int=50, read_length::Vector{Int}=[150, 150], singletons::Float64=0.70, circular::Bool=false, attempts::Int=25, seed::Int=-1, mask::Bool = false, quiet::Bool=false)
     if seed >= 0
         Random.seed!(seed)
     end
@@ -30,7 +31,7 @@ function mimick(fasta::Vector{String}, format::String; prefix::String="simulated
         @info "Only 1 read length was provided. Using it for both R1 and R2 read lengths"
         read_length = [read_length, read_length]
     end
-    schema = setup_schema(fasta, coverage, read_length, mol_length)
+    schema = setup_schema(fasta, coverage, read_length, mol_length, mask = mask)
     bc_fmt, fq_fmt = interperet_format(format)
     barcodes = setup_barcodes(bc_fmt)
     params = SimParams(prefix, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular=circular, attempts=attempts)
@@ -48,7 +49,6 @@ function mimick(fasta::Vector{String}, format::String; prefix::String="simulated
             molsize = get_molecule_size(params, length(schema[target].sequence))
             frags = calculate_insert_sizes(params, molsize)
             molecule = get_sequences(schema[target], params, get_next!(barcodes), molsize, frags)
-            #println(molecule)
             write(R1, format_R1(fq_fmt, molecule))
             write(R2, format_R2(fq_fmt, molecule))
             schema[target].tracker.reads_current += length(frags)
@@ -82,13 +82,14 @@ The `format` is expected to be one of `"haplotagging"`, `"stlfr"`, `"tellseq"`, 
 - circular: `Bool` of whether to treat input FASTA contigs as circular DNA when simulating molecules (default: `false`)
 - attempts: `Int` of how many times to attempt creating a feasible molecule for a barcode before terminating with an error (default: `25`)
 - seed: `Int` of seed for randomization. Numbers >=0 will set the seed to that value, whereas negative numbers ignore setting a seed (default: `-1`)
+- mask: `Bool` replaces Ns with a random ATCG base in the input fasta file
 - quiet: `Bool` suppress progress bar if `true`
 """
-function mimick(fasta::String, vcf::String, format::String; outdir::String="simulated", coverage::Union{Int,Float64}=30, n_molecules::Int=2, mol_coverage::Float64=0.2, mol_length::Int64=80000, insert_length::Int=500, insert_stdev::Int=50, read_length::Vector{Int}=[150, 150], singletons::Float64=0.70, circular::Bool=false, attempts::Int=25, seed::Int=-1, quiet::Bool=false)
+function mimick(fasta::String, vcf::String, format::String; outdir::String="simulated", coverage::Union{Int,Float64}=30, n_molecules::Int=2, mol_coverage::Float64=0.2, mol_length::Int64=80000, insert_length::Int=500, insert_stdev::Int=50, read_length::Vector{Int}=[150, 150], singletons::Float64=0.70, circular::Bool=false, attempts::Int=25, seed::Int=-1, mask::Bool = false, quiet::Bool=false)
     if seed >= 0
         Random.seed!(seed)
     end
-    master_schema = setup_schema(fasta, coverage, read_length, mol_length)
+    master_schema = setup_schema(fasta, coverage, read_length, mol_length, mask = mask)
     params = SimParams(outdir, insert_length, insert_stdev, read_length[1], read_length[2], n_molecules, mol_length, mol_coverage, singletons; circular=circular, attempts=attempts)
     bc_fmt, fq_fmt = interperet_format(format)
     if endswith(lowercase(vcf), "bcf")
