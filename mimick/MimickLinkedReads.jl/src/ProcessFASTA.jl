@@ -45,6 +45,7 @@ Use `mask=true` to replace Ns with random bases.
 function process_fasta(fasta::String, haplotype::Int, coverage::Float64, read_len::Vector{Int}; mask::Bool = false)::Vector{Schema}
     #fai = index_fasta(fasta)
     mean_readlen = sum(read_len) ÷ 2
+    unambiguous_cutoff = Int(round(sum(read_len) * 0.95))
     FASTAReader(safe_read(fasta), index=nothing, copy=false) do _fasta
         map(_fasta) do contig
             chrom = String(identifier(contig))
@@ -54,8 +55,8 @@ function process_fasta(fasta::String, haplotype::Int, coverage::Float64, read_le
             end
             end_position = lastindex(seq)
             normalized_length = end_position - count(==(DNA_N), seq)
-            if normalized_length < 600
-                error("Error in $fasta contig $chrom: contigs must have at least 600 unambiguous (non-N) bases.")
+            if normalized_length < unambiguous_cutoff
+                error("Contigs must have at least 95% of the requested read length sum as unambiguous (non-N) bases. This could not be achieved for contig $contig in $fasta, which doesn't have at least $unambiguous_cutoff ATCG bases.")
             end
             reads_required = trunc(Int, (coverage * normalized_length / mean_readlen) / 2)
             Schema(haplotype, chrom, reads_required, seq)

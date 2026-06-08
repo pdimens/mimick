@@ -45,7 +45,7 @@ config = click.RichHelpConfiguration(
 @click.option('-d', '--insert-stdev', help='standard deviation for `--insert-size`', default=50, show_default=True, type=click.IntRange(min=0))
 @click.option('-A', '--molecule-attempts', help='how many tries to create a molecule with <70% ambiguous bases', show_default=True, default=300, type=click.IntRange(min=5))
 @click.option('-C', '--molecule-coverage', help='mean percent coverage per molecule if <1, else mean number of reads per molecule', default=0.2, show_default=True, type=click.FloatRange(min=0.00001))
-@click.option('-L', '--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=650))
+@click.option('-L', '--molecule-length', help='mean length of molecules in bp', show_default=True, default=80000, type=click.IntRange(min=300))
 @click.option('-N', '--molecules-per', help='mean number of unrelated molecules per barcode per chromosome, where a negative number (e.g. `-2`) will use a fixed number of unrelated molecules and a positive one will draw from a distribution', default=2, show_default=True, type=int)
 @click.option('-l', '--read-lengths', help='length of R1,R2 sequences in bp', default="150,150", show_default=True, type=ReadLengths())
 @click.option('-S', '--singletons', help='proportion of barcodes that will only have one read pair', default=0, show_default=True, type=click.FloatRange(0,1))
@@ -70,9 +70,6 @@ def mimick(fasta, circular, quiet, mask_n, output_prefix, fmt, seed, threads,gen
     | stlfr        |    `150,108`     | 3-barcode on R2      | @SEQID#1_2_3          |
     | tellseq      |    `132,150`     | single barcode on R1 | @SEQID:ATGC           |
     """
-    if "MimickLinkedReads" not in pkglist():
-        mimick_install()
-
     fmt = "tenx" if fmt == "10x" else fmt
     cmd = ["julia", "--threads", f"{threads}", "-e"]
     circular = f"{circular}".lower()
@@ -84,7 +81,12 @@ def mimick(fasta, circular, quiet, mask_n, output_prefix, fmt, seed, threads,gen
     else:
         fa = "[" + ", ".join(f'"{i}"' for i in fasta) + "]"
         cmd.append(f'using MimickLinkedReads; mimick({fa}, "{fmt}", prefix = "{output_prefix}", coverage = {genomic_coverage}, n_molecules = {molecules_per}, mol_coverage = {molecule_coverage}, mol_length = {molecule_length}, insert_length = {insert_size}, insert_stdev = {insert_stdev}, read_length = Int{read_lengths}, singletons = {singletons}, circular = {circular}, attempts = {molecule_attempts}, seed = {seed}, mask = {mask_n}, quiet = {quiet})')
+    if sum(read_lengths) > molecule_length:
+        rprint(f"[red]ERROR[/]: The sum of the read lengths {read_lengths} cannot exceed the average molecule length ({molecule_length}).", file = sys.stderr)
+        sys.exit(1)
 
+    if "MimickLinkedReads" not in pkglist():
+        mimick_install()
     with subprocess.Popen(cmd) as mmk:
         exitcode = 0
         try:
