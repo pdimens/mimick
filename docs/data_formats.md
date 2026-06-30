@@ -17,8 +17,8 @@ with `--format stlfr` and `--read-lengths 150,108`. You can also mix-match these
 
 The table below serves as a guide for the configurations for the common linked-read varieties: 
 
-{.compact}
-| Chemistry    | `--read-lengths` | Format                                  | barcode `--format`      |
+{.compact .clean}
+| Chemistry  {.whitespace-nowrap}   | `--read-lengths`  {.whitespace-nowrap} | Format                                  | barcode `--format`    {.whitespace-nowrap}   |
 |:-------------|:-----------:|:---------------------------------------------|:------------------------|
 | 10x          |  `134,150`  | single barcode on R1                         | `tellseq`               |
 | tellseq      |  `132,150`  | single barcode on R1                         | `tellseq`               |
@@ -39,8 +39,8 @@ experiment you are trying to do, you can specify any of the linked-read types as
 You can suffix `standard` with `:haplotagging` or `:stlfr` (e.g. `standard:stlfr`) to output the standard format
 with that kind of barcode encoding style, otherwise `standard` (no suffix) will use the nucleotide barcode.
 
-{.compact}
-| --format    | Barcode Location                         | Example                    |
+{.compact .clean}
+| --format   {.whitespace-nowrap}  | Barcode Location                         | Example                    |
 |:-----------------|:-----------------------------------------|:---------------------------|
 | `10x`            | start of R1 sequence                     | `ATAGACCATAGA`GGACA...     |
 | `haplotagging`   | sequence header as `BX:Z:ACBD`           | `@SEQID BX:Z:A0C331B34D87` |

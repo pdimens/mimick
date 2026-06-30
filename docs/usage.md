@@ -30,8 +30,8 @@ done
 ==- All Options
 For completeness, the table below is all the command line arguments and options
 
-{.compact}
-| short name | long name             |                         default                          | description                                                                                                                                    | notes                                                                               |
+{.compact .clean}
+| short name  {.whitespace-nowrap}| long name     {.whitespace-nowrap}         |                         default           {.whitespace-nowrap}                | description                                                                                                                                    | notes                                                                               |
 |:----------:|:----------------------|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
 |            | `FASTA`               |                                                          | input fasta file(s)                                                                                                                            | REQUIRED                                                                            |
 |    `-c`    | `--circular`          |                                                          | toggle to let Mimick know the input contigs are circular/prokaryotic                                                                           |                                                                                     |
@@ -81,8 +81,8 @@ should make sense as well: $end = start + molecule\_size - contig\_size$
 +++ General options
 These options control inputs/outputs and resources
 
-{.compact}
-| short name | long name         | default                                                  | description                                                          |
+{.compact .clean}
+| short name  {.whitespace-nowrap} | long name     {.whitespace-nowrap}     | default           {.whitespace-nowrap}                                        | description                                                          |
 |:----------:|:------------------|:--------------------------------------------------------:|:---------------------------------------------------------------------|
 |    `-c`    | `--circular`      | `False`                                                  | toggle to let Mimick know the input contigs are circular/prokaryotic |
 |    `-o`    | `--output-prefix` | `simulated/`                                             | output file prefix                                                   |
@@ -100,8 +100,8 @@ simulation type. See [Data Formats](data_formats.md) for more information.
 +++ Linked-read simulation
 These are the options available specific to linked-read parameters, such as the average molecule length, etc.
 
-{.compact}
-| short name | long name             |                         default                          | description                                                                                                                                    | notes                                                                               |
+{.compact .clean}
+| short name {.whitespace-nowrap} | long name   {.whitespace-nowrap}           |                         default       {.whitespace-nowrap}                    | description                                                                                                                                    | notes                                                                               |
 |:----------:|:----------------------|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
 |            | `FASTA`               |                                                          | input fasta file(s)                                                                                                                            | REQUIRED                                                                            |
 |    `-g`    | `--genomic-coverage`  |                           `30`                           | mean coverage target for simulated data                                                                                                        |                                                                                     |
