@@ -1,7 +1,7 @@
 Linked-read chemistries continue to evolve and it seems like every new method wants to use their own bespoke
 convention for putting barcodes in FASTQ files (because that's exactly what's happening, unfortunately). Until
-such a day comes when linked-read FASTQ data formats will be properly standardized, we are sort of forced to just let
-tyrants roam about with their hubris. It is for this very frustrating reason that Mimick supports different
+such a day comes when linked-read FASTQ data formats will be [properly standardized](https://pdimens.github.io/lastq/),
+we are sort of forced to just let egos roam. It is for this very frustrating reason that Mimick supports different
 input and output linked-read types.
 
 ## Linked-read simulation types
@@ -13,12 +13,12 @@ with `--format stlfr` and `--read-lengths 150,108`. You can also mix-match these
 The table below serves as a guide for the configurations for the common linked-read varieties: 
 
 {.compact .clean}
-| Chemistry  {.whitespace-nowrap}   | `--read-lengths`  {.whitespace-nowrap} | Format                                  | barcode `--format`    {.whitespace-nowrap}   |
-|:-------------|:-----------:|:---------------------------------------------|:------------------------|
-| 10x          |  `134,150`  | single barcode on R1                         | `tellseq`               |
-| tellseq      |  `132,150`  | single barcode on R1                         | `tellseq`               |
-| haplotagging |  `150,150`  | I1 and I2 each with combinatorial 2-barcodes | `standard:haplotagging` |
-| stlfr        |  `150,108`  | combinatorial 3-barcode on R2                | `stlfr`                 |
+| Chemistry  {.whitespace-nowrap} | `--read-lengths`  {.whitespace-nowrap} | Format                                       | barcode `--format`    {.whitespace-nowrap} |
+| :------------------------------ | :------------------------------------: | :------------------------------------------- | :----------------------------------------- |
+| 10x                             |               `134,150`                | single barcode on R1                         | `tellseq`                                  |
+| tellseq                         |               `132,150`                | single barcode on R1                         | `tellseq`                                  |
+| haplotagging                    |               `150,150`                | I1 and I2 each with combinatorial 2-barcodes | `standard:haplotagging`                    |
+| stlfr                           |               `150,108`                | combinatorial 3-barcode on R2                | `stlfr`                                    |
 
 The simulation process never actually includes the barcodes in the reads, so the read lengths you
 specify with `--lengths` will be the **final demultiplexed read lengths**. Unlike 10x and tellseq, which use barcodes directly,
@@ -31,17 +31,18 @@ Like discussed above, there are _options_ for how the resulting linked-read data
 format over another? Well, it could be personal preference or the software you want to use is configured for a very
 specific format (which is a **problem** for the linked-read ecosystem). Regardless of the _kind_ of linked-read
 experiment you are trying to do, you can specify any of the linked-read types as the output format with `--format`.
-You can suffix `standard` with `:haplotagging` or `:stlfr` (e.g. `standard:stlfr`) to output the standard format
+You can suffix `standard` with `:haplotagging` or `:stlfr` (e.g. `standard:stlfr`) to output the [standard format](https://pdimens.github.io/lastq/)
 with that kind of barcode encoding style, otherwise `standard` (no suffix) will use the nucleotide barcode.
+**We strongly recommend using the standard output format in your work**.
 
 {.compact .clean}
-| --format   {.whitespace-nowrap}  | Barcode Location                         | Example                    |
-|:-----------------|:-----------------------------------------|:---------------------------|
-| `10x`            | start of R1 sequence                     | `ATAGACCATAGA`GGACA...     |
-| `haplotagging`   | sequence header as `BX:Z:ACBD`           | `@SEQID BX:Z:A0C331B34D87` |
-| `standard[:...]` | sequence header as `BX:Z:BARCODE VX:i:N` | `@SEQID BX:Z:ATACGAGACA`   |
-| `stlfr`          | appended to sequence ID via `#1_2_3`     | `@SEQID#1_354_39`          |
-| `tellseq`        | appended to sequence ID via `:ATCG`      | `@SEQID:TATTAGCAC`         |
+| --format   {.whitespace-nowrap} | Barcode Location                         | Example                    |
+| :------------------------------ | :--------------------------------------- | :------------------------- |
+| `10x`                           | start of R1 sequence                     | `ATAGACCATAGA`GGACA...     |
+| `haplotagging`                  | sequence header as `BX:Z:ACBD`           | `@SEQID BX:Z:A0C331B34D87` |
+| `standard[:...]`                | sequence header as `BX:Z:BARCODE VX:i:N` | `@SEQID BX:Z:ATACGAGACA`   |
+| `stlfr`                         | appended to sequence ID via `#1_2_3`     | `@SEQID#1_354_39`          |
+| `tellseq`                       | appended to sequence ID via `:ATCG`      | `@SEQID:TATTAGCAC`         |
 
 ## Proper read pairing
 Mimick should properly pair reads, but in the event you need to do that manually, you can use `seqkit`:
