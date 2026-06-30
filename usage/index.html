@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/mimick">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.834241035142">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.6.0.836107744565">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 4.6.0">
@@ -39,12 +39,12 @@
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
     <link id="retype-favicon" rel="icon" href="../static/mimick_icon.png" />
-    <link href="../resources/css/retype.css?v=4.6.0.834241035142" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=4.6.0.836107744565" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.834241035142" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=4.6.0.836107744565" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=4.6.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.834241035142" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.6.0.834241035142" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=4.6.0.836107744565" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=4.6.0.836107744565" defer></script>
     <link href="../resources/css/katex.css?v=4.6.0" rel="stylesheet">
     <script id="katex-js" data-cfasync="false" src="../resources/js/katex.js?v=4.6.0" defer></script>
 </head>
@@ -255,7 +255,7 @@ done</code></pre>
 <doc-panel id="all-options" collapsed>
     <template #title>All Options</template>
 <p>For completeness, the table below is all the command line arguments and options</p>
-<retype-table copy-text="| short name | long name             |                         default                          | description                                                                                                                                    | notes                                                                               |
+<retype-table copy-text="| short name| long name|                         default| description                                                                                                                                    | notes                                                                               |
 |:----------:|:----------------------|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
 |            | `FASTA`               |                                                          | input fasta file(s)                                                                                                                            | REQUIRED                                                                            |
 |    `-c`    | `--circular`          |                                                          | toggle to let Mimick know the input contigs are circular/prokaryotic                                                                           |                                                                                     |
@@ -275,141 +275,141 @@ done</code></pre>
 |    `-l`    | `--read-lengths`      |                        `150,150`                         | length of R1,R2 reads in bp                                                                                                                    | each must be &gt;10 and separated by a comma, no spaces                                |
 |    `-S`    | `--singletons`        |                           `0`                            | proportion of barcodes that will only have a single read pair                                                                                  |                                                                                     |
 |    `-v`    | `--vcf`               |                                                          | VCF-formatted file containing genotypes from which to create per-sample haplotypes                                                             |                                                                                     |">
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="compact">
+<div class="table-wrapper clean scrollbar overflow-hidden">
+<table class="compact clean">
 <thead>
 <tr>
-<th style="text-align: center;">short name</th>
-<th style="text-align: left;">long name</th>
-<th style="text-align: center;">default</th>
+<th style="text-align: center;" class="whitespace-nowrap">short name</th>
+<th style="text-align: left;" class="whitespace-nowrap">long name</th>
+<th style="text-align: center;" class="whitespace-nowrap">default</th>
 <th style="text-align: left;">description</th>
 <th style="text-align: left;">notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: center;"> </td>
-<td style="text-align: left;"><code translate="no" v-pre>FASTA</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>FASTA</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">input fasta file(s)</td>
 <td style="text-align: left;">REQUIRED</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-c</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--circular</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-c</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--circular</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">toggle to let Mimick know the input contigs are circular/prokaryotic</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-o</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--output-prefix</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>simulated/</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-o</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--output-prefix</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>simulated/</code></td>
 <td style="text-align: left;">output file prefix</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-f</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--format</code></td>
-<td style="text-align: center;"><a href="../data_formats/#linked-read-simulation-types">varies</a></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-f</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--format</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><a href="../data_formats/#linked-read-simulation-types">varies</a></td>
 <td style="text-align: left;">output format of FASTQ files</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-q</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--quiet</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-q</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--quiet</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">toggle to hide the progress bar</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-m</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--mask-n</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-m</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--mask-n</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">toggle to replace <code translate="no" v-pre>N</code> bases in FASTA file(s) with random ATCG bases</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-s</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--seed</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-s</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--seed</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">random seed for simulation</td>
 <td style="text-align: left;">optional and useful for reproducibility</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-t</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--threads</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>2</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-t</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--threads</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>2</code></td>
 <td style="text-align: left;">number of threads to use for simulation</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-g</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--genomic-coverage</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>30</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-g</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--genomic-coverage</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>30</code></td>
 <td style="text-align: left;">mean coverage target for simulated data</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-i</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--insert-size</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>500</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-i</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--insert-size</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>500</code></td>
 <td style="text-align: left;">outer distance between the two ends in bp</td>
 <td style="text-align: left;">must be &gt;<code translate="no" v-pre>--read-lengths</code></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-d</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--insert-stdev</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>50</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-d</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--insert-stdev</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>50</code></td>
 <td style="text-align: left;">standard deviation of --distance</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-A</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecule-attempts</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>300</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-A</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecule-attempts</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>300</code></td>
 <td style="text-align: left;">number of attempts to create a molecule with &lt;70% ambiguous bases before exiting with an error</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-C</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecule-coverage</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>0.2</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-C</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecule-coverage</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>0.2</code></td>
 <td style="text-align: left;">mean percent coverage per molecule if &lt;1, else mean number of reads per molecule</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-L</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecule-length</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>80000</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-L</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecule-length</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>80000</code></td>
 <td style="text-align: left;">mean length of molecules in bp, drawn from exponential distribution</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-N</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecules-per</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>3</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-N</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecules-per</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>3</code></td>
 <td style="text-align: left;">mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. <code translate="no" v-pre>-2</code>) will be fixed for that number</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-l</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--read-lengths</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>150,150</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-l</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--read-lengths</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>150,150</code></td>
 <td style="text-align: left;">length of R1,R2 reads in bp</td>
 <td style="text-align: left;">each must be &gt;10 and separated by a comma, no spaces</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-S</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--singletons</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>0</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-S</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--singletons</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>0</code></td>
 <td style="text-align: left;">proportion of barcodes that will only have a single read pair</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-v</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--vcf</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-v</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--vcf</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">VCF-formatted file containing genotypes from which to create per-sample haplotypes</td>
 <td style="text-align: left;"> </td>
 </tr>
@@ -443,7 +443,7 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 <doc-tab v-cloak id="general-options">
 <template #title>General options</template>
 <p>These options control inputs/outputs and resources</p>
-<retype-table copy-text="| short name | long name         | default                                                  | description                                                          |
+<retype-table copy-text="| short name| long name| default| description                                                          |
 |:----------:|:------------------|:--------------------------------------------------------:|:---------------------------------------------------------------------|
 |    `-c`    | `--circular`      | `False`                                                  | toggle to let Mimick know the input contigs are circular/prokaryotic |
 |    `-o`    | `--output-prefix` | `simulated/`                                             | output file prefix                                                   |
@@ -453,63 +453,63 @@ should make sense as well: <span class="math">end = start + molecule\_size - con
 |    `-S`    | `--seed`          |                                                          | random seed for simulation                                           |
 |    `-t`    | `--threads`       | `2`                                                      | number of threads to use for simulation                              |
 |    `-v`    | `--vcf`           |                                                          | VCF-formatted file containing genotypes from which to create per-sample haplotypes |">
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="compact">
+<div class="table-wrapper clean scrollbar overflow-hidden">
+<table class="compact clean">
 <thead>
 <tr>
-<th style="text-align: center;">short name</th>
-<th style="text-align: left;">long name</th>
-<th style="text-align: center;">default</th>
+<th style="text-align: center;" class="whitespace-nowrap">short name</th>
+<th style="text-align: left;" class="whitespace-nowrap">long name</th>
+<th style="text-align: center;" class="whitespace-nowrap">default</th>
 <th style="text-align: left;">description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-c</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--circular</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>False</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-c</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--circular</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>False</code></td>
 <td style="text-align: left;">toggle to let Mimick know the input contigs are circular/prokaryotic</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-o</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--output-prefix</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>simulated/</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-o</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--output-prefix</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>simulated/</code></td>
 <td style="text-align: left;">output file prefix</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-f</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--format</code></td>
-<td style="text-align: center;"><a href="../data_formats/#linked-read-simulation-types">varies</a></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-f</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--format</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><a href="../data_formats/#linked-read-simulation-types">varies</a></td>
 <td style="text-align: left;">output format of FASTQ files</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-q</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--quiet</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>False</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-q</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--quiet</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>False</code></td>
 <td style="text-align: left;">toggle to hide progress bar</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-m</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--mask-n</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>False</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-m</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--mask-n</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>False</code></td>
 <td style="text-align: left;">to replace <code translate="no" v-pre>N</code> bases in FASTA file(s) with random ATCG bases</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-S</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--seed</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-S</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--seed</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">random seed for simulation</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-t</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--threads</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>2</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-t</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--threads</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>2</code></td>
 <td style="text-align: left;">number of threads to use for simulation</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-v</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--vcf</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-v</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--vcf</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">VCF-formatted file containing genotypes from which to create per-sample haplotypes</td>
 </tr>
 </tbody>
@@ -523,7 +523,7 @@ simulation type. See <a href="../data_formats/">Data Formats</a> for more inform
 <doc-tab v-cloak id="linked-read-simulation">
 <template #title>Linked-read simulation</template>
 <p>These are the options available specific to linked-read parameters, such as the average molecule length, etc.</p>
-<retype-table copy-text="| short name | long name             |                         default                          | description                                                                                                                                    | notes                                                                               |
+<retype-table copy-text="| short name| long name|                         default| description                                                                                                                                    | notes                                                                               |
 |:----------:|:----------------------|:--------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
 |            | `FASTA`               |                                                          | input fasta file(s)                                                                                                                            | REQUIRED                                                                            |
 |    `-g`    | `--genomic-coverage`  |                           `30`                           | mean coverage target for simulated data                                                                                                        |                                                                                     |
@@ -535,85 +535,85 @@ simulation type. See <a href="../data_formats/">Data Formats</a> for more inform
 |    `-N`    | `--molecules-per`     |                           `3`                            | mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. `-2`) will be fixed for that number |                                                                                     |
 |    `-l`    | `--read-lengths`      |                        `150,150`                         | length of R1,R2 reads in bp                                                                                                                    | each must be &gt;10 and separated by a comma, no spaces                                |
 |    `-S`    | `--singletons`        |                           `0`                            | proportion of barcodes will only have a single read pair                                                                                       |">
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="compact">
+<div class="table-wrapper clean scrollbar overflow-hidden">
+<table class="compact clean">
 <thead>
 <tr>
-<th style="text-align: center;">short name</th>
-<th style="text-align: left;">long name</th>
-<th style="text-align: center;">default</th>
+<th style="text-align: center;" class="whitespace-nowrap">short name</th>
+<th style="text-align: left;" class="whitespace-nowrap">long name</th>
+<th style="text-align: center;" class="whitespace-nowrap">default</th>
 <th style="text-align: left;">description</th>
 <th style="text-align: left;">notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: center;"> </td>
-<td style="text-align: left;"><code translate="no" v-pre>FASTA</code></td>
-<td style="text-align: center;"> </td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>FASTA</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"> </td>
 <td style="text-align: left;">input fasta file(s)</td>
 <td style="text-align: left;">REQUIRED</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-g</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--genomic-coverage</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>30</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-g</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--genomic-coverage</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>30</code></td>
 <td style="text-align: left;">mean coverage target for simulated data</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-i</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--insert-size</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>500</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-i</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--insert-size</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>500</code></td>
 <td style="text-align: left;">outer distance between the two ends in bp</td>
 <td style="text-align: left;">must be &gt;<code translate="no" v-pre>--read-lengths</code></td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-d</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--insert-stdev</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>50</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-d</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--insert-stdev</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>50</code></td>
 <td style="text-align: left;">standard deviation of --distance</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-A</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecule-attempts</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>300</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-A</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecule-attempts</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>300</code></td>
 <td style="text-align: left;">number of attempts to create a molecule with &lt;70% ambiguous bases before exiting with an error</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-C</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecule-coverage</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>0.2</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-C</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecule-coverage</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>0.2</code></td>
 <td style="text-align: left;">mean percent coverage per molecule if &lt;1, else mean number of reads per molecule</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-L</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecule-length</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>80000</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-L</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecule-length</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>80000</code></td>
 <td style="text-align: left;">mean length of molecules in bp, drawn from exponential distribution</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-N</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--molecules-per</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>3</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-N</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--molecules-per</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>3</code></td>
 <td style="text-align: left;">mean number of unrelated molecules per barcode, drawn from an exponential distribution. If negative, (e.g. <code translate="no" v-pre>-2</code>) will be fixed for that number</td>
 <td style="text-align: left;"> </td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-l</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--read-lengths</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>150,150</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-l</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--read-lengths</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>150,150</code></td>
 <td style="text-align: left;">length of R1,R2 reads in bp</td>
 <td style="text-align: left;">each must be &gt;10 and separated by a comma, no spaces</td>
 </tr>
 <tr>
-<td style="text-align: center;"><code translate="no" v-pre>-S</code></td>
-<td style="text-align: left;"><code translate="no" v-pre>--singletons</code></td>
-<td style="text-align: center;"><code translate="no" v-pre>0</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>-S</code></td>
+<td style="text-align: left;" class="whitespace-nowrap"><code translate="no" v-pre>--singletons</code></td>
+<td style="text-align: center;" class="whitespace-nowrap"><code translate="no" v-pre>0</code></td>
 <td style="text-align: left;">proportion of barcodes will only have a single read pair</td>
 <td style="text-align: left;"> </td>
 </tr>
