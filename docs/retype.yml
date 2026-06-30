@@ -29,10 +29,6 @@ edit:
   base: /
   branch: "docs"
 links:
-- text: Harpy
-  link: https://pdimens.github.io/harpy/
-  icon: https://raw.githubusercontent.com/pdimens/harpy/refs/heads/docs/static/logo_navbar.png
-  target: blank
 - text: Therkildsen Lab
   link: https://www.therkildsenlab.org/
   icon: https://www.therkildsenlab.org/uploads/1/4/5/5/145548022/published/new-logo-smaller.png
@@ -40,6 +36,10 @@ links:
 - text: Cornell GIH
   link: https://www.genomicsinnovation.cornell.edu/
   icon: https://raw.githubusercontent.com/pdimens/harpy/refs/heads/docs/static/biotech.png
+  target: blank
+- text: LASTQ Standard
+  link: https://pdimens.github.io/lastq/
+  icon: https://pdimens.github.io/lastq/img/logo.png
   target: blank
 - text: Source
   link: https://github.com/pdimens/mimick
