@@ -15,9 +15,10 @@ jobs:
       repository-projects: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
       - name: Bump Mimick Version
-        # this removes the :latest tag and replaces with versioned container
         run: |
           sed -i "s/0\.0\.0/${{ github.ref_name }}/g" mimick/__main__.py
           sed -i "s/0\.0\.0/${{ github.ref_name }}/g" pyproject.toml

@@ -15,9 +15,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7
         with:
-          ref: main
+          fetch-depth: 1
       - uses: retypeapp/action-build@latest
         with:
           config_path: docs/
