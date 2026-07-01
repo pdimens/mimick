@@ -33,9 +33,9 @@ links:
   link: https://www.therkildsenlab.org/
   icon: https://www.therkildsenlab.org/uploads/1/4/5/5/145548022/published/new-logo-smaller.png
   target: blank
-- text: Cornell GIH
+- text: Innovation Lab
   link: https://www.genomicsinnovation.cornell.edu/
-  icon: https://raw.githubusercontent.com/pdimens/harpy/refs/heads/docs/static/biotech.png
+  icon: https://raw.githubusercontent.com/pdimens/harpy/refs/heads/main/docs/static/biotech.png
   target: blank
 - text: LASTQ Standard
   link: https://pdimens.github.io/lastq/
